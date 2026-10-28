@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La búsqueda del tesoro</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 12px;
+            overflow: hidden;
+            color: #fff;
+        }
+        #game-container {
+            position: relative;
+            width: min(900px, calc(100vw - 24px), calc((100dvh - 24px) * 900 / 550));
+            aspect-ratio: 900 / 550;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #4facfe;
+        }
+        .menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+            backdrop-filter: blur(6px);
+            overflow-y: auto;
+        }
+        .hidden {
+            display: none !important;
+        }
+        h1 {
+            font-size: clamp(1.5rem, 5.5vw, 3.5rem);
+            color: #ffd700;
+            text-shadow: 3px 3px #ff4500, 0 0 25px rgba(255, 215, 0, 0.7);
+            margin-bottom: 10px;
+            animation: bounce 2s infinite;
+        }
+        h2 {
+            font-size: clamp(1.3rem, 4vw, 2.2rem);
+            color: #00ffff;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px #000;
+        }
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            max-width: 600px;
+            line-height: 1.5;
+            color: #e0e0e0;
+        }
+        .btn {
+            background: linear-gradient(to bottom, #ff5e62, #ff9966);
+            border: none;
+            color: white;
+            padding: 14px 35px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px #c53c40;
+            transition: all 0.1s ease;
+            margin: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn:hover {
+            background: linear-gradient(to bottom, #ff7074, #ffa87d);
+            transform: translateY(-2px);
+        }
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px #c53c40;
+        }
+        .instructions-box {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+            max-width: 650px;
+        }
+        .instructions-box ul {
+            list-style-type: none;
+        }
+        .instructions-box li {
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: clamp(0.55rem, 1.8vw, 1.2rem);
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 5;
+            pointer-events: none;
+        }
+        .hud-item {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px clamp(4px, 1vw, 15px);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- HUD -->
+        <div id="hud" class="hidden">
+            <div class="hud-item" id="hud-level">Nivel: 1/10</div>
+            <div class="hud-item" id="hud-score">Tesoros: 0/5</div>
+            <div class="hud-item" id="hud-lives">Vidas P1: ❤️❤️❤️ | P2: 💙💙💙</div>
+        </div>
+        <!-- Canvas -->
+        <canvas id="gameCanvas" width="900" height="550"></canvas>
+        <!-- Pantalla de Inicio -->
+        <div id="start-menu" class="menu-overlay">
+            <h1>La búsqueda del tesoro</h1>
+            <p>¡10 niveles de aventura! Las estrellas están accesibles en las plataformas, pero cuidado: ¡los villanos son cada vez más rápidos y agresivos, y en el nivel 10 te espera el Jefe Final!</p>
+            <button class="btn" id="start-btn">Jugar</button>
+            <button class="btn" id="instructions-btn" style="background: linear-gradient(to bottom, #2193b0, #6dd5ed); box-shadow: 0 6px #145a6b;">Instrucciones</button>
+        </div>
+        <!-- Pantalla de Instrucciones -->
+        <div id="instructions-menu" class="menu-overlay hidden">
+            <h2>Instrucciones</h2>
+            <div class="instructions-box">
+                <ul>
+                    <li>🔴 <strong>Jugador 1 (Bola Roja):</strong> Teclas <strong>A</strong> (Izq), <strong>D</strong> (Der), <strong>W</strong> (Saltar).</li>
+                    <li>🔵 <strong>Jugador 2 (Bola Azul):</strong> Teclas <strong>Flecha Izquierda</strong>, <strong>Flecha Derecha</strong>, <strong>Flecha Arriba</strong> (Saltar).</li>
+                    <li>⭐ Recoge todas las estrellas ubicadas sobre las plataformas y llega al cofre final.</li>
+                    <li>👾 Salta sobre la cabeza de los villanos cuadrados para eliminarlos. ¡Los enemigos aumentan en cantidad y velocidad en cada nivel!</li>
+                    <li>👑 Nivel 10: Enfréntate al Gran Jefe en un combate épico de equipo.</li>
+                </ul>
+            </div>
+            <button class="btn" id="back-btn">Volver</button>
+        </div>
+        <!-- Pantalla de Game Over -->
+        <div id="game-over-menu" class="menu-overlay hidden">
+            <h2 style="color: #ff4500;">¡Derrota!</h2>
+            <p id="game-over-text">Las pelotitas cayeron en combate.</p>
+            <button class="btn" id="restart-btn">Volver a Jugar</button>
+        </div>
+        <!-- Pantalla de Victoria -->
+        <div id="victory-menu" class="menu-overlay hidden">
+            <h2 style="color: #ffd700;">¡Victoria Épica Absoluta!</h2>
+            <p>¡Derrotaste al Gran Jefe Cuadrado y recuperaste todos los tesoros del reino!</p>
+            <p id="final-score-text"></p>
+            <button class="btn" id="victory-restart-btn">Jugar de Nuevo</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const startMenu = document.getElementById('start-menu');
+            const instructionsMenu = document.getElementById('instructions-menu');
+            const gameOverMenu = document.getElementById('game-over-menu');
+            const victoryMenu = document.getElementById('victory-menu');
+            const hud = document.getElementById('hud');
+            const startBtn = document.getElementById('start-btn');
+            const instructionsBtn = document.getElementById('instructions-btn');
+            const backBtn = document.getElementById('back-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            const victoryRestartBtn = document.getElementById('victory-restart-btn');
+            const hudLevel = document.getElementById('hud-level');
+            const hudScore = document.getElementById('hud-score');
+            const hudLives = document.getElementById('hud-lives');
+            const finalScoreText = document.getElementById('final-score-text');
+            let gameState = 'START'; 
+            let currentLevel = 0;
+            let score = 0;
+            let totalTreasuresInLevel = 0;
+            const keys = {};
+            window.addEventListener('keydown', e => { if (['ArrowLeft','ArrowRight','ArrowUp','Space'].includes(e.code)) e.preventDefault(); keys[e.code] = true; });
+            window.addEventListener('keyup', e => keys[e.code] = false);
+            class Player {
+                constructor(x, y, color, controls) {
+                    this.x = x;
+                    this.y = y;
+                    this.radius = 18;
+                    this.vx = 0;
+                    this.vy = 0;
+                    this.speed = 4.8;
+                    this.jumpForce = -11.5;
+                    this.gravity = 0.5;
+                    this.color = color;
+                    this.controls = controls;
+                    this.isGrounded = false;
+                    this.lives = 3;
+                    this.angle = 0;
+                    this.respawnX = x;
+                    this.respawnY = y;
+                    this.invulnerability = 0;
+                }
+                update(platforms) {
+                    if (this.invulnerability > 0) this.invulnerability--;
+                    if (keys[this.controls.left]) {
+                        this.vx = -this.speed;
+                        this.angle -= 0.1;
+                    } else if (keys[this.controls.right]) {
+                        this.vx = this.speed;
+                        this.angle += 0.1;
+                    } else {
+                        this.vx *= 0.8; 
+                    }
+                    if (keys[this.controls.jump] && this.isGrounded) {
+                        this.vy = this.jumpForce;
+                        this.isGrounded = false;
+                    }
+                    this.vy += this.gravity;
+                    this.x += this.vx;
+                    this.handleHorizontalCollisions(platforms);
+                    this.y += this.vy;
+                    this.isGrounded = false;
+                    this.handleVerticalCollisions(platforms);
+                    if (this.y > canvas.height + 50) {
+                        this.die();
+                    }
+                }
+                handleHorizontalCollisions(platforms) {
+                    for (let p of platforms) {
+                        if (this.x + this.radius > p.x && this.x - this.radius < p.x + p.width &&
+                            this.y + this.radius > p.y && this.y - this.radius < p.y + p.height) {
+                            if (this.vx > 0) {
+                                this.x = p.x - this.radius;
+                            } else if (this.vx < 0) {
+                                this.x = p.x + p.width + this.radius;
+                            }
+                        }
+                    }
+                }
+                handleVerticalCollisions(platforms) {
+                    for (let p of platforms) {
+                        if (this.x + this.radius > p.x && this.x - this.radius < p.x + p.width &&
+                            this.y + this.radius > p.y && this.y - this.radius < p.y + p.height) {
+                            if (this.vy > 0) { 
+                                this.y = p.y - this.radius;
+                                this.vy = 0;
+                                this.isGrounded = true;
+                                if (p.type === 'moving') {
+                                    this.x += p.currentSpeed * p.dir;
+                                }
+                            } else if (this.vy < 0) { 
+                                this.y = p.y + p.height + this.radius;
+                                this.vy = 0;
+                            }
+                        }
+                    }
+                }
+                die() {
+                    if (this.invulnerability > 0 || gameState !== 'PLAYING') return;
+                    this.lives--;
+                    this.invulnerability = 65;
+                    if (this.lives <= 0) {
+                        triggerGameOver();
+                    } else {
+                        this.x = this.respawnX;
+                        this.y = this.respawnY;
+                        this.vx = 0;
+                        this.vy = 0;
+                    }
+                }
+                draw() {
+                    if (this.invulnerability > 0 && Math.floor(this.invulnerability / 5) % 2 === 0) return;
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.angle);
+                    let gradient = ctx.createRadialGradient(-5, -5, 2, 0, 0, this.radius);
+                    if (this.color === 'red') {
+                        gradient.addColorStop(0, '#ff7675');
+                        gradient.addColorStop(1, '#d63031');
+                    } else {
+                        gradient.addColorStop(0, '#74b9ff');
+                        gradient.addColorStop(1, '#0984e3');
+                    }
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#2d3436';
+                    ctx.stroke();
+                    ctx.restore();
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(this.x - 4, this.y - 3, 4.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(this.x + 6, this.y - 3, 4.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(this.x - 3, this.y - 3, 2, 0, Math.PI * 2);
+                    ctx.arc(this.x + 7, this.y - 3, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            class Enemy {
+                constructor(x, y, minX, maxX, speed = 1.5) {
+                    this.x = x;
+                    this.y = y;
+                    this.width = 30;
+                    this.height = 30;
+                    this.minX = minX;
+                    this.maxX = maxX;
+                    this.speed = speed;
+                    this.direction = 1;
+                    this.alive = true;
+                }
+                update() {
+                    if (!this.alive) return;
+                    this.x += this.speed * this.direction;
+                    if (this.x < this.minX || this.x + this.width > this.maxX) {
+                        this.direction *= -1;
+                    }
+                }
+                draw() {
+                    if (!this.alive) return;
+                    ctx.fillStyle = '#2d3436';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                    ctx.strokeStyle = '#ff4757';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(this.x, this.y, this.width, this.height);
+                    ctx.fillStyle = '#ff4757';
+                    ctx.fillRect(this.x + 5, this.y + 8, 6, 4);
+                    ctx.fillRect(this.x + 19, this.y + 8, 6, 4);
+                    ctx.strokeStyle = '#ff4757';
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 4, this.y + 6);
+                    ctx.lineTo(this.x + 12, this.y + 11);
+                    ctx.moveTo(this.x + 26, this.y + 6);
+                    ctx.lineTo(this.x + 18, this.y + 11);
+                    ctx.stroke();
+                }
+            }
+            class Boss {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.width = 80;
+                    this.height = 80;
+                    this.minX = 150;
+                    this.maxX = 750;
+                    this.speed = 3.2;
+                    this.dir = 1;
+                    this.health = 5;
+                    this.maxHealth = 5;
+                    this.alive = true;
+                }
+                update() {
+                    if (!this.alive) return;
+                    this.x += this.speed * this.dir;
+                    if (this.x < this.minX || this.x + this.width > this.maxX) {
+                        this.dir *= -1;
+                    }
+                }
+                draw() {
+                    if (!this.alive) return;
+                    ctx.fillStyle = '#8e44ad';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                    ctx.strokeStyle = '#f1c40f';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(this.x, this.y, this.width, this.height);
+                    ctx.fillStyle = '#f1c40f';
+                    ctx.fillRect(this.x + 15, this.y + 20, 14, 10);
+                    ctx.fillRect(this.x + 51, this.y + 20, 14, 10);
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(this.x + 20, this.y + 23, 5, 5);
+                    ctx.fillRect(this.x + 56, this.y + 23, 5, 5);
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(this.x, this.y - 18, this.width, 10);
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.fillRect(this.x, this.y - 18, (this.width * (this.health / this.maxHealth)), 10);
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(this.x, this.y - 18, this.width, 10);
+                }
+            }
+            class Platform {
+                constructor(x, y, width, height, type = 'normal', minX = 0, maxX = 0, speed = 1.5) {
+                    this.x = x;
+                    this.y = y;
+                    this.width = width;
+                    this.height = height;
+                    this.type = type; 
+                    this.minX = minX;
+                    this.maxX = maxX;
+                    this.currentSpeed = speed;
+                    this.dir = 1;
+                }
+                update() {
+                    if (this.type === 'moving') {
+                        this.x += this.currentSpeed * this.dir;
+                        if (this.x < this.minX || this.x + this.width > this.maxX) {
+                            this.dir *= -1;
+                        }
+                    }
+                }
+                draw() {
+                    if (this.type === 'normal' || this.type === 'moving') {
+                        ctx.fillStyle = '#6ab04c';
+                        ctx.fillRect(this.x, this.y, this.width, 14); 
+                        ctx.fillStyle = '#795548';
+                        ctx.fillRect(this.x, this.y + 14, this.width, this.height - 14); 
+                        if (this.type === 'moving') {
+                            ctx.fillStyle = '#f39c12';
+                            ctx.fillRect(this.x + 5, this.y + 4, 10, 6);
+                            ctx.fillRect(this.x + this.width - 15, this.y + 4, 10, 6);
+                        }
+                    } else if (this.type === 'spike') {
+                        ctx.fillStyle = '#b2bec3';
+                        ctx.fillRect(this.x, this.y + 10, this.width, this.height - 10);
+                        ctx.fillStyle = '#d63031';
+                        let spikeWidth = 15;
+                        let count = Math.floor(this.width / spikeWidth);
+                        for (let i = 0; i < count; i++) {
+                            ctx.beginPath();
+                            ctx.moveTo(this.x + (i * spikeWidth), this.y + 10);
+                            ctx.lineTo(this.x + (i * spikeWidth) + (spikeWidth / 2), this.y);
+                            ctx.lineTo(this.x + ((i + 1) * spikeWidth), this.y + 10);
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+            class Treasure {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.radius = 12;
+                    this.collected = false;
+                }
+                draw() {
+                    if (this.collected) return;
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.fillStyle = '#f1c40f';
+                    ctx.beginPath();
+                    for (let i = 0; i < 5; i++) {
+                        ctx.lineTo(Math.cos((18 + i * 72) * Math.PI / 180) * this.radius, -Math.sin((18 + i * 72) * Math.PI / 180) * this.radius);
+                        ctx.lineTo(Math.cos((54 + i * 72) * Math.PI / 180) * (this.radius / 2), -Math.sin((54 + i * 72) * Math.PI / 180) * (this.radius / 2));
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.strokeStyle = '#d4ac0d';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+            class Checkpoint {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.activated = false;
+                }
+                draw() {
+                    ctx.fillStyle = '#636e72';
+                    ctx.fillRect(this.x, this.y - 40, 4, 40);
+                    ctx.fillStyle = this.activated ? '#00b894' : '#ff7675';
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 4, this.y - 40);
+                    ctx.lineTo(this.x + 30, this.y - 28);
+                    ctx.lineTo(this.x + 4, this.y - 16);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+            class ExitDoor {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.width = 40;
+                    this.height = 60;
+                }
+                draw() {
+                    ctx.fillStyle = '#d35400';
+                    ctx.fillRect(this.x, this.y + 20, this.width, this.height - 20);
+                    ctx.fillStyle = '#e67e22';
+                    ctx.fillRect(this.x - 4, this.y + 15, this.width + 8, 12); 
+                    ctx.fillStyle = '#f1c40f';
+                    ctx.beginPath();
+                    ctx.arc(this.x + this.width / 2, this.y + 26, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            // Generador de 10 Niveles con Estrellas Accesibles y Dificultad Basada en Enemigos
+            let levels = [];
+            for (let i = 1; i <= 10; i++) {
+                let lvl = {
+                    platforms: [new Platform(0, 500, 900, 50)],
+                    treasures: [],
+                    enemies: [],
+                    checkpoints: [new Checkpoint(450, 500)],
+                    exit: new ExitDoor(830, 440),
+                    boss: null
+                };
+                if (i === 10) {
+                    // NIVEL 10: JEFE FINAL
+                    lvl.platforms.push(new Platform(200, 380, 500, 30));
+                    lvl.platforms.push(new Platform(100, 250, 150, 30));
+                    lvl.platforms.push(new Platform(650, 250, 150, 30));
+                    lvl.boss = new Boss(400, 300);
+                    lvl.treasures = [new Treasure(175, 210), new Treasure(725, 210), new Treasure(450, 340)];
+                } else {
+                    let platCount = 4 + Math.floor(i / 3);
+                    let enemyCount = 1 + Math.floor(i / 2); // Aumenta la cantidad de enemigos por nivel
+                    // Crear plataformas con alturas razonables
+                    for (let p = 0; p < platCount; p++) {
+                        let px = 70 + (p * 150) % 730;
+                        let py = 410 - (p * 35);
+                        let pWidth = 130;
+                        if (i >= 3 && p % 2 === 1) {
+                            lvl.platforms.push(new Platform(px, py, pWidth, 30, 'moving', px - 70, px + 90, 1.5 + (i * 0.15)));
+                        } else {
+                            lvl.platforms.push(new Platform(px, py, pWidth, 30, 'normal'));
+                        }
+                        // Las estrellas se colocan justo encima de las plataformas (fáciles de alcanzar)
+                        if (p < 4) {
+                            lvl.treasures.push(new Treasure(px + pWidth / 2, py - 22));
+                        }
+                    }
+                    // Enemigos más rápidos y numerosos para aumentar la dificultad real
+                    for (let e = 0; e < enemyCount; e++) {
+                        let ex = 100 + (e * 200);
+                        let enemySpeed = 1.6 + (i * 0.22); // A mayor nivel, más rápidos son los malos
+                        lvl.enemies.push(new Enemy(ex, 470, ex - 80, ex + 120, enemySpeed));
+                    }
+                }
+                levels.push(lvl);
+            }
+            let player1, player2;
+            let currentLevelData;
+            function initLevel(levelIndex) {
+                currentLevel = levelIndex;
+                let data = levels[currentLevel];
+                player1 = new Player(50, 440, 'red', { left: 'KeyA', right: 'KeyD', jump: 'KeyW' });
+                player2 = new Player(100, 440, 'blue', { left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp' });
+                currentLevelData = {
+                    platforms: data.platforms.map(p => new Platform(p.x, p.y, p.width, p.height, p.type, p.minX, p.maxX, p.currentSpeed)),
+                    treasures: data.treasures.map(t => new Treasure(t.x, t.y)),
+                    enemies: data.enemies.map(e => new Enemy(e.x, e.y, e.minX, e.maxX, e.speed)),
+                    checkpoints: data.checkpoints.map(c => new Checkpoint(c.x, c.y)),
+                    exit: new ExitDoor(data.exit.x, data.exit.y),
+                    boss: data.boss ? new Boss(data.boss.x, data.boss.y) : null
+                };
+                totalTreasuresInLevel = currentLevelData.treasures.length;
+                updateHUD();
+            }
+            function updateHUD() {
+                hudLevel.innerText = `Nivel: ${currentLevel + 1}/10`;
+                let collectedCount = currentLevelData.treasures.filter(t => t.collected).length;
+                hudScore.innerText = `Tesoros: ${collectedCount}/${totalTreasuresInLevel}`;
+                hudLives.innerText = `Vidas P1: ${'❤️'.repeat(Math.max(0, player1.lives))} | P2: ${'💙'.repeat(Math.max(0, player2.lives))}`;
+            }
+            function startGame() {
+                startMenu.classList.add('hidden');
+                instructionsMenu.classList.add('hidden');
+                gameOverMenu.classList.add('hidden');
+                victoryMenu.classList.add('hidden');
+                hud.classList.remove('hidden');
+                score = 0;
+                initLevel(0);
+                gameState = 'PLAYING';
+            }
+            function triggerGameOver() {
+                gameState = 'GAMEOVER';
+                hud.classList.add('hidden');
+                document.getElementById('game-over-text').innerText = `Llegaste al nivel ${currentLevel + 1} con ${score} tesoros recolectados.`;
+                gameOverMenu.classList.remove('hidden');
+            }
+            function triggerVictory() {
+                gameState = 'VICTORY';
+                hud.classList.add('hidden');
+                finalScoreText.innerText = `¡Puntuación total de tesoros: ${score}!`;
+                victoryMenu.classList.remove('hidden');
+            }
+            startBtn.addEventListener('click', startGame);
+            restartBtn.addEventListener('click', startGame);
+            victoryRestartBtn.addEventListener('click', startGame);
+            instructionsBtn.addEventListener('click', () => {
+                startMenu.classList.add('hidden');
+                instructionsMenu.classList.remove('hidden');
+            });
+            backBtn.addEventListener('click', () => {
+                instructionsMenu.classList.add('hidden');
+                startMenu.classList.remove('hidden');
+            });
+            function update() {
+                if (gameState !== 'PLAYING') return;
+                for (let p of currentLevelData.platforms) {
+                    p.update();
+                }
+                player1.update(currentLevelData.platforms);
+                player2.update(currentLevelData.platforms);
+                    if (gameState !== 'PLAYING') return;
+                for (let enemy of currentLevelData.enemies) {
+                    enemy.update();
+                    if (!enemy.alive) continue;
+                    checkPlayerEnemyCollision(player1, enemy);
+                    checkPlayerEnemyCollision(player2, enemy);
+                }
+                if (currentLevelData.boss && currentLevelData.boss.alive) {
+                    let boss = currentLevelData.boss;
+                    boss.update();
+                    checkPlayerBossCollision(player1, boss);
+                    checkPlayerBossCollision(player2, boss);
+                }
+                for (let p of currentLevelData.platforms) {
+                    if (p.type === 'spike') {
+                        if (checkSpikeCollision(player1, p)) player1.die();
+                        if (checkSpikeCollision(player2, p)) player2.die();
+                    }
+                }
+                for (let t of currentLevelData.treasures) {
+                    if (!t.collected) {
+                        if (Math.hypot(player1.x - t.x, player1.y - t.y) < player1.radius + t.radius ||
+                            Math.hypot(player2.x - t.x, player2.y - t.y) < player2.radius + t.radius) {
+                            t.collected = true;
+                            score++;
+                            updateHUD();
+                        }
+                    }
+                }
+                for (let c of currentLevelData.checkpoints) {
+                    if (!c.activated) {
+                        if (Math.abs(player1.x - c.x) < 25 && Math.abs(player1.y - c.y) < 40 ||
+                            Math.abs(player2.x - c.x) < 25 && Math.abs(player2.y - c.y) < 40) {
+                            c.activated = true;
+                            player1.respawnX = c.x;
+                            player1.respawnY = c.y - 10;
+                            player2.respawnX = c.x + 30;
+                            player2.respawnY = c.y - 10;
+                        }
+                    }
+                }
+                let allCollected = currentLevelData.treasures.every(t => t.collected);
+                let bossDefeated = !currentLevelData.boss || !currentLevelData.boss.alive;
+                let exit = currentLevelData.exit;
+                if (allCollected && bossDefeated && 
+                    ((Math.abs(player1.x - (exit.x + exit.width/2)) < 30 && Math.abs(player1.y - (exit.y + exit.height/2)) < 40) ||
+                     (Math.abs(player2.x - (exit.x + exit.width/2)) < 30 && Math.abs(player2.y - (exit.y + exit.height/2)) < 40))) {
+                    if (currentLevel < levels.length - 1) {
+                        currentLevel++;
+                        initLevel(currentLevel);
+                    } else {
+                        triggerVictory();
+                    }
+                }
+                updateHUD();
+            }
+            function checkPlayerEnemyCollision(player, enemy) {
+                if (player.x + player.radius > enemy.x &&
+                    player.x - player.radius < enemy.x + enemy.width &&
+                    player.y + player.radius > enemy.y &&
+                    player.y - player.radius < enemy.y + enemy.height) {
+                    if (player.vy > 0 && player.y < enemy.y + 10) {
+                        enemy.alive = false;
+                        player.vy = -9; 
+                    } else {
+                        player.die();
+                    }
+                }
+            }
+            function checkPlayerBossCollision(player, boss) {
+                if (player.x + player.radius > boss.x &&
+                    player.x - player.radius < boss.x + boss.width &&
+                    player.y + player.radius > boss.y &&
+                    player.y - player.radius < boss.y + boss.height) {
+                    if (player.vy > 0 && player.y < boss.y + 15) {
+                        boss.health--;
+                        player.vy = -11;
+                        if (boss.health <= 0) {
+                            boss.alive = false;
+                        }
+                    } else {
+                        player.die();
+                    }
+                }
+            }
+            function checkSpikeCollision(player, spike) {
+                return (player.x + player.radius > spike.x &&
+                        player.x - player.radius < spike.x + spike.width &&
+                        player.y + player.radius > spike.y &&
+                        player.y - player.radius < spike.y + spike.height);
+            }
+            function render() {
+                let bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                bgGradient.addColorStop(0, '#1e3c72');
+                bgGradient.addColorStop(0.5, '#2a5298');
+                bgGradient.addColorStop(1, '#74b9ff');
+                ctx.fillStyle = bgGradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.beginPath();
+                ctx.moveTo(0, 500);
+                ctx.lineTo(150, 320);
+                ctx.lineTo(350, 500);
+                ctx.lineTo(550, 280);
+                ctx.lineTo(800, 500);
+                ctx.lineTo(900, 350);
+                ctx.lineTo(900, 500);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath();
+                ctx.arc(150, 90, 35, 0, Math.PI * 2);
+                ctx.arc(185, 80, 45, 0, Math.PI * 2);
+                ctx.arc(220, 95, 30, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(650, 120, 40, 0, Math.PI * 2);
+                ctx.arc(690, 105, 50, 0, Math.PI * 2);
+                ctx.arc(735, 125, 35, 0, Math.PI * 2);
+                ctx.fill();
+                if (gameState === 'PLAYING') {
+                    for (let p of currentLevelData.platforms) p.draw();
+                    for (let c of currentLevelData.checkpoints) c.draw();
+                    for (let t of currentLevelData.treasures) t.draw();
+                    currentLevelData.exit.draw();
+                    for (let e of currentLevelData.enemies) e.draw();
+                    if (currentLevelData.boss) currentLevelData.boss.draw();
+                    player1.draw();
+                    player2.draw();
+                }
+            }
+            function gameLoop() {
+                update();
+                render();
+                requestAnimationFrame(gameLoop);
+            }
+            gameLoop();
+        });
+    </script>
+</body>
+</html>
