@@ -1,0 +1,2497 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>¿Qué personaje de My Little Pony eres?</title>
+
+<style>
+
+/* ===== COLORES ===== */
+
+:root {
+
+  --ink: #493b68;
+
+  --pink: #ffd7e8;
+
+  --lav: #e7dcff;
+
+  --blue: #d9f2ff;
+
+  --cream: #fffaf0;
+
+  --accent: #9c72d8;
+
+}
+
+* { box-sizing: border-box; }
+
+body {
+
+  margin: 0;
+
+  min-height: 100vh;
+
+  font-family: "Trebuchet MS", Arial, sans-serif;
+
+  color: var(--ink);
+
+  background:
+
+    radial-gradient(circle at 15% 10%, #fff 0 3px, transparent 4px),
+
+    linear-gradient(135deg, #fff0f6, #f0eaff 48%, #e5f8ff);
+
+  background-size: 34px 34px, auto;
+
+}
+
+button, select { font: inherit; }
+
+button {
+
+  cursor: pointer;
+
+  border: 0;
+
+  transition: transform .18s, filter .18s;
+
+}
+
+button:hover {
+
+  transform: translateY(-2px);
+
+  filter: brightness(1.03);
+
+}
+
+button:focus-visible, select:focus-visible {
+
+  outline: 3px solid #6f4eb3;
+
+  outline-offset: 3px;
+
+}
+
+.hidden { display: none !important; }
+
+/* ===== CABECERA ===== */
+
+.topbar {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  gap: 12px;
+
+  max-width: 1050px;
+
+  margin: auto;
+
+  padding: 18px 20px;
+
+}
+
+.brand {
+
+  font-weight: 900;
+
+  letter-spacing: .04em;
+
+  font-size: .95rem;
+
+}
+
+.lang {
+
+  border: 2px solid #e4d6f7;
+
+  background: #ffffffc9;
+
+  color: var(--ink);
+
+  border-radius: 999px;
+
+  padding: 9px 13px;
+
+}
+
+/* ===== CONTENEDORES ===== */
+
+main {
+
+  max-width: 900px;
+
+  margin: 0 auto;
+
+  padding: 18px 20px 54px;
+
+}
+
+.hero, .quiz-card, .result-card {
+
+  background: #ffffffd9;
+
+  border: 2px solid #fff;
+
+  box-shadow: 0 18px 45px #8264a51c;
+
+  border-radius: 30px;
+
+}
+
+/* ===== BIENVENIDA ===== */
+
+.hero {
+
+  text-align: center;
+
+  padding: clamp(28px, 6vw, 60px) 24px;
+
+  position: relative;
+
+  overflow: hidden;
+
+}
+
+.hero::before, .hero::after {
+
+  content: "✦";
+
+  position: absolute;
+
+  color: #f5a8ce;
+
+  font-size: 3rem;
+
+  opacity: .7;
+
+}
+
+.hero::before { top: 18px; left: 25px; }
+
+.hero::after {
+
+  bottom: 20px;
+
+  right: 28px;
+
+  color: #9bcff2;
+
+}
+
+.kicker {
+
+  display: inline-block;
+
+  background: #fce0ee;
+
+  border-radius: 999px;
+
+  padding: 8px 14px;
+
+  font-size: .78rem;
+
+  font-weight: 900;
+
+  letter-spacing: .12em;
+
+  text-transform: uppercase;
+
+}
+
+h1 {
+
+  font-size: clamp(2rem, 6vw, 4.1rem);
+
+  line-height: 1.04;
+
+  margin: 20px auto 16px;
+
+  max-width: 760px;
+
+  color: #7650a5;
+
+  text-wrap: balance;
+
+}
+
+.subtitle {
+
+  max-width: 590px;
+
+  margin: 0 auto 26px;
+
+  line-height: 1.65;
+
+  color: #706285;
+
+  font-size: 1.05rem;
+
+}
+
+.mini-ponies {
+
+  display: flex;
+
+  justify-content: center;
+
+  gap: 12px;
+
+  margin: 24px 0 0;
+
+  font-size: 2.1rem;
+
+}
+
+/* ===== BOTONES ===== */
+
+.primary {
+
+  background: linear-gradient(100deg, #ff9fc9, #b99bff);
+
+  color: white;
+
+  font-weight: 900;
+
+  border-radius: 999px;
+
+  padding: 15px 28px;
+
+  box-shadow: 0 8px 0 #8e6cba55;
+
+}
+
+.secondary {
+
+  background: #f0e9f8;
+
+  color: #725b8e;
+
+  border-radius: 999px;
+
+  padding: 12px 20px;
+
+  font-weight: 800;
+
+}
+
+.secondary:disabled {
+
+  opacity: .4;
+
+  cursor: not-allowed;
+
+  transform: none;
+
+}
+
+/* ===== CUESTIONARIO ===== */
+
+.quiz-card {
+
+  max-width: 740px;
+
+  margin: 0 auto;
+
+  padding: clamp(22px, 5vw, 40px);
+
+}
+
+.progress-row {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  font-size: .9rem;
+
+  font-weight: 800;
+
+  color: #8977a3;
+
+  margin-bottom: 10px;
+
+}
+
+.progress {
+
+  height: 10px;
+
+  background: #f0e7fa;
+
+  border-radius: 999px;
+
+  overflow: hidden;
+
+  margin-bottom: 28px;
+
+}
+
+.progress-fill {
+
+  height: 100%;
+
+  width: 0;
+
+  background: linear-gradient(90deg, #ff9fc9, #a8d9ff, #b8a0f4);
+
+  transition: width .25s;
+
+}
+
+.question {
+
+  font-size: clamp(1.35rem, 3.5vw, 2rem);
+
+  line-height: 1.25;
+
+  margin: 0 0 22px;
+
+}
+
+.answers {
+
+  display: grid;
+
+  gap: 12px;
+
+}
+
+.answer {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  text-align: left;
+
+  width: 100%;
+
+  background: #fff;
+
+  border: 2px solid #eee4f8;
+
+  border-radius: 17px;
+
+  padding: 15px 17px;
+
+  color: #51456a;
+
+  line-height: 1.4;
+
+}
+
+.answer:hover {
+
+  border-color: #c7a9ed;
+
+  background: #fffaff;
+
+}
+
+.answer.selected {
+
+  border-color: #a17add;
+
+  background: #f4edff;
+
+  box-shadow: 0 0 0 2px #a17add22;
+
+}
+
+.answer-letter {
+
+  display: grid;
+
+  place-items: center;
+
+  flex: 0 0 34px;
+
+  height: 34px;
+
+  border-radius: 12px;
+
+  background: #f6e8f3;
+
+  font-weight: 900;
+
+  color: #8c67ae;
+
+}
+
+.controls {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-top: 26px;
+
+}
+
+/* ===== RESULTADOS ===== */
+
+.result-card {
+
+  text-align: center;
+
+  padding: clamp(22px, 5vw, 42px);
+
+  position: relative;
+
+  overflow: hidden;
+
+}
+
+.result-card h2 {
+
+  font-size: clamp(1.9rem, 5vw, 3rem);
+
+  color: #7650a5;
+
+  margin: 10px 0;
+
+}
+
+.description {
+
+  font-size: 1.1rem;
+
+  line-height: 1.7;
+
+  max-width: 590px;
+
+  margin: 0 auto 22px;
+
+}
+
+.pony-frame {
+
+  width: min(100%, 310px);
+
+  margin: 8px auto 18px;
+
+  aspect-ratio: 1;
+
+  background: linear-gradient(135deg, var(--pony-bg, #fff0f6), #fff);
+
+  border-radius: 50%;
+
+  display: grid;
+
+  place-items: center;
+
+  border: 7px solid white;
+
+  box-shadow: 0 12px 35px #7a5b9a24;
+
+}
+
+.pony-frame svg {
+
+  width: 92%;
+
+  height: 92%;
+
+  filter: drop-shadow(0 6px 2px #493b6812);
+
+}
+
+.traits {
+
+  display: flex;
+
+  flex-wrap: wrap;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  margin: 18px 0 24px;
+
+}
+
+.trait {
+
+  background: #f2eaff;
+
+  border-radius: 999px;
+
+  padding: 8px 12px;
+
+  font-size: .9rem;
+
+  font-weight: 800;
+
+}
+
+.result-actions {
+
+  display: flex;
+
+  justify-content: center;
+
+  flex-wrap: wrap;
+
+  gap: 12px;
+
+}
+
+/* ===== CONFETI ===== */
+
+.confetti-layer {
+
+  position: fixed;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  overflow: hidden;
+
+  z-index: 10;
+
+}
+
+.particle {
+
+  position: absolute;
+
+  top: -35px;
+
+  animation: fall linear forwards;
+
+  will-change: transform;
+
+}
+
+@keyframes fall {
+
+  to {
+
+    transform: translate3d(var(--drift), 110vh, 0) rotate(760deg);
+
+  }
+
+}
+
+footer {
+
+  text-align: center;
+
+  padding: 26px 16px;
+
+  color: #9b8bb0;
+
+  font-size: .82rem;
+
+}
+
+/* ===== CELULARES ===== */
+
+@media (max-width: 540px) {
+
+  .topbar { padding: 14px; }
+
+  .brand { font-size: .78rem; }
+
+  main { padding: 12px 12px 36px; }
+
+  .hero, .quiz-card, .result-card {
+
+    border-radius: 24px;
+
+  }
+
+  .controls button { padding: 11px 15px; }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *, *::before, *::after {
+
+    animation-duration: .01ms !important;
+
+    transition: none !important;
+
+  }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="confetti-layer" id="confetti" aria-hidden="true"></div>
+
+<header class="topbar">
+
+  <div class="brand">🌈 PONY PERSONALITY CLUB</div>
+
+  <select class="lang" id="language" aria-label="Idioma">
+
+    <option value="es">🇦🇷 Español</option>
+
+    <option value="en">🇬🇧 English</option>
+
+  </select>
+
+</header>
+
+<main>
+
+  <!-- BIENVENIDA -->
+
+  <section class="hero" id="welcome">
+
+    <span class="kicker" id="kicker">
+
+      Un test mágico de personalidad
+
+    </span>
+
+    <h1>¿QUÉ PERSONAJE DE MY LITTLE PONY ERES?</h1>
+
+    <p class="subtitle" id="intro">
+
+      Contestá 20 preguntas sobre tus gustos y tu forma de ser
+
+      para descubrir qué pony se parece más a vos.
+
+      ¡Elegí lo que realmente te represente!
+
+    </p>
+
+    <button class="primary" id="start">
+
+      ✨ INICIAR TEST
+
+    </button>
+
+    <div class="mini-ponies" aria-hidden="true">
+
+      <span>🦄</span>
+
+      <span>🌈</span>
+
+      <span>🦋</span>
+
+      <span>🎀</span>
+
+      <span>⭐</span>
+
+    </div>
+
+  </section>
+
+  <!-- PREGUNTAS -->
+
+  <section class="quiz-card hidden" id="quiz" aria-live="polite">
+
+    <div class="progress-row">
+
+      <span id="question-label">Pregunta 1 de 20</span>
+
+      <span id="percent">5%</span>
+
+    </div>
+
+    <div class="progress">
+
+      <div class="progress-fill" id="progress-fill"></div>
+
+    </div>
+
+    <h2 class="question" id="question"></h2>
+
+    <div class="answers" id="answers"></div>
+
+    <div class="controls">
+
+      <button class="secondary" id="back">← Anterior</button>
+
+      <button class="primary" id="next">Siguiente →</button>
+
+    </div>
+
+  </section>
+
+  <!-- RESULTADO -->
+
+  <section class="result-card hidden" id="result" aria-live="polite">
+
+    <span class="kicker" id="result-kicker">¡Tu pony interior!</span>
+
+    <div class="pony-frame" id="pony-frame">
+
+      <div id="pony-art"></div>
+
+    </div>
+
+    <p id="you-are">Sos...</p>
+
+    <h2 id="result-name"></h2>
+
+    <p class="description" id="result-description"></p>
+
+    <div class="traits" id="traits"></div>
+
+    <div class="result-actions">
+
+      <button class="primary" id="restart">
+
+        🔁 Hacer el test de nuevo
+
+      </button>
+
+      <button class="secondary" id="share">
+
+        Copiar mi resultado
+
+      </button>
+
+    </div>
+
+    <p id="share-status" role="status"></p>
+
+  </section>
+
+</main>
+
+<footer id="footer">
+
+  Hecho con magia, amistad y muchos colores pastel ✨
+
+  · Fan quiz no oficial.
+
+</footer>
+
+<script>
+
+// ========================================
+
+// PERSONAJES
+
+// ========================================
+
+const characters = {
+
+  twilight: {
+
+    name: "Twilight Sparkle",
+
+    color: "#9b73c9",
+
+    bg: "#eee4ff",
+
+    symbol: "✦",
+
+    traits: {
+
+      es: ["Curiosa", "Organizada", "Inteligente"],
+
+      en: ["Curious", "Organized", "Smart"]
+
+    },
+
+    desc: {
+
+      es: "Sos curiosa, responsable y te encanta aprender. Cuando algo te importa, te esforzás por entenderlo bien y ayudar a los demás con tus ideas.",
+
+      en: "You're curious, responsible, and love learning. When something matters to you, you work hard to understand it and help others with your ideas."
+
+    },
+
+    rain: ["✦", "📚", "💜"]
+
+  },
+
+  pinkie: {
+
+    name: "Pinkie Pie",
+
+    color: "#f18bb7",
+
+    bg: "#ffe3f0",
+
+    symbol: "🎈",
+
+    traits: {
+
+      es: ["Divertida", "Sociable", "Espontánea"],
+
+      en: ["Funny", "Social", "Spontaneous"]
+
+    },
+
+    desc: {
+
+      es: "Sos alegre, espontánea y te gusta levantarle el ánimo a todo el mundo. Convertís los momentos comunes en recuerdos divertidos y valorás mucho compartir.",
+
+      en: "You're cheerful, spontaneous, and love lifting everyone's spirits. You turn ordinary moments into fun memories and really value spending time together."
+
+    },
+
+    rain: ["🎉", "🎊", "🎈", "⭐"]
+
+  },
+
+  rainbow: {
+
+    name: "Rainbow Dash",
+
+    color: "#43a8e5",
+
+    bg: "#dff4ff",
+
+    symbol: "🌈",
+
+    traits: {
+
+      es: ["Valiente", "Competitiva", "Leal"],
+
+      en: ["Brave", "Competitive", "Loyal"]
+
+    },
+
+    desc: {
+
+      es: "Sos valiente, segura de vos misma y te gustan los desafíos. A veces querés ganar sí o sí, pero cuando alguien te necesita, tu lealtad aparece primero.",
+
+      en: "You're brave, confident, and love a challenge. You may really want to win, but when someone needs you, your loyalty comes first."
+
+    },
+
+    rain: ["🌈", "☁️", "💧", "⭐"]
+
+  },
+
+  rarity: {
+
+    name: "Rarity",
+
+    color: "#a88be8",
+
+    bg: "#eee7ff",
+
+    symbol: "💎",
+
+    traits: {
+
+      es: ["Creativa", "Elegante", "Generosa"],
+
+      en: ["Creative", "Elegant", "Generous"]
+
+    },
+
+    desc: {
+
+      es: "Tenés creatividad, buen gusto y una gran atención por los detalles. Te gusta expresarte y hacer sentir especiales a las personas que querés.",
+
+      en: "You're creative, have a great eye for detail, and enjoy expressing yourself. You also love making the people you care about feel special."
+
+    },
+
+    rain: ["💎", "✨", "💜", "🌸"]
+
+  },
+
+  fluttershy: {
+
+    name: "Fluttershy",
+
+    color: "#e5b84d",
+
+    bg: "#fff4d4",
+
+    symbol: "🦋",
+
+    traits: {
+
+      es: ["Amable", "Tranquila", "Empática"],
+
+      en: ["Kind", "Gentle", "Empathetic"]
+
+    },
+
+    desc: {
+
+      es: "Sos dulce, paciente y muy sensible a lo que sienten los demás. Quizás no seas quien más habla, pero tu bondad y tu valentía tranquila hacen una gran diferencia.",
+
+      en: "You're gentle, patient, and very aware of other people's feelings. You may not be the loudest person in the room, but your kindness and quiet courage make a difference."
+
+    },
+
+    rain: ["🦋", "🌼", "🌸", "🍃"]
+
+  },
+
+  applejack: {
+
+    name: "Applejack",
+
+    color: "#d58b3c",
+
+    bg: "#ffecd6",
+
+    symbol: "🍎",
+
+    traits: {
+
+      es: ["Honesta", "Trabajadora", "Leal"],
+
+      en: ["Honest", "Hardworking", "Loyal"]
+
+    },
+
+    desc: {
+
+      es: "Sos sincera, práctica y alguien en quien se puede confiar. Preferís demostrar lo que sentís con acciones y siempre intentás cumplir tu palabra.",
+
+      en: "You're honest, practical, and dependable. You prefer showing how you feel through actions, and you do your best to keep your word."
+
+    },
+
+    rain: ["🍎", "🍏", "🌻", "🍂"]
+
+  }
+
+};
+
+// ========================================
+
+// PREGUNTAS
+
+// ========================================
+
+const keys = [
+
+  "twilight", "pinkie", "rainbow",
+
+  "rarity", "fluttershy", "applejack"
+
+];
+
+// Cada respuesta corresponde al personaje
+
+// de la misma posición dentro de keys.
+
+function makeQ(es, en, esAnswers, enAnswers) {
+
+  return {
+
+    es, en,
+
+    a: esAnswers.map((answer, i) => [
+
+      answer, enAnswers[i], keys[i]
+
+    ])
+
+  };
+
+}
+
+const questions = [
+
+  makeQ(
+
+    "En un día libre ideal, ¿qué elegís?",
+
+    "What's your ideal day off?",
+
+    [
+
+      "Leer, aprender o descubrir algo nuevo",
+
+      "Organizar una juntada divertida",
+
+      "Hacer deporte o probar un reto",
+
+      "Crear algo lindo o cambiar mi estilo",
+
+      "Estar en la naturaleza con animales",
+
+      "Ayudar en casa o hacer algo útil"
+
+    ],
+
+    [
+
+      "Read, learn, or discover something new",
+
+      "Plan a fun get-together",
+
+      "Play sports or try a challenge",
+
+      "Make something beautiful or change my style",
+
+      "Spend time in nature with animals",
+
+      "Help at home or do something useful"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Qué papel tenés en tu grupo de amigos?",
+
+    "What role do you play in your friend group?",
+
+    [
+
+      "La que organiza y piensa el plan",
+
+      "La que hace reír a todos",
+
+      "La competitiva que anima al equipo",
+
+      "La que da consejos de estilo",
+
+      "La que escucha cuando alguien está mal",
+
+      "La que siempre cumple y da una mano"
+
+    ],
+
+    [
+
+      "The planner who thinks things through",
+
+      "The one who makes everyone laugh",
+
+      "The competitive one who hypes everyone up",
+
+      "The one with style advice",
+
+      "The listener when someone feels down",
+
+      "The reliable one who lends a hand"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "Si aparece un problema difícil...",
+
+    "When a difficult problem appears...",
+
+    [
+
+      "Investigo hasta entenderlo",
+
+      "Busco una forma creativa de levantar el ánimo",
+
+      "Lo enfrento de una",
+
+      "Pienso una solución original y elegante",
+
+      "Me tomo un momento y pienso cómo afecta a todos",
+
+      "Voy paso a paso, sin rendirme"
+
+    ],
+
+    [
+
+      "I research until I understand it",
+
+      "Find a creative way to cheer people up",
+
+      "Face it head-on",
+
+      "Think of an original, elegant solution",
+
+      "Pause and think how it affects everyone",
+
+      "Work through it step by step"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Qué valorás más en una amistad?",
+
+    "What do you value most in a friendship?",
+
+    [
+
+      "Poder aprender y crecer juntos",
+
+      "Reírnos y pasarla bien",
+
+      "La lealtad pase lo que pase",
+
+      "Que nos apoyemos y apreciemos",
+
+      "La confianza y la comprensión",
+
+      "La sinceridad"
+
+    ],
+
+    [
+
+      "Learning and growing together",
+
+      "Laughing and having fun",
+
+      "Loyalty no matter what",
+
+      "Supporting and appreciating each other",
+
+      "Trust and understanding",
+
+      "Honesty"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "Elegí un lugar para pasar la tarde.",
+
+    "Choose a place to spend the afternoon.",
+
+    [
+
+      "Una biblioteca o un museo",
+
+      "Un parque de diversiones",
+
+      "Una pista deportiva o una montaña",
+
+      "Una boutique o un taller artístico",
+
+      "Un jardín tranquilo",
+
+      "Una granja o el campo"
+
+    ],
+
+    [
+
+      "A library or museum",
+
+      "An amusement park",
+
+      "A sports field or a mountain",
+
+      "A boutique or art studio",
+
+      "A peaceful garden",
+
+      "A farm or the countryside"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Cómo reaccionás cuando te sale algo mal?",
+
+    "How do you react when something goes wrong?",
+
+    [
+
+      "Analizo qué falló y vuelvo a intentarlo",
+
+      "Intento no perder el humor",
+
+      "Me pico un poco, pero sigo intentando",
+
+      "Busco otra manera de hacerlo mejor",
+
+      "Me afecta, pero trato de ser amable conmigo",
+
+      "Acepto el error y trabajo para arreglarlo"
+
+    ],
+
+    [
+
+      "Analyze what went wrong and try again",
+
+      "Try not to lose my sense of humor",
+
+      "Get fired up, but keep trying",
+
+      "Find another way to improve it",
+
+      "It bothers me, but I try to be kind to myself",
+
+      "Own the mistake and work to fix it"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Qué te gustaría que la gente notara de vos?",
+
+    "What would you like people to notice about you?",
+
+    [
+
+      "Mi inteligencia y dedicación",
+
+      "Mi energía positiva",
+
+      "Mi coraje y habilidad",
+
+      "Mi creatividad",
+
+      "Mi corazón y mi sensibilidad",
+
+      "Que soy confiable y sincera"
+
+    ],
+
+    [
+
+      "My intelligence and dedication",
+
+      "My positive energy",
+
+      "My courage and skill",
+
+      "My creativity",
+
+      "My heart and sensitivity",
+
+      "That I'm dependable and honest"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "En un trabajo grupal, normalmente...",
+
+    "In a group project, you usually...",
+
+    [
+
+      "Armo un plan y reparto las tareas",
+
+      "Propongo ideas para hacerlo entretenido",
+
+      "Tomo la iniciativa y voy al frente",
+
+      "Me ocupo de que quede bien presentado",
+
+      "Me fijo si todos participan y están cómodos",
+
+      "Hago mi parte y ayudo donde haga falta"
+
+    ],
+
+    [
+
+      "Make a plan and divide the tasks",
+
+      "Suggest ways to make it fun",
+
+      "Take initiative and lead from the front",
+
+      "Make sure it looks polished",
+
+      "Check that everyone participates and feels comfortable",
+
+      "Do my part and help wherever needed"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Qué regalo te haría más ilusión?",
+
+    "Which gift would make you happiest?",
+
+    [
+
+      "Un libro o un juego de ingenio",
+
+      "Entradas para una fiesta o un show",
+
+      "Algo para mi deporte favorito",
+
+      "Materiales para crear o decorar",
+
+      "Una planta o algo relacionado con animales",
+
+      "Algo práctico hecho con cariño"
+
+    ],
+
+    [
+
+      "A book or brain teaser",
+
+      "Tickets to a party or show",
+
+      "Something for my favorite sport",
+
+      "Art or decorating supplies",
+
+      "A plant or something animal-related",
+
+      "Something practical made with care"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "Cuando alguien te pide ayuda...",
+
+    "When someone asks you for help...",
+
+    [
+
+      "Intento explicarle cómo resolverlo",
+
+      "Le doy ánimo y trato de sacarle una sonrisa",
+
+      "Lo defiendo si alguien lo trata mal",
+
+      "Me esfuerzo por encontrar algo que le sirva",
+
+      "Escucho con paciencia",
+
+      "Me pongo manos a la obra"
+
+    ],
+
+    [
+
+      "Try to explain how to solve it",
+
+      "Encourage them and try to make them smile",
+
+      "Stand up for them if someone treats them badly",
+
+      "Work to find something that helps them",
+
+      "Listen patiently",
+
+      "Roll up my sleeves and get to work"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Cuál de estas frases va más con vos?",
+
+    "Which of these phrases sounds most like you?",
+
+    [
+
+      "Siempre hay algo nuevo por aprender",
+
+      "¡Un poco de alegría cambia el día!",
+
+      "¡Dale, yo me animo!",
+
+      "Los detalles hacen la diferencia",
+
+      "La amabilidad también es valentía",
+
+      "Lo importante es hacer las cosas bien"
+
+    ],
+
+    [
+
+      "There's always something new to learn",
+
+      "A little joy can change the whole day!",
+
+      "Come on, I'll give it a shot!",
+
+      "Details make the difference",
+
+      "Kindness is a kind of courage",
+
+      "What matters is doing things right"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Cómo preferís tomar una decisión?",
+
+    "How do you prefer to make a decision?",
+
+    [
+
+      "Comparo opciones y pienso las consecuencias",
+
+      "Me guío por lo que nos entusiasma",
+
+      "Confío en mi instinto y me lanzo",
+
+      "Pienso qué opción expresa mejor mi idea",
+
+      "Considero cómo se sentirán los demás",
+
+      "Elijo lo más honesto y práctico"
+
+    ],
+
+    [
+
+      "Compare options and consider consequences",
+
+      "Go with what gets us excited",
+
+      "Trust my instincts and go for it",
+
+      "Choose what best expresses my vision",
+
+      "Consider how others will feel",
+
+      "Choose what's honest and practical"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Qué te describe mejor en una competencia?",
+
+    "What describes you best in a competition?",
+
+    [
+
+      "Me preparo y estudio la estrategia",
+
+      "Quiero que todos se diviertan",
+
+      "¡Quiero darlo todo y ganar!",
+
+      "Me gusta hacerlo con estilo",
+
+      "Me pongo nerviosa, pero apoyo a todos",
+
+      "Juego limpio y doy lo mejor de mí"
+
+    ],
+
+    [
+
+      "Prepare and study the strategy",
+
+      "I want everyone to have fun",
+
+      "I want to give it my all and win!",
+
+      "I like doing it with style",
+
+      "I get nervous, but support everyone",
+
+      "Play fair and do my best"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Qué ambiente te hace sentir mejor?",
+
+    "What kind of environment makes you feel best?",
+
+    [
+
+      "Ordenado y lleno de ideas",
+
+      "Colorido, ruidoso y lleno de gente querida",
+
+      "Activo, abierto y lleno de desafíos",
+
+      "Lindo, armonioso e inspirador",
+
+      "Calmo, acogedor y natural",
+
+      "Familiar, sencillo y auténtico"
+
+    ],
+
+    [
+
+      "Organized and full of ideas",
+
+      "Colorful, lively, and full of loved ones",
+
+      "Active, open, and full of challenges",
+
+      "Beautiful, harmonious, and inspiring",
+
+      "Calm, cozy, and natural",
+
+      "Familiar, simple, and genuine"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Qué hacés si ves a alguien excluido?",
+
+    "What do you do if you see someone being left out?",
+
+    [
+
+      "Busco una forma de incluirlo en la actividad",
+
+      "Lo invito y trato de hacerlo sentir bienvenido",
+
+      "Digo algo y no dejo que lo carguen",
+
+      "Me acerco y le doy conversación",
+
+      "Me quedo con esa persona para que no esté sola",
+
+      "Le hablo directamente y con sinceridad"
+
+    ],
+
+    [
+
+      "Find a way to include them in the activity",
+
+      "Invite them and help them feel welcome",
+
+      "Speak up and don't let others pick on them",
+
+      "Go over and start a conversation",
+
+      "Stay with them so they aren't alone",
+
+      "Talk to them directly and honestly"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Qué actividad elegirías para aprender algo nuevo?",
+
+    "What would you choose to learn something new?",
+
+    [
+
+      "Ciencia, historia o tecnología",
+
+      "Baile, juegos o trucos divertidos",
+
+      "Un deporte o una habilidad física",
+
+      "Dibujo, moda o diseño",
+
+      "Cuidado de animales o plantas",
+
+      "Cocina, reparación o algo práctico"
+
+    ],
+
+    [
+
+      "Science, history, or technology",
+
+      "Dance, games, or fun tricks",
+
+      "A sport or physical skill",
+
+      "Drawing, fashion, or design",
+
+      "Animal or plant care",
+
+      "Cooking, repairs, or something practical"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Qué te cuesta más?",
+
+    "What do you struggle with the most?",
+
+    [
+
+      "Dejar de pensar en todo y relajarme",
+
+      "Tomarme algo en serio cuando toca",
+
+      "Aceptar que no siempre puedo ganar",
+
+      "No exigirme tanto ni buscar la perfección",
+
+      "Decir lo que pienso o poner límites",
+
+      "Aceptar ayuda y no hacer todo sola/o"
+
+    ],
+
+    [
+
+      "Stop thinking about everything and relax",
+
+      "Get serious when I need to",
+
+      "Accept that I can't always win",
+
+      "Stop demanding perfection from myself",
+
+      "Speak up or set boundaries",
+
+      "Accept help instead of doing everything myself"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "Si tuvieras un poder mágico, elegirías...",
+
+    "If you had a magical power, you'd choose...",
+
+    [
+
+      "Saber y recordar cualquier cosa",
+
+      "Crear diversión instantánea",
+
+      "Moverme a velocidad increíble",
+
+      "Crear objetos hermosos con magia",
+
+      "Hablar con animales",
+
+      "Hacer crecer plantas y cosechas"
+
+    ],
+
+    [
+
+      "Know and remember anything",
+
+      "Create instant fun",
+
+      "Move at incredible speed",
+
+      "Create beautiful things with magic",
+
+      "Talk to animals",
+
+      "Grow plants and crops"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "¿Qué te motiva a seguir?",
+
+    "What motivates you to keep going?",
+
+    [
+
+      "Entender y mejorar",
+
+      "Ver felices a mis amigos",
+
+      "Superarme y lograr una meta",
+
+      "Crear algo que me enorgullezca",
+
+      "Saber que estoy cuidando a alguien",
+
+      "Cumplir mi palabra y hacer lo correcto"
+
+    ],
+
+    [
+
+      "Understanding and improving",
+
+      "Seeing my friends happy",
+
+      "Outdoing myself and reaching a goal",
+
+      "Creating something I'm proud of",
+
+      "Knowing I'm caring for someone",
+
+      "Keeping my word and doing what's right"
+
+    ]
+
+  ),
+
+  makeQ(
+
+    "Elegí la cualidad que más te representa.",
+
+    "Choose the quality that represents you most.",
+
+    [
+
+      "Sabiduría",
+
+      "Alegría",
+
+      "Valentía",
+
+      "Creatividad",
+
+      "Bondad",
+
+      "Honestidad"
+
+    ],
+
+    [
+
+      "Wisdom",
+
+      "Joy",
+
+      "Courage",
+
+      "Creativity",
+
+      "Kindness",
+
+      "Honesty"
+
+    ]
+
+  )
+
+];
+
+// ========================================
+
+// TRADUCCIONES DE LA INTERFAZ
+
+// ========================================
+
+const copy = {
+
+  es: {
+
+    kicker: "Un test mágico de personalidad",
+
+    intro: "Contestá 20 preguntas sobre tus gustos y tu forma de ser para descubrir qué pony se parece más a vos. ¡Elegí lo que realmente te represente!",
+
+    start: "✨ INICIAR TEST",
+
+    question: "Pregunta",
+
+    of: "de",
+
+    back: "← Anterior",
+
+    next: "Siguiente →",
+
+    finish: "Ver mi resultado ✨",
+
+    need: "Elegí una respuesta para continuar.",
+
+    result: "¡Tu pony interior!",
+
+    you: "Sos...",
+
+    restart: "🔁 Hacer el test de nuevo",
+
+    share: "Copiar mi resultado",
+
+    copied: "¡Resultado copiado!",
+
+    copyfail: "Tu resultado es",
+
+    footer: "Hecho con magia, amistad y muchos colores pastel ✨ · Fan quiz no oficial."
+
+  },
+
+  en: {
+
+    kicker: "A magical personality quiz",
+
+    intro: "Answer 20 questions about your tastes and personality to discover which pony is most like you. Choose what truly feels like you!",
+
+    start: "✨ START THE QUIZ",
+
+    question: "Question",
+
+    of: "of",
+
+    back: "← Back",
+
+    next: "Next →",
+
+    finish: "Reveal my result ✨",
+
+    need: "Choose an answer to continue.",
+
+    result: "Your inner pony!",
+
+    you: "You're...",
+
+    restart: "🔁 Take the quiz again",
+
+    share: "Copy my result",
+
+    copied: "Result copied!",
+
+    copyfail: "Your result is",
+
+    footer: "Made with magic, friendship, and pastel colors ✨ · Unofficial fan quiz."
+
+  }
+
+};
+
+// ========================================
+
+// VARIABLES DEL TEST
+
+// ========================================
+
+let lang = "es";
+
+let index = 0;
+
+let answers = Array(questions.length).fill(null);
+
+let selectedCharacter = null;
+
+const $ = id => document.getElementById(id);
+
+// ========================================
+
+// CAMBIAR IDIOMA
+
+// ========================================
+
+function setLanguage(next) {
+
+  lang = next;
+
+  document.documentElement.lang = lang;
+
+  const c = copy[lang];
+
+  $("kicker").textContent = c.kicker;
+
+  $("intro").textContent = c.intro;
+
+  $("start").textContent = c.start;
+
+  $("footer").textContent = c.footer;
+
+  $("back").textContent = c.back;
+
+  $("result-kicker").textContent = c.result;
+
+  $("restart").textContent = c.restart;
+
+  $("share").textContent = c.share;
+
+  if (!$("quiz").classList.contains("hidden")) {
+
+    renderQuestion();
+
+  } else {
+
+    $("next").textContent = c.next;
+
+  }
+
+  if (!$("result").classList.contains("hidden")) {
+
+    renderResult(false);
+
+  }
+
+}
+
+$("language").addEventListener("change", e => {
+
+  setLanguage(e.target.value);
+
+});
+
+// ========================================
+
+// COMENZAR EL TEST
+
+// ========================================
+
+$("start").addEventListener("click", () => {
+
+  index = 0;
+
+  answers = Array(questions.length).fill(null);
+
+  selectedCharacter = null;
+
+  $("welcome").classList.add("hidden");
+
+  $("result").classList.add("hidden");
+
+  $("quiz").classList.remove("hidden");
+
+  renderQuestion();
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+});
+
+// ========================================
+
+// MOSTRAR PREGUNTA
+
+// ========================================
+
+function renderQuestion() {
+
+  const q = questions[index];
+
+  const c = copy[lang];
+
+  const progress = (index + 1) / questions.length * 100;
+
+  $("question-label").textContent =
+
+    `${c.question} ${index + 1} ${c.of} ${questions.length}`;
+
+  $("percent").textContent =
+
+    `${Math.round(progress)}%`;
+
+  $("progress-fill").style.width=`${progress}%`;
+
+  $("question").textContent = q[lang];
+
+  $("answers").innerHTML = "";
+
+  q.a.forEach((a, i) => {
+
+    const button = document.createElement("button");
+
+    button.type = "button";
+
+    button.className =
+
+      "answer" + (answers[index] === i ? " selected" : "");
+
+    button.setAttribute(
+
+      "aria-pressed",
+
+      answers[index] === i ? "true" : "false"
+
+    );
+
+    const letter = document.createElement("span");
+
+    letter.className = "answer-letter";
+
+    letter.textContent = String.fromCharCode(65 + i);
+
+    const text = document.createElement("span");
+
+    text.textContent = a[lang === "es" ? 0 : 1];
+
+    button.append(letter, text);
+
+    button.addEventListener("click", () => {
+
+      answers[index] = i;
+
+      renderQuestion();
+
+    });
+
+    $("answers").append(button);
+
+  });
+
+  $("back").disabled = index === 0;
+
+  $("next").textContent =
+
+    index === questions.length - 1 ? c.finish : c.next;
+
+}
+
+// ========================================
+
+// ANTERIOR Y SIGUIENTE
+
+// ========================================
+
+$("back").addEventListener("click", () => {
+
+  if (index > 0) {
+
+    index--;
+
+    renderQuestion();
+
+  }
+
+});
+
+$("next").addEventListener("click", () => {
+
+  if (answers[index] === null) {
+
+    alert(copy[lang].need);
+
+    return;
+
+  }
+
+  if (index < questions.length - 1) {
+
+    index++;
+
+    renderQuestion();
+
+  } else {
+
+    showResult();
+
+  }
+
+});
+
+// ========================================
+
+// CALCULAR PERSONAJE GANADOR
+
+// ========================================
+
+function showResult() {
+
+  const scores = Object.fromEntries(
+
+    keys.map(key => [key, 0])
+
+  );
+
+  answers.forEach((answer, i) => {
+
+    const character = questions[i].a[answer][2];
+
+    scores[character]++;
+
+  });
+
+  const max = Math.max(...Object.values(scores));
+
+  const winners = Object.keys(scores).filter(
+
+    key => scores[key] === max
+
+  );
+
+  selectedCharacter =
+
+    winners[Math.floor(Math.random() * winners.length)];
+
+  $("quiz").classList.add("hidden");
+
+  $("result").classList.remove("hidden");
+
+  renderResult(true);
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+}
+
+// ========================================
+
+// DIBUJO DEL PONY EN SVG
+
+// ========================================
+
+function ponySVG(key) {
+
+  const c = characters[key];
+
+  const maneColors = {
+
+    twilight: "#d4b8ff",
+
+    pinkie: "#ffd0e4",
+
+    rainbow: "#ffb0cc",
+
+    rarity: "#e8e6ff",
+
+    fluttershy: "#f6d66b",
+
+    applejack: "#f4c25e"
+
+  };
+
+  return `
+
+  <svg viewBox="0 0 300 300"
+
+       role="img"
+
+       aria-label="${c.name} pony"
+
+       xmlns="http\://www.w3.org/2000/svg">
+
+    <ellipse cx="151" cy="249" rx="78" ry="13"
+
+      fill="#6b5784" opacity=".12"/>
+
+    <path
+
+      d="M83 175 C49 156 45 119 64 93
+
+         C42 110 40 143 54 165
+
+         C37 156 33 133 39 118
+
+         C19 145 38 183 72 193Z"
+
+      fill="${c.color}"
+
+      stroke="#6b5784"
+
+      stroke-width="3"/>
+
+    <path
+
+      d="M87 178 C63 204 70 235 95 239
+
+         L194 239 C221 231 226 206 207 183Z"
+
+      fill="${c.color}"
+
+      stroke="#6b5784"
+
+      stroke-width="3"/>
+
+    <path
+
+      d="M112 221 L109 247 L130 247 L138 220
+
+         M184 221 L183 247 L204 247 L209 210"
+
+      fill="${c.color}"
+
+      stroke="#6b5784"
+
+      stroke-width="3"
+
+      stroke-linejoin="round"/>
+
+    <path
+
+      d="M72 111 C58 77 81 48 121 47
+
+         C145 20 189 37 198 67
+
+         C225 72 238 101 222 127
+
+         C216 150 193 165 164 165
+
+         L111 157 C88 148 74 132 72 111Z"
+
+      fill="${c.color}"
+
+      stroke="#6b5784"
+
+      stroke-width="3"/>
+
+    <path
+
+      d="M83 83 L73 44 Q96 51 112 75
+
+         M174 53 L192 32 Q207 55 201 78"
+
+      fill="${c.color}"
+
+      stroke="#6b5784"
+
+      stroke-width="3"/>
+
+    <ellipse cx="117" cy="106" rx="12" ry="17"
+
+      fill="#ffffff"/>
+
+    <ellipse cx="119" cy="109" rx="6" ry="10"
+
+      fill="#493b68"/>
+
+    <circle cx="121" cy="105" r="3"
+
+      fill="#ffffff"/>
+
+    <path d="M150 128 Q164 139 178 127"
+
+      fill="none"
+
+      stroke="#6b4568"
+
+      stroke-width="3"
+
+      stroke-linecap="round"/>
+
+    <ellipse cx="147" cy="121" rx="14" ry="7"
+
+      fill="#f7b4ca" opacity=".75"/>
+
+    <path
+
+      d="M97 48 C113 20 147 26 157 47
+
+         C144 41 133 45 126 57
+
+         C144 53 158 59 164 73
+
+         C141 63 123 70 110 83Z"
+
+      fill="${maneColors[key]}"
+
+      stroke="#6b5784"
+
+      stroke-width="2"/>
+
+    <circle cx="169" cy="188" r="27"
+
+      fill="#ffffff" opacity=".8"/>
+
+    <text x="169" y="198"
+
+      text-anchor="middle"
+
+      font-size="29">${c.symbol}</text>
+
+    <path
+
+      d="M87 237 Q102 244 115 237
+
+         M177 237 Q191 244 204 237"
+
+      fill="none"
+
+      stroke="#ffffff"
+
+      stroke-width="4"
+
+      stroke-linecap="round"/>
+
+  </svg>`;
+
+}
+
+// ========================================
+
+// MOSTRAR EL RESULTADO
+
+// ========================================
+
+function renderResult(burst = false) {
+
+  if (!selectedCharacter) return;
+
+  const c = characters[selectedCharacter];
+
+  $("result-name").textContent = c.name;
+
+  $("result-description").textContent = c.desc[lang];
+
+  $("you-are").textContent = copy[lang].you;
+
+  $("pony-frame").style.setProperty("--pony-bg", c.bg);
+
+  $("pony-art").innerHTML = ponySVG(selectedCharacter);
+
+  $("traits").innerHTML = "";
+
+  c.traits[lang].forEach(trait => {
+
+    const span = document.createElement("span");
+
+    span.className = "trait";
+
+    span.textContent = trait;
+
+    $("traits").append(span);
+
+  });
+
+  $("share-status").textContent = "";
+
+  if (burst) celebrate(c.rain);
+
+}
+
+// ========================================
+
+// ANIMACIÓN DE CONFETI
+
+// ========================================
+
+function celebrate(items) {
+
+  const layer = $("confetti");
+
+  layer.innerHTML = "";
+
+  for (let i = 0; i < 85; i++) {
+
+    const p = document.createElement("span");
+
+    p.className = "particle";
+
+    p.textContent =
+
+      items[Math.floor(Math.random() * items.length)];
+
+    p.style.left = Math.random() * 100 + "%";
+
+    p.style.fontSize = (14 + Math.random() * 20) + "px";
+
+    p.style.animationDuration = (3 + Math.random() * 4) + "s";
+
+    p.style.animationDelay = (Math.random() * 1.5) + "s";
+
+    p.style.setProperty(
+
+      "--drift",
+
+      (Math.random() * 220 - 110) + "px"
+
+    );
+
+    layer.append(p);
+
+  }
+
+  setTimeout(() => {
+
+    layer.innerHTML = "";
+
+  }, 8500);
+
+}
+
+// ========================================
+
+// REINICIAR TEST
+
+// ========================================
+
+$("restart").addEventListener("click", () => {
+
+  $("result").classList.add("hidden");
+
+  $("welcome").classList.remove("hidden");
+
+  $("confetti").innerHTML = "";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+});
+
+// ========================================
+
+// COPIAR RESULTADO
+
+// ========================================
+
+$("share").addEventListener("click", async () => {
+
+  const name = $("result-name").textContent;
+
+  const text = lang === "es"
+
+    ? `¡Hice el test de My Little Pony y soy ${name}!`
+
+    : `I took the My Little Pony quiz and got ${name}!`;
+
+  try {
+
+    await navigator.clipboard.writeText(text);
+
+    $("share-status").textContent = copy[lang].copied;
+
+  } catch (error) {
+
+    $("share-status").textContent =
+
+      copy[lang].copyfail + ": " + text;
+
+  }
+
+});
+
+// ========================================
+
+// INICIAR APLICACIÓN
+
+// ========================================
+
+setLanguage("es");
+
+</script>
+
+</body>
+
+</html>
