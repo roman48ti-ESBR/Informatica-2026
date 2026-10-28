@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Truco Blitz Argentino</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+
+
+        :root {
+
+            --primary: #1e3d2f;
+
+            --secondary: #2b5843;
+
+            --accent: #d4af37;
+
+            --accent-hover: #f1c40f;
+
+            --card-bg: #fff;
+
+            --text-dark: #222;
+
+            --text-light: #f9f9f9;
+
+            --danger: #c0392b;
+
+            --success: #27ae60;
+
+        }
+
+
+
+        * {
+
+            box-sizing: border-box;
+
+            margin: 0;
+
+            padding: 0;
+
+            user-select: none;
+
+        }
+
+
+
+        body {
+
+            font-family: 'Poppins', sans-serif;
+
+            background: radial-gradient(circle, #204e3b 0%, #0e241b 100%);
+
+            color: var(--text-light);
+
+            min-height: 100vh;
+
+            display: flex;
+
+            flex-direction: column;
+
+            overflow-x: hidden;
+
+        }
+
+
+
+        header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding: 15px 30px;
+
+            background: rgba(0, 0, 0, 0.4);
+
+            border-bottom: 2px solid var(--accent);
+
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+
+        }
+
+
+
+        .logo {
+
+            font-family: 'Cinzel', serif;
+
+            font-size: 1.8rem;
+
+            color: var(--accent);
+
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+        }
+
+
+
+        .controls-header {
+
+            display: flex;
+
+            gap: 12px;
+
+            align-items: center;
+
+        }
+
+
+
+        .btn {
+
+            background: linear-gradient(to bottom, var(--accent), #b89728);
+
+            color: var(--text-dark);
+
+            border: none;
+
+            padding: 8px 16px;
+
+            border-radius: 8px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+
+            transition: all 0.2s ease;
+
+            font-size: 0.9rem;
+
+        }
+
+
+
+        .btn:hover {
+
+            background: linear-gradient(to bottom, var(--accent-hover), var(--accent));
+
+            transform: translateY(-2px);
+
+            box-shadow: 0 6px 15px rgba(212, 175, 55, 0.4);
+
+        }
+
+
+
+        .btn:active {
+
+            transform: translateY(1px);
+
+        }
+
+
+
+        .btn-danger {
+
+            background: linear-gradient(to bottom, #e74c3c, #c0392b);
+
+            color: white;
+
+        }
+
+        .btn-danger:hover {
+
+            background: linear-gradient(to bottom, #ff6b6b, #e74c3c);
+
+        }
+
+
+
+        .main-container {
+
+            flex: 1;
+
+            display: flex;
+
+            flex-direction: column;
+
+            max-width: 1200px;
+
+            width: 100%;
+
+            margin: 0 auto;
+
+            padding: 20px;
+
+            position: relative;
+
+        }
+
+
+
+        /* Marcador y Estado */
+
+        .scoreboard {
+
+            display: flex;
+
+            justify-content: space-around;
+
+            background: rgba(0, 0, 0, 0.45);
+
+            padding: 12px;
+
+            border-radius: 12px;
+
+            border: 1px solid rgba(212, 175, 55, 0.3);
+
+            margin-bottom: 20px;
+
+            backdrop-filter: blur(5px);
+
+        }
+
+
+
+        .team-score {
+
+            text-align: center;
+
+        }
+
+
+
+        .team-score h3 {
+
+            font-size: 1rem;
+
+            color: #aaa;
+
+            margin-bottom: 4px;
+
+        }
+
+
+
+        .team-score .points {
+
+            font-size: 2rem;
+
+            font-weight: 700;
+
+            color: var(--accent);
+
+            font-family: 'Cinzel', serif;
+
+        }
+
+
+
+        /* Mesa de Juego */
+
+        .table-area {
+
+            flex: 1;
+
+            background: radial-gradient(ellipse at center, #27694d 0%, #174230 100%);
+
+            border-radius: 20px;
+
+            border: 6px solid #102d21;
+
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 10px 25px rgba(0,0,0,0.5);
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: space-between;
+
+            padding: 25px;
+
+            min-height: 480px;
+
+            position: relative;
+
+        }
+
+
+
+        .bot-section, .player-section {
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            gap: 10px;
+
+        }
+
+
+
+        .player-info {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            font-weight: 600;
+
+            font-size: 1.1rem;
+
+        }
+
+
+
+        .avatar {
+
+            width: 40px;
+
+            height: 40px;
+
+            border-radius: 50%;
+
+            background: var(--accent);
+
+            color: var(--text-dark);
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-weight: bold;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+
+        }
+
+
+
+        .cards-container {
+
+            display: flex;
+
+            gap: 12px;
+
+            min-height: 130px;
+
+            align-items: center;
+
+        }
+
+
+
+        /* Cartas */
+
+        .card {
+
+            width: 75px;
+
+            height: 115px;
+
+            background: white;
+
+            border-radius: 8px;
+
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: space-between;
+
+            padding: 8px;
+
+            cursor: pointer;
+
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+            position: relative;
+
+            border: 1px solid #ccc;
+
+        }
+
+
+
+        .card.hidden-card {
+
+            background: repeating-linear-gradient(
+
+                45deg,
+
+                #b91c1c,
+
+                #b91c1c 10px,
+
+                #991b1b 10px,
+
+                #991b1b 20px
+
+            );
+
+            border: 2px solid var(--accent);
+
+            cursor: default;
+
+        }
+
+
+
+        .card:hover:not(.hidden-card):not(.played) {
+
+            transform: translateY(-15px) scale(1.05);
+
+            box-shadow: 0 12px 25px rgba(0,0,0,0.6);
+
+            border-color: var(--accent);
+
+        }
+
+
+
+        .card.selected {
+
+            transform: translateY(-20px) scale(1.08);
+
+            border: 3px solid var(--accent);
+
+            box-shadow: 0 15px 30px rgba(212, 175, 55, 0.6);
+
+        }
+
+
+
+        .card-val {
+
+            font-size: 1.2rem;
+
+            font-weight: bold;
+
+            line-height: 1;
+
+        }
+
+
+
+        .card-suit {
+
+            font-size: 1.5rem;
+
+            align-self: center;
+
+        }
+
+
+
+        .card.oros { color: #d35400; }
+
+        .card.copas { color: #2980b9; }
+
+        .card.espadas { color: #2c3e50; }
+
+        .card.bastos { color: #27ae60; }
+
+
+
+        /* Centro de la mesa (Cartas jugadas) */
+
+        .center-board {
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            gap: 40px;
+
+            flex: 1;
+
+            margin: 15px 0;
+
+            position: relative;
+
+        }
+
+
+
+        .played-card-slot {
+
+            width: 80px;
+
+            height: 120px;
+
+            border: 2px dashed rgba(255, 255, 255, 0.25);
+
+            border-radius: 10px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            position: relative;
+
+        }
+
+
+
+        .played-card-slot span {
+
+            font-size: 0.75rem;
+
+            color: rgba(255,255,255,0.4);
+
+            text-align: center;
+
+        }
+
+
+
+        /* Bocadillos de diálogo (Gritos de truco/envido) */
+
+        .speech-bubble {
+
+            position: absolute;
+
+            background: white;
+
+            color: var(--text-dark);
+
+            padding: 8px 16px;
+
+            border-radius: 20px;
+
+            font-weight: 700;
+
+            font-size: 0.95rem;
+
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+
+            z-index: 10;
+
+            max-width: 250px;
+
+            text-align: center;
+
+        }
+
+
+
+        .speech-bubble::after {
+
+            content: '';
+
+            position: absolute;
+
+            bottom: -8px;
+
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            border-width: 8px 8px 0;
+
+            border-style: solid;
+
+            border-color: white transparent;
+
+            display: block;
+
+            width: 0;
+
+        }
+
+
+
+        @keyframes popIn {
+
+            0% { transform: scale(0); opacity: 0; }
+
+            100% { transform: scale(1); opacity: 1; }
+
+        }
+
+
+
+        /* Panel de Acciones y Cánticos */
+
+        .actions-panel {
+
+            display: flex;
+
+            justify-content: center;
+
+            gap: 12px;
+
+            margin-top: 20px;
+
+            flex-wrap: wrap;
+
+        }
+
+
+
+        .action-group {
+
+            display: flex;
+
+            gap: 8px;
+
+            background: rgba(0, 0, 0, 0.3);
+
+            padding: 8px 12px;
+
+            border-radius: 12px;
+
+            border: 1px solid rgba(255,255,255,0.1);
+
+        }
+
+
+
+        /* Modal / Tutorial / Pantallas */
+
+        .modal-overlay {
+
+            position: fixed;
+
+            top: 0; left: 0; width: 100%; height: 100%;
+
+            background: rgba(0, 0, 0, 0.8);
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            z-index: 100;
+
+            backdrop-filter: blur(8px);
+
+        }
+
+
+
+        .modal-content {
+
+            background: #19382b;
+
+            border: 2px solid var(--accent);
+
+            border-radius: 16px;
+
+            padding: 35px;
+
+            max-width: 650px;
+
+            width: 90%;
+
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+
+            text-align: center;
+
+            max-height: 85vh;
+
+            overflow-y: auto;
+
+        }
+
+
+
+        .modal-content h2 {
+
+            font-family: 'Cinzel', serif;
+
+            color: var(--accent);
+
+            font-size: 2rem;
+
+            margin-bottom: 15px;
+
+        }
+
+
+
+        .modal-content p {
+
+            margin-bottom: 15px;
+
+            line-height: 1.6;
+
+            color: #ddd;
+
+        }
+
+
+
+        .modal-content ul {
+
+            text-align: left;
+
+            margin: 15px 0 25px 25px;
+
+            color: #ddd;
+
+            line-height: 1.5;
+
+        }
+
+
+
+        .modal-content li {
+
+            margin-bottom: 8px;
+
+        }
+
+
+
+        .hidden {
+
+            display: none !important;
+
+        }
+
+
+
+        /* Notificaciones flotantes de ronda */
+
+        .round-notification {
+
+            position: absolute;
+
+            top: 30%;
+
+            left: 50%;
+
+            transform: translate(-50%, -50%);
+
+            background: rgba(0, 0, 0, 0.85);
+
+            border: 2px solid var(--accent);
+
+            padding: 15px 30px;
+
+            border-radius: 12px;
+
+            font-size: 1.5rem;
+
+            font-family: 'Cinzel', serif;
+
+            color: var(--accent);
+
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+
+            z-index: 50;
+
+            pointer-events: none;
+
+            animation: fadeInOut 2s ease forwards;
+
+        }
+
+
+
+        @keyframes fadeInOut {
+
+            0% { opacity: 0; transform: translate(-50%, -30%) scale(0.8); }
+
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+            100% { opacity: 0; transform: translate(-50%, -70%) scale(0.9); }
+
+        }
+
+
+
+        .score-pill {
+
+            background: rgba(212, 175, 55, 0.15);
+
+            padding: 4px 10px;
+
+            border-radius: 6px;
+
+            border: 1px solid var(--accent);
+
+            font-size: 0.85rem;
+
+            color: var(--accent);
+
+            font-weight: 600;
+
+        }
+
+    
+
+@media(max-width:700px){header{padding:12px;gap:12px;flex-wrap:wrap}.logo{font-size:1.3rem}.main-container{padding:10px}.table-area{min-height:420px;padding:12px}.cards-container{gap:6px}.card{width:61px;height:96px}.center-board{gap:14px}.actions-panel{gap:7px}.action-group{flex-wrap:wrap;justify-content:center}.scoreboard{gap:8px}.controls-header{flex-wrap:wrap}.btn{font-size:.8rem;padding:8px 11px}} 
+button:disabled{opacity:.45;cursor:not-allowed}.card:focus-visible,.btn:focus-visible{outline:3px solid white;outline-offset:2px}.status-message{min-height:34px;text-align:center;padding:9px;color:#ffe59a;font-weight:600}.card.back{background:repeating-linear-gradient(45deg,#b91c1c,#b91c1c 10px,#991b1b 10px,#991b1b 20px);border:2px solid var(--accent)}.card.played{cursor:default}.card .card-val:last-child{align-self:end;transform:rotate(180deg)}.card-suit{font-size:1.8rem}.card.selected{transform:translateY(-15px)}
+
+</style>
+</head>
+<body>
+
+<header><div class="logo">🃏 Truco Blitz</div><div class="controls-header"><span class="score-pill" id="hand-mode-indicator">Mano de: Jugador</span><button class="btn" id="btn-sound">🔊 Sonido: OFF</button><button class="btn" id="btn-tutorial">📖 Aprender a jugar</button></div></header>
+<main class="main-container">
+<div class="scoreboard"><div class="team-score"><h3>VOS</h3><div class="points" id="player-score">0</div></div><div style="text-align:center"><span id="game-status-text">¡Nueva mano!</span><div id="envido-val-text" style="font-size:.8rem;color:#ddd">Envido: disponible</div></div><div class="team-score"><h3>BOT</h3><div class="points" id="bot-score">0</div></div></div>
+<div class="table-area"><div class="bot-section"><div class="player-info"><div class="avatar">🤖</div><span>Rival Blitz</span></div><div class="cards-container" id="bot-cards"></div></div><div class="center-board"><div class="played-card-slot" id="slot-bot"><span>Carta del bot</span></div><div class="played-card-slot" id="slot-player"><span>Tu carta</span></div></div><div class="player-section"><div class="cards-container" id="player-cards"></div><div class="player-info"><div class="avatar" style="background:#3498db;color:white">👤</div><span>Tus cartas: seleccioná para tirar</span></div></div></div>
+<div class="status-message" id="message" aria-live="polite">Seleccioná una carta para comenzar.</div>
+<div class="actions-panel"><button class="btn" id="btn-play-card" disabled>Tirar carta seleccionada</button><div class="action-group"><button class="btn" id="btn-envido">Envido</button><button class="btn" id="btn-real-envido">Real envido</button><button class="btn" id="btn-falta-envido">Falta envido</button></div><div class="action-group"><button class="btn" id="btn-truco">Truco</button><button class="btn" id="btn-retruco">Retruco</button><button class="btn" id="btn-vale-cuatro">Vale cuatro</button></div><button class="btn btn-danger" id="btn-fold">Irse al mazo</button><button class="btn" id="btn-new">Nueva partida</button></div>
+</main>
+<div id="tutorial" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Cómo jugar"><div class="modal-content"><h2>Cómo jugar</h2><p>Truco argentino simplificado, a 15 puntos contra un bot. Se reparten tres cartas por mano y gana quien consiga dos bazas. En caso de empate de baza se aplican las reglas habituales de prioridad de la primera baza.</p><ul><li>Elegí una carta y tocá «Tirar carta seleccionada».</li><li>Envido antes de jugar la primera carta: dos cartas del mismo palo suman 20 más sus valores (10, 11 y 12 valen 0). Si no hay pareja, cuenta la carta más alta.</li><li>Truco, retruco y vale cuatro elevan el valor de la mano a 2, 3 y 4 puntos cuando son aceptados.</li><li>El bot acepta o rechaza los cantos de forma automática. Los puntos y el reparto son simulados y locales.</li></ul><button class="btn" id="close-tutorial">Entendido</button></div></div>
+<script>
+const $=id=>document.getElementById(id);
+const PALOS=[['espadas','⚔'],['bastos','♣'],['oros','♦'],['copas','♥']];
+const VALORES=[1,2,3,4,5,6,7,10,11,12];
+const RANK={'1-espadas':14,'1-bastos':13,'7-espadas':12,'7-oros':11,'3':10,'2':9,'1':8,'12':7,'11':6,'10':5,'7':4,'6':3,'5':2,'4':1};
+const key=c=>`${c.n}-${c.p}`;
+const fuerza=c=>RANK[key(c)]??RANK[c.n]??0;
+const deck=()=>PALOS.flatMap(([p])=>VALORES.map(n=>({n,p})));
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+let state,selected=null,sound=false,ctx=null,handTimeout=0;
+function beep(){if(!sound)return;try{ctx??=new (window.AudioContext||window.webkitAudioContext)();let o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=440;g.gain.setValueAtTime(.08,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.1);o.start();o.stop(ctx.currentTime+.1)}catch(e){}}
+function cardHTML(c,back=false){if(back)return '<div class="card back" aria-label="Carta oculta"></div>';const sym=PALOS.find(x=>x[0]===c.p)?.[1]||'●';return `<div class="card ${c.p}"><span class="card-val">${c.n}</span><span class="card-suit">${sym}</span><span class="card-val">${c.n}</span></div>`}
+function pointsEnvido(hand){let best=Math.max(...hand.map(c=>c.n>=10?0:c.n));for(let i=0;i<hand.length;i++)for(let j=i+1;j<hand.length;j++)if(hand[i].p===hand[j].p)best=Math.max(best,20+(hand[i].n>=10?0:hand[i].n)+(hand[j].n>=10?0:hand[j].n));return best}
+function log(msg){$('message').textContent=msg;$('game-status-text').textContent=msg}
+function startMatch(){clearTimeout(handTimeout);state={ps:0,bs:0,mano:Math.random()<.5?'p':'b',round:0,started:false,over:false};newHand()}
+function newHand(){if(state.over)return;const cards=shuffle(deck());state.ph=cards.slice(0,3);state.bh=cards.slice(3,6);state.tricks=[];state.pc=null;state.bc=null;state.turn=state.mano;state.truco=1;state.envido=false;state.envidoPts=0;state.lock=false;state.handEnded=false;state.round++;selected=null;log('Nueva mano: elegí una carta.');if(state.turn==='b')handTimeout=setTimeout(botPlay,850);render()}
+function render(){if(!state)return;$('player-score').textContent=state.ps;$('bot-score').textContent=state.bs;$('hand-mode-indicator').textContent='Mano de: '+(state.mano==='p'?'Jugador':'Bot');$('envido-val-text').textContent=state.envido?'Envido ya cantado':'Envido disponible';$('player-cards').innerHTML='';state.ph.forEach((c,i)=>{const el=document.createElement('button');el.className=`card ${c.p}${selected===i?' selected':''}`;el.innerHTML=cardHTML(c).replace(/^<div[^>]*>|<\/div>$/g,'');el.disabled=state.lock||state.handEnded||state.turn!=='p';el.setAttribute('aria-label',`${c.n} de ${c.p}`);el.onclick=()=>{selected=i;render()};$('player-cards').appendChild(el)});$('bot-cards').innerHTML=state.bh.map(()=>cardHTML(null,true)).join('');$('slot-player').innerHTML=state.pc?cardHTML(state.pc):'<span>Tu carta</span>';$('slot-bot').innerHTML=state.bc?cardHTML(state.bc):'<span>Carta del bot</span>';$('btn-play-card').disabled=selected===null||state.turn!=='p'||state.lock||state.handEnded;const canBid=!state.lock&&!state.handEnded&&!state.envido&&!state.tricks.length&&!state.pc&&!state.bc;['envido','real-envido','falta-envido'].forEach(id=>$('btn-'+id).disabled=!canBid);$('btn-truco').disabled=state.lock||state.handEnded||state.truco!==1;$('btn-retruco').disabled=state.lock||state.handEnded||state.truco!==2;$('btn-vale-cuatro').disabled=state.lock||state.handEnded||state.truco!==3;$('btn-fold').disabled=state.lock||state.handEnded}
+function playPlayer(){if(selected===null||state.turn!=='p'||state.lock||state.handEnded)return;state.pc=state.ph.splice(selected,1)[0];selected=null;beep();state.turn='b';render();if(state.bc)resolveTrick();else handTimeout=setTimeout(botPlay,650)}
+function botPlay(){if(state.handEnded||state.lock||!state.bh.length)return;let i=0;if(state.pc){let opts=state.bh.map((c,i)=>({i,f:fuerza(c)})).sort((a,b)=>a.f-b.f);i=(opts.find(x=>x.f>fuerza(state.pc))||opts[0]).i}else{i=state.bh.reduce((bi,c,i,a)=>fuerza(c)<fuerza(a[bi])?i:bi,0)}state.bc=state.bh.splice(i,1)[0];beep();state.turn='p';render();if(state.pc)resolveTrick();else log('El bot jugó. Te toca.')}
+function resolveTrick(){if(!state.pc||!state.bc)return;state.lock=true;const pf=fuerza(state.pc),bf=fuerza(state.bc),winner=pf===bf?'e':pf>bf?'p':'b';state.tricks.push(winner);log(winner==='e'?'¡Baza parda!':winner==='p'?'Ganaste la baza':'El bot ganó la baza');render();handTimeout=setTimeout(()=>{state.pc=null;state.bc=null;state.lock=false;const w=handWinner();if(w){finishHand(w);return}state.turn=winner==='e'?state.mano:winner;render();if(state.turn==='b')handTimeout=setTimeout(botPlay,650);else log('Tu turno: elegí una carta.')},900)}
+function handWinner(){const a=state.tricks;if(a.length===0)return null;if(a.length>=2){if(a[0]!=='e'&&a[0]===a[1])return a[0];if(a[0]==='e'&&a[1]!=='e')return a[1];if(a[1]==='e'&&a[0]!=='e')return a[0]}if(a.length<3)return null;const p=a.filter(x=>x==='p').length,b=a.filter(x=>x==='b').length;if(p>b)return'p';if(b>p)return'b';return a.find(x=>x!=='e')||state.mano}
+function addPoints(w,n){if(w==='p')state.ps+=n;else state.bs+=n;render()}
+function finishHand(w,pts=state.truco){if(state.handEnded)return;state.handEnded=true;state.lock=true;addPoints(w,pts);log((w==='p'?'Ganaste':'Ganó el bot')+` la mano (+${pts} punto${pts===1?'':'s'}).`);if(state.ps>=15||state.bs>=15){state.over=true;log(state.ps>=15?'¡GANASTE EL PARTIDO!':'El bot ganó el partido.');render();return}state.mano=state.mano==='p'?'b':'p';render();handTimeout=setTimeout(newHand,1800)}
+function bidEnvido(type){if(state.envido||state.tricks.length||state.pc||state.bc||state.lock||state.handEnded)return;state.envido=true;const pp=pointsEnvido(state.ph),bp=pointsEnvido(state.bh),winner=pp===bp?state.mano:pp>bp?'p':'b';const pts=type==='envido'?2:type==='real-envido'?3:Math.max(1,15-Math.max(state.ps,state.bs));const accept=Math.random()<(bp>=25?.88:.67);if(accept){addPoints(winner,pts);log(`¡Quiero! Tu envido: ${pp}, bot: ${bp}. ${winner==='p'?'Ganaste':'Perdiste'} ${pts} puntos.`)}else{addPoints('p',1);log('El bot no quiso el envido. Sumás 1 punto.')}beep();render();if(state.ps>=15||state.bs>=15){state.over=true;state.handEnded=true;log(state.ps>=15?'¡GANASTE EL PARTIDO!':'El bot ganó el partido.');render()}}
+function bidTruco(n){if(state.lock||state.handEnded||state.truco!==n-1)return;const prior=state.truco;const accept=Math.random()<(.78-(n-2)*.12);if(accept){state.truco=n;log(`¡Quiero! La mano vale ${n} puntos.`)}else{finishHand('p',prior);log(`El bot no quiso. Sumás ${prior} punto${prior===1?'':'s'}.`)}beep();render()}
+$('btn-play-card').onclick=playPlayer;$('btn-envido').onclick=()=>bidEnvido('envido');$('btn-real-envido').onclick=()=>bidEnvido('real-envido');$('btn-falta-envido').onclick=()=>bidEnvido('falta-envido');$('btn-truco').onclick=()=>bidTruco(2);$('btn-retruco').onclick=()=>bidTruco(3);$('btn-vale-cuatro').onclick=()=>bidTruco(4);$('btn-fold').onclick=()=>finishHand('b',state.truco);$('btn-new').onclick=()=>{if(confirm('¿Empezar una nueva partida?'))startMatch()};$('btn-tutorial').onclick=()=>$('tutorial').classList.remove('hidden');$('close-tutorial').onclick=()=>$('tutorial').classList.add('hidden');$('btn-sound').onclick=()=>{sound=!sound;$('btn-sound').textContent=sound?'🔊 Sonido: ON':'🔇 Sonido: OFF';beep()};startMatch();
+</script>
+
+</body>
+</html>
