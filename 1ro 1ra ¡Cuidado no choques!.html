@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>¡Cuidado no choques!</title>
+
+    <style>
+
+        * {
+
+            box-sizing: border-box;
+
+            user-select: none;
+
+            -webkit-user-select: none;
+
+        }
+
+        body {
+
+            margin: 0;
+
+            padding: 0;
+
+            background: linear-gradient(135deg, #022b3a, #1f7a8c);
+
+            font-family: 'Arial Rounded MT Bold', sans-serif;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            height: 100vh;
+
+            overflow: hidden;
+
+            color: #fff;
+
+        }
+
+        #game-container {
+
+            position: relative;
+
+            width: 400px;
+
+            height: 600px;
+
+            background: #005f73;
+
+            border-radius: 20px;
+
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+
+            overflow: hidden;
+
+            border: 4px solid #ee9b00;
+
+        }
+
+        canvas {
+
+            display: block;
+
+            background: #0a9396;
+
+        }
+
+        /* HUD Superior */
+
+        #hud {
+
+            position: absolute;
+
+            top: 15px;
+
+            left: 15px;
+
+            right: 15px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            font-size: 18px;
+
+            font-weight: bold;
+
+            pointer-events: none;
+
+            text-shadow: 2px 2px #000;
+
+            z-index: 5;
+
+        }
+
+        .hud-item {
+
+            background: rgba(0, 0, 0, 0.4);
+
+            padding: 8px 12px;
+
+            border-radius: 12px;
+
+            border: 2px solid rgba(255, 255, 255, 0.2);
+
+        }
+
+        /* Pantallas de Menú / Pausa / Game Over */
+
+        .screen {
+
+            position: absolute;
+
+            top: 0;
+
+            left: 0;
+
+            width: 100%;
+
+            height: 100%;
+
+            background: rgba(2, 43, 58, 0.95);
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: center;
+
+            align-items: center;
+
+            text-align: center;
+
+            padding: 20px;
+
+            z-index: 20;
+
+        }
+
+        h1 {
+
+            color: #e9d8a6;
+
+            font-size: 26px;
+
+            margin-bottom: 10px;
+
+            text-shadow: 3px 3px #bb3e03;
+
+        }
+
+        p {
+
+            font-size: 15px;
+
+            margin-bottom: 20px;
+
+            line-height: 1.4;
+
+        }
+
+        .btn {
+
+            background: #bb3e03;
+
+            color: white;
+
+            border: none;
+
+            padding: 12px 25px;
+
+            font-size: 18px;
+
+            font-weight: bold;
+
+            border-radius: 50px;
+
+            cursor: pointer;
+
+            margin: 8px;
+
+            box-shadow: 0 5px 0 #7b2501;
+
+            transition: all 0.1s ease;
+
+            z-index: 25
+
+        }
+
+        .btn:active {
+
+            transform: translateY(4px);
+
+            box-shadow: 0 1px 0 #7b2501;
+
+        }
+
+        .btn-green {
+
+            background: #94d2bd;
+
+            color: #022b3a;
+
+            box-shadow: 0 5px 0 #52b788;
+
+        }
+
+        .btn-green:active {
+
+            box-shadow: 0 1px 0 #52b788;
+
+        }
+
+        .btn-yellow {
+
+            background: #ee9b00;
+
+            color: #333;
+
+            box-shadow: 0 5px 0 #ca6702;
+
+        }
+
+        .btn-yellow:active {
+
+            box-shadow: 0 1px 0 #ca6702;
+
+        }
+
+        /* Controles táctiles en pantalla */
+
+        #touch-controls {
+
+            position: absolute;
+
+            bottom: 15px;
+
+            left: 0;
+
+            width: 100%;
+
+            display: flex;
+
+            justify-content: space-around;
+
+            padding: 0 20px;
+
+            pointer-events: auto;
+
+            z-index: 15;
+
+        }
+
+        .touch-btn {
+
+            width: 70px;
+
+            height: 70px;
+
+            background: rgba(255, 255, 255, 0.2);
+
+            border: 2px solid rgba(255, 255, 255, 0.5);
+
+            border-radius: 50%;
+
+            font-size: 28px;
+
+            color: white;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            cursor: pointer;
+
+        }
+
+        .hidden {
+
+            display: none !important;
+
+        }
+
+        .shop-item {
+
+            background: rgba(255,255,255,0.1);
+
+            margin: 5px;
+
+            padding: 10px;
+
+            border-radius: 10px;
+
+            width: 85%;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            font-size: 14px;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+    <div id="game-container">
+
+        <!-- HUD Superior -->
+
+        <div id="hud" class="hidden">
+
+            <div class="hud-item">🐚 <span id="coin-count">0</span></div>
+
+            <div class="hud-item">❤️ <span id="life-count">1</span></div>
+
+            <div class="hud-item">⭐ <span id="score-count">0</span></div>
+
+        </div>
+
+
+
+        <!-- Canvas del Juego -->
+
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+
+
+        <!-- Controles Táctiles -->
+
+        <div id="touch-controls" class="hidden">
+
+            <div class="touch-btn" id="btn-left">⬅️</div>
+
+            <div class="touch-btn" id="btn-right">➡️</div>
+
+        </div>
+
+
+
+        <!-- Pantalla de Inicio -->
+
+        <div id="start-screen" class="screen">
+
+            <h1>¡Cuidado no choques!</h1>
+
+            <p>¡Ayuda al pulpin a esquivar rocas 🪨 y medusas ⚡, recolecta conchas marinas 🐚 y mejora tus habilidades!</p>
+
+            <button class="btn btn-green" id="play-btn">¡NADAR!</button>
+
+            <button class="btn btn-yellow" id="shop-btn">🛒 Tienda Marina</button>
+
+        </div>
+
+
+
+        <!-- Pantalla de Tienda / Mejoras -->
+
+        <div id="shop-screen" class="screen hidden">
+
+            <h1>🛒 Tienda del Océano</h1>
+
+            <p>Conchas disponibles: <span id="shop-coins">0</span> 🐚</p>
+
+
+
+            <div class="shop-item">
+
+                <span>❤️ Vida Extra (+1)</span>
+
+                <button class="btn btn-green" style="padding: 5px 15px; font-size: 14px;" id="buy-life-btn">15 🐚</button>
+
+            </div>
+
+            <div class="shop-item">
+
+                <span>⚡ Velocidad de Nado</span>
+
+                <button class="btn btn-green" style="padding: 5px 15px; font-size: 14px;" id="buy-speed-btn">25 🐚</button>
+
+            </div>
+
+            <div class="shop-item">
+
+                <span>🧲 Imán de Conchas</span>
+
+                <button class="btn btn-green" style="padding: 5px 15px; font-size: 14px;" id="buy-magnet-btn">40 🐚</button>
+
+            </div>
+
+
+
+            <button class="btn" style="margin-top: 20px;" id="back-shop-btn">Volver</button>
+
+        </div>
+
+
+
+        <!-- Pantalla de Game Over / Renacimiento -->
+
+        <div id="gameover-screen" class="screen hidden">
+
+            <h1>💥 ¡Oh no! ¡Te atascaste!</h1>
+
+            <p>Puntuación: <span id="final-score">0</span></p>
+
+            <div id="respawn-container">
+
+                <button id="respawn-btn" class="btn btn-yellow">🔄 Continuar (¡Usar Vida!)</button>
+
+            </div>
+
+            <button class="btn" id="menu-btn">Menú Principal</button>
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+        const canvas = document.getElementById("gameCanvas");
+
+        const ctx = canvas.getContext("2d");
+
+
+
+        // Elementos de la interfaz
+
+        const startScreen = document.getElementById("start-screen");
+
+        const shopScreen = document.getElementById("shop-screen");
+
+        const gameOverScreen = document.getElementById("gameover-screen");
+
+        const hud = document.getElementById("hud");
+
+        const touchControls = document.getElementById("touch-controls");
+
+
+
+        const coinCountDisplay = document.getElementById("coin-count");
+
+        const lifeCountDisplay = document.getElementById("life-count");
+
+        const scoreCountDisplay = document.getElementById("score-count");
+
+        const shopCoinsDisplay = document.getElementById("shop-coins");
+
+        const finalScoreDisplay = document.getElementById("final-score");
+
+        const respawnBtn = document.getElementById("respawn-btn");
+
+
+
+        // Datos del jugador y juego
+
+        let score = 0;
+
+        let coins = parseInt(localStorage.getItem("sea_coins")) || 0;
+
+        let lives = parseInt(localStorage.getItem("sea_lives")) || 1;
+
+        let baseSpeedBonus = parseInt(localStorage.getItem("sea_speed")) || 0;
+
+        let hasMagnet = localStorage.getItem("sea_magnet") === "true";
+
+
+
+        let gameRunning = false;
+
+        let gameInterval, spawnerInterval;
+
+
+
+        let player = {
+
+            x: 175,
+
+            y: 500,
+
+            width: 45,
+
+            height: 45,
+
+            speed: 6 + baseSpeedBonus
+
+        };
+
+
+
+        let obstacles = [];
+
+        let collectibleCoins = [];
+
+
+
+        // Asignación de eventos en botones
+
+        document.getElementById("play-btn").addEventListener("click", startGame);
+
+        document.getElementById("shop-btn").addEventListener("click", openShop);
+
+        document.getElementById("back-shop-btn").addEventListener("click", closeShop);
+
+        document.getElementById("menu-btn").addEventListener("click", returnToMenu);
+
+        document.getElementById("respawn-btn").addEventListener("click", respawnGame);
+
+
+
+        document.getElementById("buy-life-btn").addEventListener("click", () => buyUpgrade('life'));
+
+        document.getElementById("buy-speed-btn").addEventListener("click", () => buyUpgrade('speed'));
+
+        document.getElementById("buy-magnet-btn").addEventListener("click", () => buyUpgrade('magnet'));
+
+
+
+        // Controles de teclado
+
+        let keys = { ArrowLeft: false, ArrowRight: false, KeyA: false, KeyD: false };
+
+
+
+        window.addEventListener("keydown", (e) => {
+
+            if (e.code === "ArrowLeft" || e.code === "KeyA") { keys.ArrowLeft = true; e.preventDefault(); }
+
+            if (e.code === "ArrowRight" || e.code === "KeyD") { keys.ArrowRight = true; e.preventDefault(); }
+
+        });
+
+
+
+        window.addEventListener("keyup", (e) => {
+
+            if (e.code === "ArrowLeft" || e.code === "KeyA") keys.ArrowLeft = false;
+
+            if (e.code === "ArrowRight" || e.code === "KeyD") keys.ArrowRight = false;
+
+        });
+
+
+
+        // Controles táctiles
+
+        const btnLeft = document.getElementById("btn-left");
+
+        const btnRight = document.getElementById("btn-right");
+
+
+
+        btnLeft.addEventListener("touchstart", (e) => { e.preventDefault(); keys.ArrowLeft = true; });
+
+        btnLeft.addEventListener("touchend", (e) => { e.preventDefault(); keys.ArrowLeft = false; });
+
+        btnRight.addEventListener("touchstart", (e) => { e.preventDefault(); keys.ArrowRight = true; });
+
+        btnRight.addEventListener("touchend", (e) => { e.preventDefault(); keys.ArrowRight = false; });
+
+
+
+        // Funciones de navegación
+
+        function openShop() {
+
+            shopCoinsDisplay.innerText = coins;
+
+            startScreen.classList.add("hidden");
+
+            shopScreen.classList.remove("hidden");
+
+        }
+
+
+
+        function closeShop() {
+
+            shopScreen.classList.add("hidden");
+
+            startScreen.classList.remove("hidden");
+
+        }
+
+
+
+        function returnToMenu() {
+
+            gameOverScreen.classList.add("hidden");
+
+            startScreen.classList.remove("hidden");
+
+            hud.classList.add("hidden");
+
+            touchControls.classList.add("hidden");
+
+        }
+
+
+
+        // Tienda de mejoras submarinas
+
+        function buyUpgrade(type) {
+
+            if (type === 'life' && coins >= 15) {
+
+                coins -= 15;
+
+                lives++;
+
+                alert("¡Has comprado 1 Vida Extra!");
+
+            } else if (type === 'speed' && coins >= 25) {
+
+                coins -= 25;
+
+                baseSpeedBonus += 1;
+
+                player.speed = 6 + baseSpeedBonus;
+
+                alert("¡Velocidad de nado mejorada!");
+
+            } else if (type === 'magnet' && coins >= 40 && !hasMagnet) {
+
+                coins -= 40;
+
+                hasMagnet = true;
+
+                alert("¡Imán de conchas activado!");
+
+            } else {
+
+                alert("¡No tienes suficientes conchas o ya lo compraste!");
+
+            }
+
+            saveData();
+
+            shopCoinsDisplay.innerText = coins;
+
+        }
+
+
+
+        function saveData() {
+
+            localStorage.setItem("sea_coins", coins);
+
+            localStorage.setItem("sea_lives", lives);
+
+            localStorage.setItem("sea_speed", baseSpeedBonus);
+
+            localStorage.setItem("sea_magnet", hasMagnet);
+
+        }
+
+
+
+        // Iniciar Juego
+
+        function startGame() {
+
+            startScreen.classList.add("hidden");
+
+            shopScreen.classList.add("hidden");
+
+            gameOverScreen.classList.add("hidden");
+
+            hud.classList.remove("hidden");
+
+            touchControls.classList.remove("hidden");
+
+
+
+            score = 0;
+
+            obstacles = [];
+
+            collectibleCoins = [];
+
+            player.x = 175;
+
+            player.speed = 6 + baseSpeedBonus;
+
+
+
+            updateHUD();
+
+            gameRunning = true;
+
+
+
+            if (gameInterval) clearInterval(gameInterval);
+
+            if (spawnerInterval) clearInterval(spawnerInterval);
+
+
+
+            gameInterval = setInterval(updateGame, 1000 / 60);
+
+            spawnerInterval = setInterval(spawnElements, 900);
+
+        }
+
+
+
+        // Generar Obstáculos (Rocas/Medusas) y Conchas
+
+        function spawnElements() {
+
+            if (!gameRunning) return;
+
+
+
+            let xPos = Math.random() * (canvas.width - 40);
+
+
+
+            if (Math.random() < 0.6) {
+
+                obstacles.push({
+
+                    x: xPos,
+
+                    y: -50,
+
+                    width: 35,
+
+                    height: 35,
+
+                    speed: 4 + Math.min(score / 500, 5)
+
+                });
+
+            } else {
+
+                collectibleCoins.push({
+
+                    x: xPos,
+
+                    y: -30,
+
+                    radius: 14,
+
+                    speed: 3.5
+
+                });
+
+            }
+
+        }
+
+
+
+        // Actualizar física
+
+        function updateGame() {
+
+            if (!gameRunning) return;
+
+
+
+            if (keys.ArrowLeft || keys.KeyA) player.x -= player.speed;
+
+            if (keys.ArrowRight || keys.KeyD) player.x += player.speed;
+
+
+
+            if (player.x < 0) player.x = 0;
+
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+
+
+            score += 1;
+
+
+
+            // Obstáculos
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+
+                let obs = obstacles[i];
+
+                obs.y += obs.speed;
+
+
+
+                if (
+
+                    player.x < obs.x + obs.width &&
+
+                    player.x + player.width > obs.x &&
+
+                    player.y < obs.y + obs.height &&
+
+                    player.y + player.height > obs.y
+
+                ) {
+
+                    handleCollision();
+
+                    return;
+
+                }
+
+
+
+                if (obs.y > canvas.height) {
+
+                    obstacles.splice(i, 1);
+
+                }
+
+            }
+
+
+
+            // Conchas / Monedas
+
+            for (let i = collectibleCoins.length - 1; i >= 0; i--) {
+
+                let coin = collectibleCoins[i];
+
+
+
+                if (hasMagnet) {
+
+                    let dx = (player.x + player.width/2) - coin.x;
+
+                    let dy = (player.y + player.height/2) - coin.y;
+
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+
+                    if (dist < 150) {
+
+                        coin.x += dx * 0.08;
+
+                        coin.y += dy * 0.08;
+
+                    }
+
+                }
+
+
+
+                coin.y += coin.speed;
+
+
+
+                let distX = Math.abs(coin.x - (player.x + player.width / 2));
+
+                let distY = Math.abs(coin.y - (player.y + player.height / 2));
+
+
+
+                if (distX < (player.width / 2 + coin.radius) && distY < (player.height / 2 + coin.radius)) {
+
+                    coins += 1;
+
+                    saveData();
+
+                    collectibleCoins.splice(i, 1);
+
+                    updateHUD();
+
+                    continue;
+
+                }
+
+
+
+                if (coin.y > canvas.height) {
+
+                    collectibleCoins.splice(i, 1);
+
+                }
+
+            }
+
+
+
+            updateHUD();
+
+            drawGame();
+
+        }
+
+
+
+        // Colisión
+
+        function handleCollision() {
+
+            gameRunning = false;
+
+            clearInterval(gameInterval);
+
+            clearInterval(spawnerInterval);
+
+
+
+            if (lives > 1) {
+
+                lives--;
+
+                saveData();
+
+                respawnBtn.style.display = "inline-block";
+
+            } else {
+
+                respawnBtn.style.display = "none";
+
+            }
+
+
+
+            finalScoreDisplay.innerText = score;
+
+            hud.classList.add("hidden");
+
+            touchControls.classList.add("hidden");
+
+            gameOverScreen.classList.remove("hidden");
+
+        }
+
+
+
+        // Renacer
+
+        function respawnGame() {
+
+            gameOverScreen.classList.add("hidden");
+
+            hud.classList.remove("hidden");
+
+            touchControls.classList.remove("hidden");
+
+
+
+            obstacles = [];
+
+            player.x = 175;
+
+            gameRunning = true;
+
+
+
+            gameInterval = setInterval(updateGame, 1000 / 60);
+
+            spawnerInterval = setInterval(spawnElements, 900);
+
+        }
+
+
+
+        function updateHUD() {
+
+            coinCountDisplay.innerText = coins;
+
+            lifeCountDisplay.innerText = lives;
+
+            scoreCountDisplay.innerText = score;
+
+        }
+
+
+
+        function drawGame() {
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+
+            // Burbujas flotando de fondo
+
+            ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+
+            ctx.beginPath();
+
+            ctx.arc(60, 150, 4, 0, Math.PI * 2);
+
+            ctx.arc(180, 320, 6, 0, Math.PI * 2);
+
+            ctx.arc(310, 210, 3, 0, Math.PI * 2);
+
+            ctx.arc(240, 480, 5, 0, Math.PI * 2);
+
+            ctx.fill();
+
+
+
+            // Jugador (Pulpo simpático)
+
+            ctx.fillStyle = "#48cae4";
+
+            ctx.beginPath();
+
+            if (ctx.roundRect) {
+
+                ctx.roundRect(player.x, player.y, player.width, player.height, [16]);
+
+            } else {
+
+                ctx.rect(player.x, player.y, player.width, player.height);
+
+            }
+
+            ctx.fill();
+
+
+
+            // Ojos del pulpo
+
+            ctx.fillStyle = "#ffffff";
+
+            ctx.fillRect(player.x + 8, player.y + 12, 8, 10);
+
+            ctx.fillRect(player.x + 28, player.y + 12, 8, 10);
+
+            ctx.fillStyle = "#000000";
+
+            ctx.fillRect(player.x + 12, player.y + 15, 3, 4);
+
+            ctx.fillRect(player.x + 32, player.y + 15, 3, 4);
+
+
+
+            // Obstáculos (Rocas puntiagudas)
+
+            ctx.fillStyle = "#6c757d";
+
+            for (let obs of obstacles) {
+
+                ctx.beginPath();
+
+                if (ctx.roundRect) {
+
+                    ctx.roundRect(obs.x, obs.y, obs.width, obs.height, [8]);
+
+                } else {
+
+                    ctx.rect(obs.x, obs.y, obs.width, obs.height);
+
+                }
+
+                ctx.fill();
+
+            }
+
+
+
+            // Conchas / Monedas marinas
+
+            ctx.fillStyle = "#f4a261";
+
+            for (let coin of collectibleCoins) {
+
+                ctx.beginPath();
+
+                ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+
+                ctx.fill();
+
+                ctx.lineWidth = 2;
+
+                ctx.strokeStyle = "#e76f51";
+
+                ctx.stroke();
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>
