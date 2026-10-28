@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budokai Tenkaichi Arena 2D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #030712;
+            color: #ffffff;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #1e1b4b, #312e81, #1e293b);
+        }
+        .glow-title {
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.8), 0 0 30px rgba(56, 189, 248, 0.4);
+        }
+        .glow-box {
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.3);
+        }
+        .glow-red {
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.3);
+        }
+    </style>
+</head>
+<body class="relative w-screen h-screen flex flex-col justify-between">
+
+
+    <!-- MAIN MENU SCREEN -->
+    <div id="menu-screen" class="absolute inset-0 z-50 bg-slate-950/95 flex flex-col items-center justify-center p-6 backdrop-blur-md">
+        <div class="max-w-xl w-full text-center">
+            <h1 class="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400 glow-title mb-2">
+                TENKAICHI 2D
+            </h1>
+            <p class="text-slate-400 text-xs md:text-sm mb-6">Combates intensos estilo anime • Controles simplificados • ¡Kamehameha Blanco!</p>
+           
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl mb-6">
+                <h2 class="text-sm font-bold text-amber-400 mb-3 tracking-wider">ELIGE TU MODO DE JUEGO</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="setGameMode('pvp')" id="mode-pvp" class="p-4 rounded-xl border-2 border-cyan-500 bg-cyan-950/40 font-bold text-cyan-300 transition hover:bg-cyan-900/50">
+                        2 JUGADORES<br><span class="text-[10px] text-slate-400">Mismo Teclado</span>
+                    </button>
+                    <button onclick="setGameMode('pve')" id="mode-pve" class="p-4 rounded-xl border-2 border-slate-700 bg-slate-800/40 font-bold text-slate-300 transition hover:bg-slate-800">
+                        JUGADOR vs IA<br><span class="text-[10px] text-slate-400">Práctica de Combate</span>
+                    </button>
+                </div>
+            </div>
+
+
+            <button onclick="startGame()" class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-lg px-8 py-4 rounded-xl shadow-lg glow-box transform hover:scale-105 transition w-full">
+                ¡EMPEZAR COMBATE!
+            </button>
+        </div>
+    </div>
+
+
+    <!-- HUD OVERLAY (TOP) -->
+    <div id="hud-layer" class="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4 md:p-6 pointer-events-none">
+       
+        <!-- PLAYER 1 HUD -->
+        <div class="w-5/12 bg-slate-900/90 border-2 border-cyan-500/60 rounded-xl p-3 glow-box backdrop-blur">
+            <div class="flex justify-between items-center mb-1">
+                <span class="font-black text-xs md:text-sm text-cyan-400">P1: GUERRERO Z</span>
+                <span class="text-[10px] bg-cyan-600 px-2 py-0.5 rounded text-white font-bold">KAMEHAMEHA BLANCO</span>
+            </div>
+            <!-- HP Bar -->
+            <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden border border-slate-700 relative mb-2">
+                <div id="p1-hp" class="bg-gradient-to-r from-green-500 to-emerald-400 h-full w-full transition-all duration-150"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow"><span id="p1-hp-text">100</span>%</div>
+            </div>
+            <!-- Ki Bar -->
+            <div class="flex items-center space-x-2">
+                <span class="text-[10px] font-bold text-cyan-300">KI</span>
+                <div class="flex-1 bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700 relative">
+                    <div id="p1-ki" class="bg-gradient-to-r from-cyan-300 to-blue-500 h-full w-0 transition-all duration-75"></div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- TIMER -->
+        <div class="bg-slate-900/90 border-2 border-amber-500/60 rounded-xl px-4 py-2 text-center glow-box">
+            <span class="text-xs text-amber-400 font-bold block">TIEMPO</span>
+            <span id="match-timer" class="text-2xl font-black text-amber-200">99</span>
+        </div>
+
+
+        <!-- PLAYER 2 HUD -->
+        <div class="w-5/12 bg-slate-900/90 border-2 border-red-500/60 rounded-xl p-3 glow-red backdrop-blur text-right">
+            <div class="flex justify-between items-center mb-1 flex-row-reverse">
+                <span id="p2-label" class="font-black text-xs md:text-sm text-red-400">P2: RIVAL OSCURO</span>
+                <span class="text-[10px] bg-red-600 px-2 py-0.5 rounded text-white font-bold">ESFERA MORADA</span>
+            </div>
+            <!-- HP Bar -->
+            <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden border border-slate-700 relative mb-2 flex flex-row-reverse">
+                <div id="p2-hp" class="bg-gradient-to-l from-red-500 to-rose-400 h-full w-full transition-all duration-150 origin-right"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow"><span id="p2-hp-text">100</span>%</div>
+            </div>
+            <!-- Ki Bar -->
+            <div class="flex items-center space-x-2 flex-row-reverse">
+                <span class="text-[10px] font-bold text-rose-300">KI</span>
+                <div class="flex-1 bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700 relative">
+                    <div id="p2-ki" class="bg-gradient-to-l from-rose-400 to-red-500 h-full w-0 transition-all duration-75 float-right"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 2D GAME CANVAS -->
+    <div class="relative flex-1 w-full h-full">
+        <canvas id="gameCanvas" class="w-full h-full"></canvas>
+    </div>
+
+
+    <!-- CONTROLS LEGEND / TOUCH PADS (BOTTOM) -->
+    <div class="absolute bottom-0 left-0 right-0 z-20 p-3 bg-slate-950/80 backdrop-blur border-t border-slate-800 flex flex-col md:flex-row justify-between items-center text-xs text-slate-300 gap-2">
+        <div class="flex flex-wrap gap-x-4 gap-y-1">
+            <div><strong class="text-cyan-400">P1:</strong> A/D (Mover) | <strong class="text-cyan-400">S</strong> (Cargar Ki) | <strong class="text-cyan-400">F</strong> (Golpe) | <strong class="text-cyan-400">G</strong> (Especial Blanco) | <strong class="text-cyan-400">H</strong> (Esquive)</div>
+            <div id="p2-controls-hint"><strong class="text-red-400">P2:</strong> Izq/Der (Mover) | <strong class="text-red-400">Abajo</strong> (Cargar Ki) | <strong class="text-red-400">1</strong> (Golpe) | <strong class="text-red-400">2</strong> (Especial Morado) | <strong class="text-red-400">3</strong> (Esquive)</div>
+        </div>
+        <div class="text-[10px] text-amber-300 font-bold">¡Carga Ki al máximo para desatar tu poder definitivo!</div>
+    </div>
+
+
+    <!-- GAME OVER MODAL -->
+    <div id="gameover-screen" class="absolute inset-0 z-50 bg-slate-950/90 hidden flex flex-col items-center justify-center p-6 backdrop-blur-md">
+        <div class="bg-slate-900 border-2 border-amber-500 p-8 rounded-3xl max-w-sm w-full text-center glow-box">
+            <h2 id="winner-title" class="text-2xl font-black text-amber-400 mb-2">¡VICTORIA!</h2>
+            <p id="winner-desc" class="text-slate-300 mb-6 text-sm">El guerrero ha triunfado.</p>
+            <button onclick="location.reload()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3 rounded-xl transition w-full">
+                JUGAR DE NUEVO
+            </button>
+        </div>
+    </div>
+
+
+    <!-- SCRIPT DE JUEGO 2D -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+
+        // Resize canvas to fill window
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = Math.max(300, window.innerHeight - 60); // Mantener el área de juego visible
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+
+        let gameMode = 'pvp'; // 'pvp' or 'pve'
+        let gameActive = false;
+        let matchTimer = 99;
+        let timerInterval;
+        let particles = [];
+        let floatTexts = [];
+        let keys = {};
+
+
+        function setGameMode(mode) {
+            gameMode = mode;
+            document.getElementById('mode-pvp').className = mode === 'pvp'
+                ? 'p-4 rounded-xl border-2 border-cyan-500 bg-cyan-950/40 font-bold text-cyan-300 transition'
+                : 'p-4 rounded-xl border-2 border-slate-700 bg-slate-800/40 font-bold text-slate-300 transition';
+            document.getElementById('mode-pve').className = mode === 'pve'
+                ? 'p-4 rounded-xl border-2 border-cyan-500 bg-cyan-950/40 font-bold text-cyan-300 transition'
+                : 'p-4 rounded-xl border-2 border-slate-700 bg-slate-800/40 font-bold text-slate-300 transition';
+           
+            document.getElementById('p2-label').innerText = mode === 'pvp' ? 'P2: RIVAL OSCURO' : 'IA: RIVAL OSCURO';
+            document.getElementById('p2-controls-hint').style.display = mode === 'pvp' ? 'block' : 'none';
+        }
+
+
+        function startGame() {
+            document.getElementById('menu-screen').style.display = 'none';
+            gameActive = true;
+            resetFighters();
+            projectiles = [];
+            particles = [];
+            floatTexts = [];
+            keys = {};
+            matchTimer = 99;
+            document.getElementById('match-timer').innerText = matchTimer;
+            startTimer();
+            requestAnimationFrame(gameLoop);
+        }
+
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!gameActive) return;
+                matchTimer--;
+                document.getElementById('match-timer').innerText = matchTimer;
+                if (matchTimer <= 0) {
+                    endGame(p1.hp >= p2.hp ? '¡TIEMPO! GANA P1' : '¡TIEMPO! GANA P2');
+                }
+            }, 1000);
+        }
+
+
+        // --- FIGHTER OBJECTS ---
+        let p1, p2;
+
+
+        function resetFighters() {
+            p1 = {
+                x: canvas.width * 0.25,
+                y: canvas.height - 100 - 130,
+                width: 70,
+                height: 130,
+                vx: 0,
+                vy: 0,
+                hp: 100,
+                ki: 0,
+                maxKi: 100,
+                isCharging: false,
+                isAttacking: false,
+                isDashing: false,
+                color: '#38bdf8',
+                specialColor: '#ffffff', // Kamehameha blanco icónico
+                name: 'Guerrero Z',
+                facingRight: true
+            };
+
+
+            p2 = {
+                x: canvas.width * 0.75,
+                y: canvas.height - 100 - 130,
+                width: 70,
+                height: 130,
+                vx: 0,
+                vy: 0,
+                hp: 100,
+                ki: 0,
+                maxKi: 100,
+                isCharging: false,
+                isAttacking: false,
+                isDashing: false,
+                color: '#ef4444',
+                specialColor: '#a855f7', // Esfera morada rival
+                name: 'Rival Oscuro',
+                facingRight: false
+            };
+        }
+
+
+        // --- INPUT LISTENERS ---
+        window.addEventListener('keydown', e => {
+            if (!gameActive) return;
+            if (['ArrowLeft', 'ArrowRight', 'ArrowDown'].includes(e.key)) e.preventDefault();
+            keys[e.key.toLowerCase()] = true;
+            if (e.repeat) return;
+
+
+            // P1 Actions
+            if (e.key.toLowerCase() === 'f') performMelee(p1, p2);
+            if (e.key.toLowerCase() === 'g') fireSpecial(p1, p2);
+            if (e.key.toLowerCase() === 'h') performDash(p1);
+
+
+            // P2 Actions (if PvP mode)
+            if (gameMode === 'pvp') {
+                if (e.key === '1') performMelee(p2, p1);
+                if (e.key === '2') fireSpecial(p2, p1);
+                if (e.key === '3') performDash(p2);
+            }
+        });
+
+
+        window.addEventListener('keyup', e => {
+            if (!gameActive) return;
+            keys[e.key.toLowerCase()] = false;
+        });
+
+
+        // --- COMBAT ACTIONS ---
+        function performMelee(attacker, defender) {
+            if (!gameActive || attacker.isAttacking) return;
+            attacker.isAttacking = true;
+           
+            setTimeout(() => { attacker.isAttacking = false; }, 200);
+
+
+            let dist = Math.abs(attacker.x - defender.x);
+            if (dist < 100 && Math.abs(attacker.y - defender.y) < 110) {
+                defender.hp = Math.max(0, defender.hp - 8);
+                createHitSpark((attacker.x + defender.x) / 2, attacker.y + 50);
+                addFloatText("-8", defender.x, defender.y - 20, '#ef4444');
+                if (defender.hp <= 0) endGame(attacker === p1 ? '¡GANA P1 (GUERRERO Z)!' : '¡GANA P2 (RIVAL OSCURO)!');
+            }
+        }
+
+
+        function fireSpecial(attacker, defender) {
+            if (!gameActive) return;
+            if (attacker.ki < 60) {
+                addFloatText("¡KI INSUFICIENTE!", attacker.x, attacker.y - 40, '#facc15');
+                return;
+            }
+            attacker.ki -= 60;
+
+
+            // Generar proyectil especial (Kamehameha Blanco para P1, Esfera Morada para P2)
+            let isWhiteBeam = (attacker === p1);
+            projectiles.push({
+                x: attacker.facingRight ? attacker.x + 50 : attacker.x - 50,
+                y: attacker.y + 40,
+                vx: attacker.facingRight ? 18 : -18,
+                radius: isWhiteBeam ? 25 : 20,
+                color: attacker.specialColor,
+                damage: 35,
+                owner: attacker
+            });
+            addFloatText(isWhiteBeam ? "¡KAMEHAMEHA BLANCO!" : "¡ESFERA OSCURA!", attacker.x, attacker.y - 50, isWhiteBeam ? '#ffffff' : '#c084fc');
+        }
+
+
+        function performDash(fighter) {
+            if (!gameActive || fighter.ki < 15) return;
+            fighter.ki -= 15;
+            fighter.x += fighter.facingRight ? 150 : -150;
+            // Limitar a pantalla
+            fighter.x = Math.max(50, Math.min(canvas.width - 50, fighter.x));
+            createHitSpark(fighter.x, fighter.y + 50);
+        }
+
+
+        // Proyectiles activos
+        let projectiles = [];
+
+
+        // --- PARTÍCULAS Y EFECTOS VISUALES ---
+        function createHitSpark(x, y) {
+            for (let i = 0; i < 12; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    radius: Math.random() * 4 + 2,
+                    color: '#facc15',
+                    life: 20
+                });
+            }
+        }
+
+
+        function addFloatText(text, x, y, color) {
+            floatTexts.push({ text, x, y, alpha: 1, color });
+        }
+
+
+        function endGame(msg) {
+            if (!gameActive) return;
+            gameActive = false;
+            clearInterval(timerInterval);
+            document.getElementById('winner-title').innerText = msg;
+            document.getElementById('gameover-screen').style.display = 'flex';
+        }
+
+
+        // --- UPDATE & AI LOGIC ---
+        function updateAI() {
+            if (gameMode !== 'pve' || !gameActive) return;
+
+
+            // Simple IA: acercarse, cargar ki si está lejos o bajo, atacar si está cerca
+            let dist = p1.x - p2.x;
+            p2.facingRight = (p1.x > p2.x);
+
+
+            if (Math.abs(dist) > 120) {
+                p2.x += (dist > 0 ? 3 : -3);
+                p2.isCharging = false;
+            } else if (p2.ki < 60) {
+                p2.isCharging = true;
+                p2.ki = Math.min(p2.maxKi, p2.ki + 1.2);
+            } else {
+                p2.isCharging = false;
+                if (Math.random() < 0.03) {
+                    performMelee(p2, p1);
+                } else if (p2.ki >= 60 && Math.random() < 0.015) {
+                    fireSpecial(p2, p1);
+                }
+            }
+        }
+
+
+        // --- MAIN GAME LOOP ---
+        function gameLoop() {
+            if (!gameActive) return;
+
+
+            // --- 1. CONTROLES P1 ---
+            p1.isCharging = false;
+            if (keys['a']) { p1.x -= 6; p1.facingRight = false; }
+            if (keys['d']) { p1.x += 6; p1.facingRight = true; }
+            if (keys['s']) {
+                p1.isCharging = true;
+                p1.ki = Math.min(p1.maxKi, p1.ki + 1.2);
+            }
+
+
+            // --- 2. CONTROLES P2 (si es PvP) ---
+            if (gameMode === 'pvp') {
+                p2.isCharging = false;
+                if (keys['arrowleft']) { p2.x -= 6; p2.facingRight = false; }
+                if (keys['arrowright']) { p2.x += 6; p2.facingRight = true; }
+                if (keys['arrowdown']) {
+                    p2.isCharging = true;
+                    p2.ki = Math.min(p2.maxKi, p2.ki + 1.2);
+                }
+            } else {
+                updateAI();
+            }
+
+
+            // Limites de pantalla
+            const leftEdge = Math.min(50, canvas.width / 4);
+            const rightEdge = Math.max(leftEdge, canvas.width - leftEdge);
+            p1.x = Math.max(leftEdge, Math.min(rightEdge, p1.x));
+            p2.x = Math.max(leftEdge, Math.min(rightEdge, p2.x));
+
+
+            // --- 3. ACTUALIZAR PROYECTILES ---
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                let pr = projectiles[i];
+                pr.x += pr.vx;
+
+
+                // Colisión con rival
+                let target = (pr.owner === p1) ? p2 : p1;
+                if (Math.abs(pr.x - target.x) < 40 + pr.radius && Math.abs(pr.y - (canvas.height - 100 - target.height + 50)) < 65) {
+                    target.hp = Math.max(0, target.hp - pr.damage);
+                    createHitSpark(target.x, target.y + 50);
+                    addFloatText("-" + pr.damage, target.x, target.y - 20, pr.color);
+                    projectiles.splice(i, 1);
+                    if (target.hp <= 0) endGame(pr.owner === p1 ? '¡GANA P1 (GUERRERO Z)!' : '¡GANA P2 (RIVAL OSCURO)!');
+                    continue;
+                }
+
+
+                // Fuera de pantalla
+                if (pr.x < 0 || pr.x > canvas.width) {
+                    projectiles.splice(i, 1);
+                }
+            }
+
+
+            // --- 4. RENDERIZADO GRÁFICO (CANVAS 2D ANIME STYLE) ---
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+            // Suelo del Arena (Estilo Torneo de Artes Marciales)
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 100);
+            ctx.lineTo(canvas.width, canvas.height - 100);
+            ctx.stroke();
+
+
+            // Dibujar Auras de Ki si están cargando
+            drawFighterAura(p1);
+            drawFighterAura(p2);
+
+
+            // Dibujar Luchadores
+            drawFighter(p1);
+            drawFighter(p2);
+
+
+            // Dibujar Proyectiles
+            for (let pr of projectiles) {
+                ctx.save();
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = pr.color;
+                ctx.fillStyle = pr.color;
+                ctx.beginPath();
+                ctx.arc(pr.x, pr.y, pr.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+
+            // Dibujar Partículas
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let pt = particles[i];
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+                pt.life--;
+                ctx.fillStyle = pt.color;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+                ctx.fill();
+                if (pt.life <= 0) particles.splice(i, 1);
+            }
+
+
+            // Dibujar Textos Flotantes de daño
+            for (let i = floatTexts.length - 1; i >= 0; i--) {
+                let ft = floatTexts[i];
+                ft.y -= 1.5;
+                ft.alpha -= 0.02;
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, ft.alpha);
+                ctx.fillStyle = ft.color;
+                ctx.font = 'bold 20px Orbitron';
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.restore();
+                if (ft.alpha <= 0) floatTexts.splice(i, 1);
+            }
+
+
+            // Actualizar HUD barras en HTML
+            document.getElementById('p1-hp').style.width = p1.hp + '%';
+            document.getElementById('p1-hp-text').innerText = p1.hp;
+            document.getElementById('p1-ki').style.width = p1.ki + '%';
+
+
+            document.getElementById('p2-hp').style.width = p2.hp + '%';
+            document.getElementById('p2-hp-text').innerText = p2.hp;
+            document.getElementById('p2-ki').style.width = p2.ki + '%';
+
+
+            requestAnimationFrame(gameLoop);
+        }
+
+
+        function drawFighter(f) {
+            let groundY = canvas.height - 100;
+            let drawY = groundY - f.height;
+
+
+            ctx.save();
+            // Sombra bajo el luchador
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.beginPath();
+            ctx.ellipse(f.x, groundY, 35, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+
+            // Cuerpo principal (Estilo anime rect/shapes estilizados)
+            ctx.fillStyle = f.color;
+            ctx.fillRect(f.x - f.width/2, drawY + 30, f.width, f.height - 40); // Torso
+
+
+            // Cabeza
+            ctx.fillStyle = '#fde047';
+            ctx.fillRect(f.x - 20, drawY, 40, 35);
+
+
+            // Pelo pincho estilo anime
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            if (f === p1) {
+                // Pelo de Goku estilo punta
+                ctx.moveTo(f.x - 25, drawY + 10);
+                ctx.lineTo(f.x, drawY - 20);
+                ctx.lineTo(f.x + 25, drawY + 10);
+            } else {
+                // Pelo de Rival hacia arriba/atrás
+                ctx.moveTo(f.x - 22, drawY + 5);
+                ctx.lineTo(f.x - 10, drawY - 18);
+                ctx.lineTo(f.x + 10, drawY - 18);
+                ctx.lineTo(f.x + 22, drawY + 5);
+            }
+            ctx.fill();
+
+
+            // Brazos / Puño si está atacando
+            ctx.fillStyle = f.color;
+            if (f.isAttacking) {
+                let punchOffset = f.facingRight ? 35 : -35;
+                ctx.fillRect(f.x + punchOffset - 15, drawY + 45, 45, 20);
+            }
+
+
+            ctx.restore();
+        }
+
+
+        function drawFighterAura(f) {
+            if (!f.isCharging) return;
+            let groundY = canvas.height - 100;
+            let drawY = groundY - f.height;
+
+
+            ctx.save();
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = f === p1 ? '#38bdf8' : '#a855f7';
+            ctx.fillStyle = f === p1 ? 'rgba(56, 189, 248, 0.3)' : 'rgba(168, 85, 247, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(f.x, drawY + 50, 50, 75, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    </script>
+</body>
+</html>
