@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Champions 1v1 Arena</title>
+
+    <style>
+
+        body {
+
+            margin: 0;
+
+            padding: 0;
+
+            background: #0b1329;
+
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+            color: #fff;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            height: 100vh;
+
+            overflow: hidden;
+
+        }
+
+        #game-container {
+
+            position: relative;
+
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+
+            border: 4px solid #1e2952;
+
+            border-radius: 10px;
+
+            background: #111a36;
+
+        }
+
+        canvas {
+
+            display: block;
+
+            background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+
+        }
+
+        .screen {
+
+            position: absolute;
+
+            top: 0;
+
+            left: 0;
+
+            width: 100%;
+
+            height: 100%;
+
+            background: rgba(11, 19, 41, 0.95);
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            z-index: 10;
+
+        }
+
+        h1 {
+
+            color: #ffd700;
+
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+
+            margin-bottom: 20px;
+
+        }
+
+        .btn {
+
+            background: #2563eb;
+
+            color: white;
+
+            border: none;
+
+            padding: 12px 30px;
+
+            font-size: 18px;
+
+            font-weight: bold;
+
+            border-radius: 6px;
+
+            cursor: pointer;
+
+            margin: 10px;
+
+            transition: 0.2s;
+
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+
+        }
+
+        .btn:hover {
+
+            background: #1d4ed8;
+
+            transform: translateY(-2px);
+
+        }
+
+        .team-grid {
+
+            display: grid;
+
+            grid-template-columns: repeat(5, 1fr);
+
+            gap: 12px;
+
+            max-width: 650px;
+
+            margin-bottom: 20px;
+
+        }
+
+        .team-card {
+
+            background: #1e293b;
+
+            border: 2px solid #334155;
+
+            padding: 10px;
+
+            border-radius: 8px;
+
+            text-align: center;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+
+        }
+
+        .team-card:hover, .team-card.selected {
+
+            border-color: #ffd700;
+
+            background: #334155;
+
+            transform: scale(1.05);
+
+        }
+
+        .team-badge-icon {
+
+            width: 40px;
+
+            height: 40px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-weight: bold;
+
+            font-size: 14px;
+
+            margin: 0 auto;
+
+            color: white;
+
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+
+        }
+
+        .team-card span {
+
+            display: block;
+
+            font-size: 11px;
+
+            margin-top: 5px;
+
+            font-weight: bold;
+
+        }
+
+        .hidden {
+
+            display: none !important;
+
+        }
+
+        #hud {
+
+            position: absolute;
+
+            top: 10px;
+
+            width: 100%;
+
+            display: flex;
+
+            justify-content: space-around;
+
+            align-items: center;
+
+            font-weight: bold;
+
+            font-size: 18px;
+
+            z-index: 5;
+
+            pointer-events: none;
+
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+
+        }
+
+        .hud-team {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+        }
+
+        .hud-badge-icon {
+
+            width: 28px;
+
+            height: 28px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 11px;
+
+            font-weight: bold;
+
+            color: white;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div id="game-container">
+
+        <!-- HUD de Juego -->
+
+        <div id="hud" class="hidden">
+
+            <div class="hud-team">
+
+                <div id="hud-shield-1" class="hud-badge-icon"></div>
+
+                <span id="hud-name-1">Equipo 1</span> (<span id="hud-player-1">Jugador</span>)
+
+            </div>
+
+            <div>
+
+                <span id="score-1">0</span> - <span id="score-2">0</span> | <span id="timer">03:00</span>
+
+            </div>
+
+            <div class="hud-team">
+
+                <span id="hud-player-2">Jugador</span> (<span id="hud-name-2">Equipo 2</span>)
+
+                <div id="hud-shield-2" class="hud-badge-icon"></div>
+
+            </div>
+
+        </div>
+
+        <canvas id="canvas" width="900" height="500"></canvas>
+
+        <!-- Menú Principal -->
+
+        <div id="main-menu" class="screen">
+
+            <h1>CHAMPIONS 1v1 ARENA</h1>
+
+            <button class="btn" onclick="goToModeSelect('solo')">Modo Solitario (vs Bot)</button>
+
+            <button class="btn" onclick="goToModeSelect('local')">1v1 Local</button>
+
+        </div>
+
+        <!-- Pantalla de Selección de Equipos -->
+
+        <div id="team-select" class="screen hidden">
+
+            <h2 id="select-title">Selecciona tu Equipo</h2>
+
+            <div class="team-grid" id="team-grid"></div>
+
+            <button class="btn" id="btn-next-step" onclick="confirmTeamSelection()">Siguiente</button>
+
+        </div>
+
+        <!-- Menú de Pausa / Cambio de Jugador -->
+
+        <div id="pause-menu" class="screen hidden">
+
+            <h2>PAUSA / CAMBIO DE JUGADOR</h2>
+
+            <p>Jugador actual: <span id="pause-current-player"></span></p>
+
+            <p>Selecciona tu nuevo estelar:</p>
+
+            <div id="sub-roster" style="margin-bottom: 20px;"></div>
+
+            <button class="btn" onclick="resumeGame()">Reanudar Partido</button>
+
+        </div>
+
+        <!-- Pantalla de Fin de Partido -->
+
+        <div id="game-over" class="screen hidden">
+
+            <h1 id="winner-text">¡FIN DEL PARTIDO!</h1>
+
+            <h2 id="final-score">0 - 0</h2>
+
+            <button class="btn" onclick="location.reload()">Menú Principal</button>
+
+        </div>
+
+    </div>
+
+<script>
+
+    const TEAMS = [
+
+        { name: "Real Madrid", color: "#1d4ed8", short: "RMA", players: ["Vinícius Jr", "Jude Bellingham", "Kylian Mbappé"] },
+
+        { name: "AC Milan", color: "#b91c1c", short: "MIL", players: ["Rafael Leão", "Christian Pulisic", "Theo Hernández"] },
+
+        { name: "Bayern Múnich", color: "#dc2626", short: "BAY", players: ["Harry Kane", "Jamal Musiala", "Leroy Sané"] },
+
+        { name: "Liverpool", color: "#991b1b", short: "LIV", players: ["Mohamed Salah", "Darwin Núñez", "Virgil van Dijk"] },
+
+        { name: "Barcelona", color: "#1e40af", short: "BAR", players: ["Lamine Yamal", "Robert Lewandowski", "Pedri"] },
+
+        { name: "Ajax", color: "#b91c1c", short: "AJA", players: ["Steven Bergwijn", "Brian Brobbey", "Jordan Henderson"] },
+
+        { name: "Inter de Milán", color: "#1e3a8a", short: "INT", players: ["Lautaro Martínez", "Marcus Thuram", "Hakan Çalhanoğlu"] },
+
+        { name: "Juventus", color: "#334155", short: "JUV", players: ["Dusan Vlahovic", "Federico Chiesa", "Kenan Yildiz"] },
+
+        { name: "Manchester United", color: "#b91c1c", short: "MUN", players: ["Bruno Fernandes", "Marcus Rashford", "Alejandro Garnacho"] },
+
+        { name: "Benfica", color: "#991b1b", short: "SLB", players: ["Ángel Di María", "Orkun Kökçü", "Arthur Cabral"] },
+
+        { name: "Porto", color: "#1d4ed8", short: "POR", players: ["Galeno", "Pepê", "Mehdi Taremi"] },
+
+        { name: "Manchester City", color: "#0ea5e9", short: "MCI", players: ["Erling Haaland", "Kevin De Bruyne", "Phil Foden"] },
+
+        { name: "Chelsea", color: "#1e40af", short: "CHE", players: ["Cole Palmer", "Christopher Nkunku", "Reece James"] },
+
+        { name: "Borussia Dortmund", color: "#ca8a04", short: "BVB", players: ["Karim Adeyemi", "Julian Brandt", "Niclas Füllkrug"] },
+
+        { name: "Paris Saint-Germain", color: "#1e3a8a", short: "PSG", players: ["Ousmane Dembélé", "Randal Kolo Muani", "Vitinha"] }
+
+    ];
+
+    const canvas = document.getElementById("canvas");
+
+    const ctx = canvas.getContext("2d");
+
+    let gameState = "MENU";
+
+    let gameMode = "solo";
+
+    let selectedTeam1 = null;
+
+    let selectedTeam2 = null;
+
+    let selectingFor = 1;
+
+    let score1 = 0;
+
+    let score2 = 0;
+
+    let timeLeft = 180;
+
+    let timerInterval = null;
+
+    const keys = {};
+
+    window.addEventListener("keydown", (e) => {
+
+        keys[e.key] = true;
+
+        if (e.key === "Escape" && gameState === "PLAYING") togglePause();
+
+    });
+
+    window.addEventListener("keyup", (e) => { keys[e.key] = false; });
+
+    // Patada Jugador 1 con clic izquierdo
+
+    window.addEventListener("mousedown", (e) => {
+
+        if (e.button === 0 && gameState === "PLAYING") {
+
+            player1.isKicking = true;
+
+            player1.kickProgress = 0;
+
+        }
+
+    });
+
+    const gravity = 0.5;
+
+    class Player {
+
+        constructor(x, y, isLeft) {
+
+            this.x = x;
+
+            this.y = y;
+
+            this.vx = 0;
+
+            this.vy = 0;
+
+            this.width = 40;
+
+            this.height = 70;
+
+            this.isLeft = isLeft;
+
+            this.team = null;
+
+            this.playerIdx = 0;
+
+            this.isKicking = false;
+
+            this.kickProgress = 0;
+
+        }
+
+        update() {
+
+            this.vy += gravity;
+
+            this.x += this.vx;
+
+            this.y += this.vy;
+
+            if (this.y + this.height > canvas.height - 40) {
+
+                this.y = canvas.height - 40 - this.height;
+
+                this.vy = 0;
+
+            }
+
+            if (this.x < 20) this.x = 20;
+
+            if (this.x + this.width > canvas.width - 20) this.x = canvas.width - 20 - this.width;
+
+            if (this.isKicking) {
+
+                this.kickProgress += 0.2;
+
+                if (this.kickProgress > Math.PI) {
+
+                    this.isKicking = false;
+
+                    this.kickProgress = 0;
+
+                }
+
+            }
+
+        }
+
+        getFootPos() {
+
+            let legExt = this.isKicking ? Math.sin(this.kickProgress) * 22 : 0;
+
+            let footX = this.isLeft ? (this.x + this.width + legExt) : (this.x - legExt);
+
+            let footY = this.y + this.height - 10;
+
+            return { x: footX, y: footY };
+
+        }
+
+        draw() {
+
+            ctx.fillStyle = this.isLeft ? "#2563eb" : "#dc2626";
+
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+
+            ctx.fillStyle = "#fbcfe8";
+
+            ctx.beginPath();
+
+            ctx.arc(this.x + this.width/2, this.y - 12, 16, 0, Math.PI * 2);
+
+            ctx.fill();
+
+            ctx.fillStyle = "#fff";
+
+            ctx.font = "11px sans-serif";
+
+            ctx.textAlign = "center";
+
+            let activeName = this.team ? this.team.players[this.playerIdx] : "Jugador";
+
+            ctx.fillText(activeName, this.x + this.width/2, this.y - 35);
+
+            let legExt = this.isKicking ? Math.sin(this.kickProgress) * 22 : 0;
+
+            ctx.fillStyle = "#1e293b";
+
+            if (this.isLeft) {
+
+                ctx.fillRect(this.x + this.width, this.y + this.height - 16, 15 + legExt, 10);
+
+            } else {
+
+                ctx.fillRect(this.x - 15 - legExt, this.y + this.height - 16, 15 + legExt, 10);
+
+            }
+
+        }
+
+    }
+
+    class Ball {
+
+        constructor(x, y) {
+
+            this.x = x;
+
+            this.y = y;
+
+            this.vx = 0;
+
+            this.vy = 0;
+
+            this.radius = 16;
+
+            this.rotation = 0;
+
+        }
+
+        update() {
+
+            this.vy += gravity * 0.7;
+
+            this.x += this.vx;
+
+            this.y += this.vy;
+
+            this.vx *= 0.99;
+
+            this.vy *= 0.99;
+
+            this.rotation += this.vx * 0.05;
+
+            if (this.y + this.radius > canvas.height - 40) {
+
+                this.y = canvas.height - 40 - this.radius;
+
+                this.vy = -this.vy * 0.7;
+
+            }
+
+            if (this.y - this.radius < 0) {
+
+                this.y = this.radius;
+
+                this.vy = -this.vy * 0.7;
+
+            }
+
+            if (this.x - this.radius < 20) {
+
+                this.x = 20 + this.radius;
+
+                this.vx = -this.vx * 0.7;
+
+            }
+
+            if (this.x + this.radius > canvas.width - 20) {
+
+                this.x = canvas.width - 20 - this.radius;
+
+                this.vx = -this.vx * 0.7;
+
+            }
+
+        }
+
+        draw() {
+
+            ctx.save();
+
+            ctx.translate(this.x, this.y);
+
+            ctx.rotate(this.rotation);
+
+            ctx.fillStyle = "#ffffff";
+
+            ctx.beginPath();
+
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+
+            ctx.fill();
+
+            ctx.strokeStyle = "#111";
+
+            ctx.lineWidth = 1.5;
+
+            ctx.stroke();
+
+            ctx.fillStyle = "#111111";
+
+            for (let i = 0; i < 3; i++) {
+
+                ctx.rotate((Math.PI * 2) / 3);
+
+                ctx.beginPath();
+
+                let rOuter = this.radius * 0.65;
+
+                let rInner = this.radius * 0.3;
+
+                for (let s = 0; s < 5; s++) {
+
+                    let angle = (s * Math.PI * 2) / 5 - Math.PI / 2;
+
+                    let x = Math.cos(angle) * rOuter;
+
+                    let y = Math.sin(angle) * rOuter + 2;
+
+                    if (s === 0) ctx.moveTo(x, y);
+
+                    else ctx.lineTo(x, y);
+
+                    let angleInner = angle + Math.PI / 5;
+
+                    let xi = Math.cos(angleInner) * rInner;
+
+                    let yi = Math.sin(angleInner) * rInner + 2;
+
+                    ctx.lineTo(xi, yi);
+
+                }
+
+                ctx.closePath();
+
+                ctx.fill();
+
+            }
+
+            ctx.restore();
+
+        }
+
+    }
+
+    let player1 = new Player(150, 350, true);
+
+    let player2 = new Player(700, 350, false);
+
+    let ball = new Ball(450, 250);
+
+    function goToModeSelect(mode) {
+
+        gameMode = mode;
+
+        document.getElementById("main-menu").classList.add("hidden");
+
+        document.getElementById("team-select").classList.remove("hidden");
+
+        renderTeamGrid();
+
+    }
+
+    function renderTeamGrid() {
+
+        const grid = document.getElementById("team-grid");
+
+        grid.innerHTML = "";
+
+        TEAMS.forEach((team, index) => {
+
+            const card = document.createElement("div");
+
+            card.className = "team-card";
+
+            card.innerHTML = `<div class="team-badge-icon" style="background: ${team.color};">${team.short}</div><span>${team.name}</span>`;
+
+            card.onclick = () => selectTeamCard(index, card);
+
+            grid.appendChild(card);
+
+        });
+
+    }
+
+    let tempSelectedIdx = null;
+
+    function selectTeamCard(index, element) {
+
+        document.querySelectorAll(".team-card").forEach(c => c.classList.remove("selected"));
+
+        element.classList.add("selected");
+
+        tempSelectedIdx = index;
+
+    }
+
+    function confirmTeamSelection() {
+
+        if (tempSelectedIdx === null) return;
+
+        if (selectingFor === 1) {
+
+            selectedTeam1 = TEAMS[tempSelectedIdx];
+
+            player1.team = selectedTeam1;
+
+            tempSelectedIdx = null;
+
+            if (gameMode === 'solo') {
+
+                let botIdx;
+
+                do { botIdx = Math.floor(Math.random() * TEAMS.length); } while (TEAMS[botIdx] === selectedTeam1);
+
+                selectedTeam2 = TEAMS[botIdx];
+
+                player2.team = selectedTeam2;
+
+                startGame();
+
+            } else {
+
+                selectingFor = 2;
+
+                document.getElementById("select-title").innerText = "Selecciona el Equipo 2 (Local)";
+
+                renderTeamGrid();
+
+            }
+
+        } else {
+
+            selectedTeam2 = TEAMS[tempSelectedIdx];
+
+            player2.team = selectedTeam2;
+
+            startGame();
+
+        }
+
+    }
+
+    function startGame() {
+
+        document.getElementById("team-select").classList.add("hidden");
+
+        document.getElementById("hud").classList.remove("hidden");
+
+        document.getElementById("hud-name-1").innerText = selectedTeam1.name;
+
+        let s1 = document.getElementById("hud-shield-1");
+
+        s1.style.background = selectedTeam1.color;
+
+        s1.innerText = selectedTeam1.short;
+
+        document.getElementById("hud-player-1").innerText = selectedTeam1.players[0];
+
+        document.getElementById("hud-name-2").innerText = selectedTeam2.name;
+
+        let s2 = document.getElementById("hud-shield-2");
+
+        s2.style.background = selectedTeam2.color;
+
+        s2.innerText = selectedTeam2.short;
+
+        document.getElementById("hud-player-2").innerText = selectedTeam2.players[0];
+
+        gameState = "PLAYING";
+
+        startTimer();
+
+    }
+
+    function startTimer() {
+
+        timeLeft = 180;
+
+        if (timerInterval) clearInterval(timerInterval);
+
+        timerInterval = setInterval(() => {
+
+            if (gameState === "PLAYING") {
+
+                timeLeft--;
+
+                let mins = Math.floor(timeLeft / 60);
+
+                let secs = timeLeft % 60;
+
+                document.getElementById("timer").innerText = `${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`;
+
+                if (timeLeft <= 0) endGame();
+
+            }
+
+        }, 1000);
+
+    }
+
+    function togglePause() {
+
+        if (gameState === "PLAYING") {
+
+            gameState = "PAUSED";
+
+            document.getElementById("pause-current-player").innerText = selectedTeam1.players[player1.playerIdx];
+
+            const rosterDiv = document.getElementById("sub-roster");
+
+            rosterDiv.innerHTML = "";
+
+            selectedTeam1.players.forEach((pName, idx) => {
+
+                const btn = document.createElement("button");
+
+                btn.className = "btn";
+
+                btn.style.fontSize = "14px";
+
+                btn.style.padding = "8px 15px";
+
+                btn.innerText = pName + (idx === player1.playerIdx ? " (En cancha)" : "");
+
+                btn.onclick = () => {
+
+                    player1.playerIdx = idx;
+
+                    document.getElementById("hud-player-1").innerText = pName;
+
+                    resumeGame();
+
+                };
+
+                rosterDiv.appendChild(btn);
+
+            });
+
+            document.getElementById("pause-menu").classList.remove("hidden");
+
+        } else if (gameState === "PAUSED") {
+
+            resumeGame();
+
+        }
+
+    }
+
+    function resumeGame() {
+
+        document.getElementById("pause-menu").classList.add("hidden");
+
+        gameState = "PLAYING";
+
+    }
+
+    function endGame() {
+
+        gameState = "OVER";
+
+        clearInterval(timerInterval);
+
+        document.getElementById("hud").classList.add("hidden");
+
+        document.getElementById("game-over").classList.remove("hidden");
+
+        let winText = "¡EMPATE!";
+
+        if (score1 > score2) winText = `¡GANA ${selectedTeam1.name.toUpperCase()}!`;
+
+        else if (score2 > score1) winText = `¡GANA ${selectedTeam2.name.toUpperCase()}!`;
+
+        document.getElementById("winner-text").innerText = winText;
+
+        document.getElementById("final-score").innerText = `${score1} - ${score2}`;
+
+    }
+
+    function update() {
+
+        if (gameState !== "PLAYING") return;
+
+        // Controles Jugador 1 (A, D, W)
+
+        player1.vx = 0;
+
+        if (keys["a"] || keys["A"]) player1.vx = -5;
+
+        if (keys["d"] || keys["D"]) player1.vx = 5;
+
+        if ((keys["w"] || keys["W"]) && player1.y + player1.height >= canvas.height - 41) {
+
+            player1.vy = -12;
+
+        }
+
+        // Controles Jugador 2 o IA (Bot)
+
+        if (gameMode === 'local') {
+
+            player2.vx = 0;
+
+            if (keys["ArrowLeft"]) player2.vx = -5;
+
+            if (keys["ArrowRight"]) player2.vx = 5;
+
+            if (keys["ArrowUp"] && player2.y + player2.height >= canvas.height - 41) {
+
+                player2.vy = -12;
+
+            }
+
+            // Patada automática de corto alcance para el Jugador 2 local al estar cerca del balón
+
+            let p2Dist = Math.hypot((player2.x + player2.width/2) - ball.x, (player2.y + player2.height/2) - ball.y);
+
+            if (p2Dist < 50 && !player2.isKicking && Math.random() < 0.05) {
+
+                player2.isKicking = true;
+
+                player2.kickProgress = 0;
+
+            }
+
+            player2.update();
+
+        } else {
+
+            // IA del Bot (Modo Solitario)
+
+            let diff = ball.x - (player2.x + player2.width/2);
+
+            if (Math.abs(diff) > 12) {
+
+                player2.vx = diff > 0 ? 3.0 : -3.0;
+
+            } else {
+
+                player2.vx = 0;
+
+            }
+
+            let botDist = Math.hypot((player2.x + player2.width/2) - ball.x, (player2.y + player2.height/2) - ball.y);
+
+            if (ball.y < player2.y && botDist < 80 && Math.random() < 0.05 && player2.y + player2.height >= canvas.height - 41) {
+
+                player2.vy = -11;
+
+            }
+
+            if (botDist < 50 && !player2.isKicking && Math.random() < 0.1) {
+
+                player2.isKicking = true;
+
+                player2.kickProgress = 0;
+
+            }
+
+            player2.update();
+
+        }
+
+        player1.update();
+
+        ball.update();
+
+        // Colisiones exactas y de cuerpo completo
+
+        checkExactFootCollision(player1);
+
+        checkExactFootCollision(player2);
+
+        checkFullBodyCollision(player1);
+
+        checkFullBodyCollision(player2);
+
+        const goalWidth = 20;
+
+        const goalHeight = 110;
+
+        const goalY = canvas.height - 40 - goalHeight;
+
+        if (ball.x - ball.radius <= goalWidth && ball.y >= goalY) {
+
+            score2++;
+
+            document.getElementById("score-2").innerText = score2;
+
+            resetPositions();
+
+        }
+
+        if (ball.x + ball.radius >= canvas.width - goalWidth && ball.y >= goalY) {
+
+            score1++;
+
+            document.getElementById("score-1").innerText = score1;
+
+            resetPositions();
+
+        }
+
+    }
+
+    function checkExactFootCollision(player) {
+
+        let foot = player.getFootPos();
+
+        let dist = Math.hypot(foot.x - ball.x, foot.y - ball.y);
+
+        let kickMultiplier = player.isKicking ? 1.8 : 1.0;
+
+        if (dist < ball.radius + 14) {
+
+            let angle = Math.atan2(ball.y - foot.y, ball.x - foot.x);
+
+            let kickForce = 5.5 * kickMultiplier;
+
+            ball.vx = player.isLeft ? kickForce : -kickForce;
+
+            ball.vy = -kickForce * 0.65 - 1.5;
+
+        }
+
+    }
+
+    function checkFullBodyCollision(player) {
+
+        let closestX = Math.max(player.x, Math.min(ball.x, player.x + player.width));
+
+        let closestY = Math.max(player.y, Math.min(ball.y, player.y + player.height));
+
+        let distX = ball.x - closestX;
+
+        let distY = ball.y - closestY;
+
+        let distance = Math.hypot(distX, distY);
+
+        if (distance < ball.radius) {
+
+            let overlap = ball.radius - distance;
+
+            let angle = Math.atan2(ball.y - (player.y + player.height/2), ball.x - (player.x + player.width/2));
+
+            ball.vx = Math.cos(angle) * 4 + player.vx * 0.4;
+
+            ball.vy = Math.sin(angle) * 4 + player.vy * 0.4;
+
+            ball.x += Math.cos(angle) * overlap;
+
+            ball.y += Math.sin(angle) * overlap;
+
+        }
+
+    }
+
+    function resetPositions() {
+
+        player1.x = 150; player1.y = 350; player1.vx = 0; player1.vy = 0; player1.isKicking = false;
+
+        player2.x = 700; player2.y = 350; player2.vx = 0; player2.vy = 0; player2.isKicking = false;
+
+        ball.x = 450; ball.y = 250; ball.vx = 0; ball.vy = 0;
+
+    }
+
+    function draw() {
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#1e293b";
+
+        ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+
+        ctx.fillStyle = "#10b981";
+
+        ctx.fillRect(0, canvas.height - 40, canvas.width, 6);
+
+        ctx.strokeStyle = "rgba(255,255,255,0.15)";
+
+        ctx.lineWidth = 4;
+
+        ctx.beginPath();
+
+        ctx.moveTo(canvas.width / 2, canvas.height - 40);
+
+        ctx.lineTo(canvas.width / 2, 80);
+
+        ctx.stroke();
+
+        const goalHeight = 110;
+
+        const goalY = canvas.height - 40 - goalHeight;
+
+        ctx.strokeStyle = "#fff";
+
+        ctx.lineWidth = 5;
+
+        ctx.strokeRect(0, goalY, 20, goalHeight);
+
+        ctx.strokeRect(canvas.width - 20, goalY, 20, goalHeight);
+
+        if (gameState === "PLAYING") {
+
+            player1.draw();
+
+            player2.draw();
+
+            ball.draw();
+
+        }
+
+    }
+
+    function loop() {
+
+        update();
+
+        draw();
+
+        requestAnimationFrame(loop);
+
+    }
+
+    loop();
+
+</script>
+
+</body>
+
+</html>
