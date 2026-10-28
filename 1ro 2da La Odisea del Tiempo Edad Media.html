@@ -1,0 +1,1935 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>La Odisea del Tiempo: Edad Media - Edición Definitiva</title>
+
+    <style>
+
+        body {
+
+            margin: 0;
+
+            background-color: #07070d;
+
+            color: #fff;
+
+            font-family: 'Courier New', Courier, monospace;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            min-height: 100vh;
+
+            overflow: hidden;
+
+            user-select: none;
+
+        }
+
+        h1 {
+
+            margin: 4px 0;
+
+            font-size: 20px;
+
+            color: #ffcc00;
+
+            text-shadow: 0 0 12px #ffaa00;
+
+            letter-spacing: 2px;
+
+        }
+
+        #top-bar {
+
+            display: flex;
+
+            gap: 15px;
+
+            margin-bottom: 5px;
+
+            align-items: center;
+
+            z-index: 10;
+
+        }
+
+        .menu-btn {
+
+            background: #4a154b;
+
+            color: #fff;
+
+            border: 2px solid #9b59b6;
+
+            padding: 6px 14px;
+
+            font-family: 'Courier New', Courier, monospace;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            border-radius: 4px;
+
+            box-shadow: 0 0 8px rgba(155, 89, 182, 0.6);
+
+            transition: all 0.2s;
+
+        }
+
+        .menu-btn:hover {
+
+            background: #6c1f6d;
+
+            box-shadow: 0 0 14px rgba(155, 89, 182, 0.9);
+
+            transform: scale(1.05);
+
+        }
+
+        #game-container {
+
+            position: relative;
+
+            box-shadow: 0 0 30px rgba(255, 170, 0, 0.3);
+
+            border: 3px solid #ffaa00;
+
+            border-radius: 6px;
+
+            overflow: hidden;
+
+            background: #111;
+
+        }
+
+        canvas {
+
+            display: block;
+
+        }
+
+        .instructions {
+
+            margin-top: 6px;
+
+            font-size: 12px;
+
+            color: #ccc;
+
+            text-align: center;
+
+            background: rgba(0,0,0,0.7);
+
+            padding: 4px 14px;
+
+            border-radius: 4px;
+
+            border: 1px solid #444;
+
+        }
+
+        span.key {
+
+            color: #00ffcc;
+
+            font-weight: bold;
+
+            background: #222;
+
+            padding: 1px 5px;
+
+            border-radius: 3px;
+
+            border: 1px solid #555;
+
+        }
+
+        /* MODAL TIENDA MÁGICA */
+
+        #shop-modal {
+
+            display: none;
+
+            position: fixed;
+
+            top: 0; left: 0; width: 100%; height: 100%;
+
+            background: rgba(0,0,0,0.88);
+
+            z-index: 100;
+
+            justify-content: center;
+
+            align-items: center;
+
+        }
+
+        .shop-box {
+
+            background: #1a0a2a;
+
+            border: 4px solid #9b59b6;
+
+            width: 480px;
+
+            padding: 20px;
+
+            border-radius: 10px;
+
+            text-align: center;
+
+            box-shadow: 0 0 35px rgba(155, 89, 182, 0.8);
+
+            position: relative;
+
+        }
+
+        .shop-box h2 {
+
+            color: #d7bde2;
+
+            margin-top: 0;
+
+            text-shadow: 0 0 8px #9b59b6;
+
+        }
+
+        .merchant-avatar {
+
+            width: 80px;
+
+            height: 90px;
+
+            margin: 0 auto 5px auto;
+
+        }
+
+        .upgrade-item {
+
+            background: #2c163b;
+
+            border: 2px solid #8e44ad;
+
+            margin: 10px 0;
+
+            padding: 10px;
+
+            border-radius: 6px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+        }
+
+        .upgrade-info {
+
+            text-align: left;
+
+            font-size: 12px;
+
+            line-height: 1.4;
+
+        }
+
+        .upgrade-info b { color: #f1c40f; }
+
+        .buy-btn {
+
+            background: #27ae60;
+
+            color: white;
+
+            border: none;
+
+            padding: 7px 14px;
+
+            font-family: 'Courier New', Courier, monospace;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            border-radius: 4px;
+
+        }
+
+        .buy-btn:hover { background: #2ecc71; }
+
+        .close-shop {
+
+            background: #c0392b;
+
+            color: white;
+
+            border: none;
+
+            padding: 8px 20px;
+
+            margin-top: 10px;
+
+            font-family: 'Courier New', Courier, monospace;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            border-radius: 4px;
+
+        }
+
+        .close-shop:hover { background: #e74c3c; }
+
+    </style>
+
+</head>
+
+<body>
+
+    <h1>LA ODISEA DEL TIEMPO: EDAD MEDIA</h1>
+
+    <div id="top-bar">
+
+        <button id="btn-level-select" class="menu-btn">🏰 Selector de Niveles</button>
+
+        <button id="btn-shop" class="menu-btn" style="background:#3a1c5b; border-color:#b57edc;">🔮 Tienda Mágica</button>
+
+        <div style="font-size: 13px; color: #f1c40f; font-weight: bold;">🪙 Oro: <span id="gold-display">0</span></div>
+
+    </div>
+
+    <div id="game-container">
+
+        <canvas id="gameCanvas" width="800" height="450"></canvas>
+
+    </div>
+
+    <div class="instructions">
+
+        Controles: <span class="key">A</span> <span class="key">D</span> / <span class="key">←</span> <span class="key">→</span> (Moverse) | <span class="key">Espacio</span> / <span class="key">↑</span> (Saltar) | <span class="key">Z</span> (Espada) | <span class="key">X</span> (Magia)
+
+    </div>
+
+    <!-- MODAL TIENDA MÁGICA -->
+
+    <div id="shop-modal">
+
+        <div class="shop-box">
+
+            <div class="merchant-avatar">
+
+                <canvas id="merchantCanvas" width="80" height="90"></canvas>
+
+            </div>
+
+            <h2>Tienda Mágica de Eldrin</h2>
+
+            <p style="font-size:11px; color:#b2bec3; margin-top:-5px;">"¡Equípate bien, caballero! El castillo del Dragón es letal..."</p>
+
+            <div class="upgrade-item">
+
+                <div class="upgrade-info">
+
+                    <b>Filo de Acero (Espada)</b><br>
+
+                    Nivel: <span id="shop-sword-lvl">1</span>/5 | Daño: <span id="shop-sword-dmg">15</span>
+
+                </div>
+
+                <button id="buy-sword-btn" class="buy-btn">Mejorar (<span id="cost-sword">50</span> 🪙)</button>
+
+            </div>
+
+            <div class="upgrade-item">
+
+                <div class="upgrade-info">
+
+                    <b>Ondas Arcanas (Poder X)</b><br>
+
+                    Nivel: <span id="shop-magic-lvl">1</span>/5 | Daño: <span id="shop-magic-dmg">25</span>
+
+                </div>
+
+                <button id="buy-magic-btn" class="buy-btn">Mejorar (<span id="cost-magic">75</span> 🪙)</button>
+
+            </div>
+
+            <button id="close-shop-btn" class="close-shop">Cerrar Tienda</button>
+
+        </div>
+
+    </div>
+
+<script>
+
+window.addEventListener("DOMContentLoaded", () => {
+
+    const canvas = document.getElementById("gameCanvas");
+
+    const ctx = canvas.getContext("2d");
+
+    let gameState = "MENU"; // MENU, PLAYING, LEVELSELECT, GAMEOVER, VICTORY
+
+    let currentLevel = 1;
+
+    const maxLevels = 10;
+
+    let unlockedLevel = 1;
+
+    let gold = 100;
+
+    let upgrades = {
+
+        swordLevel: 1,
+
+        swordDmg: 15,
+
+        magicLevel: 1,
+
+        magicDmg: 25
+
+    };
+
+    if (localStorage.getItem("odisea_save")) {
+
+        try {
+
+            let save = JSON.parse(localStorage.getItem("odisea_save"));
+
+            unlockedLevel = save.unlockedLevel || 1;
+
+            gold = Number.isFinite(save.gold) ? save.gold : 100;
+
+            upgrades = save.upgrades || upgrades;
+
+        } catch(e) {}
+
+    }
+
+    function saveGame() {
+
+        localStorage.setItem("odisea_save", JSON.stringify({
+
+            unlockedLevel,
+
+            gold,
+
+            upgrades
+
+        }));
+
+    }
+
+    // Caballero con armadura completa
+
+    let crono = {
+
+        x: 100,
+
+        y: 300,
+
+        w: 32,
+
+        h: 52,
+
+        vx: 0,
+
+        vy: 0,
+
+        speed: 4.6,
+
+        jumpPower: -11.5,
+
+        grounded: false,
+
+        facing: 1,
+
+        hp: 100,
+
+        maxHp: 100,
+
+        attacking: false,
+
+        attackTimer: 0,
+
+        recoilTimer: 0,
+
+        specialCooldown: 0,
+
+        walkAnim: 0,
+
+        invincibleTimer: 0
+
+    };
+
+    let cameraX = 0;
+
+    let worldWidth = 3500;
+
+    let screenShake = 0;
+
+    let enemies = [];
+
+    let platforms = [];
+
+    let particles = [];
+
+    let portals = [];
+
+    let boss = null;
+
+    let keys = {};
+
+    window.addEventListener("keydown", (e) => {
+
+        if ([" ", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+
+            e.preventDefault();
+
+        }
+
+        keys[e.key.toLowerCase()] = true;
+
+        keys[e.code] = true;
+
+        if (e.key === " ") keys["space"] = true;
+
+        if (gameState === "MENU") {
+
+            if (e.key === "Enter" || e.key === " ") startGame(unlockedLevel);
+
+        } else if (gameState === "GAMEOVER" || gameState === "VICTORY") {
+
+            if (e.key === "Enter" || e.key === " ") gameState = "MENU";
+
+        }
+
+    });
+
+    window.addEventListener("keyup", (e) => {
+
+        keys[e.key.toLowerCase()] = false;
+
+        keys[e.code] = false;
+
+        if (e.key === " ") keys["space"] = false;
+
+    });
+
+    // Enlazar eventos de botones de forma segura
+
+    document.getElementById("btn-level-select").addEventListener("click", () => {
+
+        gameState = "LEVELSELECT";
+
+    });
+
+    document.getElementById("btn-shop").addEventListener("click", () => {
+
+        document.getElementById("shop-modal").style.display = "flex";
+
+        updateShopUI();
+
+        drawMerchantNPC();
+
+    });
+
+    document.getElementById("close-shop-btn").addEventListener("click", () => {
+
+        document.getElementById("shop-modal").style.display = "none";
+
+        saveGame();
+
+    });
+
+    document.getElementById("buy-sword-btn").addEventListener("click", () => {
+
+        if (upgrades.swordLevel >= 5) { alert("¡Alcanzaste el nivel máximo de espada!"); return; }
+
+        let cost = upgrades.swordLevel * 50;
+
+        if (gold >= cost) {
+
+            gold -= cost;
+
+            upgrades.swordLevel++;
+
+            upgrades.swordDmg += 8;
+
+            updateShopUI();
+
+            saveGame();
+
+        } else { alert("¡No tienes suficiente oro!"); }
+
+    });
+
+    document.getElementById("buy-magic-btn").addEventListener("click", () => {
+
+        if (upgrades.magicLevel >= 5) { alert("¡Alcanzaste el nivel máximo de magia!"); return; }
+
+        let cost = upgrades.magicLevel * 75;
+
+        if (gold >= cost) {
+
+            gold -= cost;
+
+            upgrades.magicLevel++;
+
+            upgrades.magicDmg += 15;
+
+            updateShopUI();
+
+            saveGame();
+
+        } else { alert("¡No tienes suficiente oro!"); }
+
+    });
+
+    function updateShopUI() {
+
+        document.getElementById("gold-display").innerText = gold;
+
+        document.getElementById("shop-sword-lvl").innerText = upgrades.swordLevel;
+
+        document.getElementById("shop-sword-dmg").innerText = upgrades.swordDmg;
+
+        document.getElementById("cost-sword").innerText = upgrades.swordLevel >= 5 ? "MAX" : upgrades.swordLevel * 50;
+
+        document.getElementById("shop-magic-lvl").innerText = upgrades.magicLevel;
+
+        document.getElementById("shop-magic-dmg").innerText = upgrades.magicDmg;
+
+        document.getElementById("cost-magic").innerText = upgrades.magicLevel >= 5 ? "MAX" : upgrades.magicLevel * 75;
+
+    }
+
+    function drawMerchantNPC() {
+
+        const mCanvas = document.getElementById("merchantCanvas");
+
+        if (!mCanvas) return;
+
+        const mCtx = mCanvas.getContext("2d");
+
+        mCtx.clearRect(0, 0, 80, 90);
+
+        mCtx.fillStyle = "#8e44ad";
+
+        mCtx.beginPath();
+
+        mCtx.moveTo(40, 6);
+
+        mCtx.lineTo(70, 35);
+
+        mCtx.lineTo(10, 35);
+
+        mCtx.fill();
+
+        mCtx.fillRect(6, 32, 68, 5);
+
+        mCtx.fillStyle = "#ecf0f1";
+
+        mCtx.beginPath();
+
+        mCtx.arc(40, 48, 12, 0, Math.PI * 2);
+
+        mCtx.fill();
+
+        mCtx.fillStyle = "#00ffcc";
+
+        mCtx.fillRect(34, 44, 3, 4);
+
+        mCtx.fillRect(43, 44, 3, 4);
+
+        mCtx.fillStyle = "#6c3483";
+
+        mCtx.fillRect(24, 60, 32, 26);
+
+    }
+
+    function startGame(lvl) {
+
+        currentLevel = lvl;
+
+        gameState = "PLAYING";
+
+        crono.hp = crono.maxHp;
+
+        crono.x = 80;
+
+        crono.y = 280;
+
+        crono.vx = 0;
+
+        crono.vy = 0;
+
+        crono.invincibleTimer = 0;
+
+        loadLevel(currentLevel);
+
+    }
+
+    function loadLevel(lvl) {
+
+        enemies = [];
+
+        portals = [];
+
+        boss = null;
+
+        platforms = [
+
+            { x: 0, y: 380, w: worldWidth, h: 70, type: "floor" }
+
+        ];
+
+        if (lvl < 10) {
+
+            let numPlats = 10 + lvl * 2;
+
+            for (let i = 1; i <= numPlats; i++) {
+
+                let px = i * 260 + (i % 2) * 40;
+
+                let py = 160 + (i % 3) * 70;
+
+                let pw = 110 - (i % 3) * 15;
+
+                platforms.push({ x: px, y: py, w: pw, h: 18, type: "stone" });
+
+            }
+
+            let numEnemies = 6 + lvl * 2;
+
+            for (let i = 0; i < numEnemies; i++) {
+
+                let ex = 350 + i * 220;
+
+                let eHp = 30 + lvl * 10;
+
+                enemies.push({
+
+                    x: ex,
+
+                    y: 380 - 35,
+
+                    w: 26,
+
+                    h: 35,
+
+                    vx: (i % 2 === 0 ? 1 : -1) * (1.3 + lvl * 0.1),
+
+                    minX: ex - 160,
+
+                    maxX: ex + 160,
+
+                    hp: eHp,
+
+                    maxHp: eHp,
+
+                    type: "skeleton_small"
+
+                });
+
+            }
+
+            portals.push({ x: worldWidth - 120, y: 310, w: 50, h: 70 });
+
+        } else {
+
+            platforms.push(
+
+                { x: 300, y: 270, w: 180, h: 20, type: "castle_stone" },
+
+                { x: 700, y: 190, w: 200, h: 20, type: "castle_stone" },
+
+                { x: 1100, y: 260, w: 220, h: 20, type: "castle_stone" },
+
+                { x: 1500, y: 180, w: 190, h: 20, type: "castle_stone" },
+
+                { x: 1900, y: 270, w: 210, h: 20, type: "castle_stone" },
+
+                { x: 2350, y: 200, w: 220, h: 20, type: "castle_stone" },
+
+                { x: 2800, y: 280, w: 200, h: 20, type: "castle_stone" }
+
+            );
+
+            for (let i = 0; i < 7; i++) {
+
+                enemies.push({
+
+                    x: 450 + i * 400,
+
+                    y: 330,
+
+                    w: 28,
+
+                    h: 36,
+
+                    vx: -1.6,
+
+                    minX: 250 + i * 400,
+
+                    maxX: 650 + i * 400,
+
+                    hp: 120,
+
+                    maxHp: 120,
+
+                    type: "skeleton_knight"
+
+                });
+
+            }
+
+            boss = {
+
+                x: worldWidth - 700,
+
+                y: 120,
+
+                w: 170,
+
+                h: 145,
+
+                hp: 1000,
+
+                maxHp: 1000,
+
+                vx: 2.2,
+
+                vy: 1.5,
+
+                attackTimer: 0,
+
+                behaviorTimer: 0,
+
+                mode: "fly"
+
+            };
+
+        }
+
+    }
+
+    function update() {
+
+        if (gameState !== "PLAYING") return;
+
+        if (screenShake > 0) screenShake--;
+
+        if (crono.invincibleTimer > 0) crono.invincibleTimer--;
+
+        if (crono.recoilTimer > 0) crono.recoilTimer--;
+
+        if (keys["arrowleft"] || keys["keya"] || keys["a"]) {
+
+            crono.vx = -crono.speed;
+
+            crono.facing = -1;
+
+            crono.walkAnim += 0.22;
+
+        } else if (keys["arrowright"] || keys["keyd"] || keys["d"]) {
+
+            crono.vx = crono.speed;
+
+            crono.facing = 1;
+
+            crono.walkAnim += 0.22;
+
+        } else {
+
+            crono.vx = 0;
+
+            crono.walkAnim = 0;
+
+        }
+
+        if ((keys["arrowup"] || keys["space"] || keys[" "]) && crono.grounded) {
+
+            crono.vy = crono.jumpPower;
+
+            crono.grounded = false;
+
+        }
+
+        if ((keys["z"] || keys["keyz"]) && !crono.attacking) {
+
+            crono.attacking = true;
+
+            crono.attackTimer = 14;
+
+            checkMeleeHit();
+
+        }
+
+        if (crono.attacking) {
+
+            crono.attackTimer--;
+
+            if (crono.attackTimer <= 0) crono.attacking = false;
+
+        }
+
+        if (crono.specialCooldown > 0) crono.specialCooldown--;
+
+        if ((keys["x"] || keys["keyx"]) && crono.specialCooldown === 0) {
+
+            crono.specialCooldown = 45;
+
+            fireMagicWave();
+
+        }
+
+        crono.vy += 0.48;
+
+        crono.x += crono.vx;
+
+        if (crono.x < 0) crono.x = 0;
+
+        if (crono.x > worldWidth - crono.w) crono.x = worldWidth - crono.w;
+
+        platforms.forEach(p => {
+
+            if (checkCollision(crono, p)) {
+
+                if (crono.vx > 0) crono.x = p.x - crono.w;
+
+                else if (crono.vx < 0) crono.x = p.x + p.w;
+
+            }
+
+        });
+
+        crono.grounded = false;
+
+        crono.y += crono.vy;
+
+        platforms.forEach(p => {
+
+            if (checkCollision(crono, p)) {
+
+                if (crono.vy > 0) {
+
+                    crono.y = p.y - crono.h;
+
+                    crono.vy = 0;
+
+                    crono.grounded = true;
+
+                } else if (crono.vy < 0) {
+
+                    crono.y = p.y + p.h;
+
+                    crono.vy = 0;
+
+                }
+
+            }
+
+        });
+
+        if (crono.y > 420) {
+
+            crono.y = 280;
+
+            crono.vy = 0;
+
+            crono.hp -= 20;
+
+            screenShake = 15;
+
+            checkGameOver();
+
+        }
+
+        let targetCameraX = crono.x - canvas.width / 2;
+
+        if (targetCameraX < 0) targetCameraX = 0;
+
+        if (targetCameraX > worldWidth - canvas.width) targetCameraX = worldWidth - canvas.width;
+
+        cameraX += (targetCameraX - cameraX) * 0.12;
+
+        enemies.forEach(e => {
+
+            e.x += e.vx;
+
+            if (e.x < e.minX || e.x > e.maxX) e.vx *= -1;
+
+            if (checkCollision(crono, e) && e.hp > 0 && crono.invincibleTimer === 0) {
+
+                crono.hp -= (e.type === "skeleton_knight" ? 12 : 8);
+
+                crono.invincibleTimer = 40;
+
+                screenShake = 10;
+
+                checkGameOver();
+
+            }
+
+        });
+
+        if (boss && boss.hp > 0) {
+
+            boss.behaviorTimer++;
+
+            if (boss.behaviorTimer > 180) {
+
+                boss.behaviorTimer = 0;
+
+                boss.mode = boss.mode === "fly" ? "charge" : "fly";
+
+            }
+
+            if (boss.mode === "fly") {
+
+                boss.x += boss.vx;
+
+                boss.y += boss.vy;
+
+                if (boss.x < worldWidth - 1000 || boss.x > worldWidth - 200) boss.vx *= -1;
+
+                if (boss.y < 60 || boss.y > 230) boss.vy *= -1;
+
+            } else {
+
+                let dir = crono.x > boss.x ? 1 : -1;
+
+                boss.x += dir * 4.5;
+
+            }
+
+            boss.attackTimer++;
+
+            if (boss.attackTimer > 75) {
+
+                boss.attackTimer = 0;
+
+                enemies.push({
+
+                    x: boss.x,
+
+                    y: boss.y + 50,
+
+                    w: 24,
+
+                    h: 24,
+
+                    vx: -7,
+
+                    minX: 0,
+
+                    maxX: worldWidth,
+
+                    hp: 15,
+
+                    type: "fireball"
+
+                });
+
+            }
+
+            if (checkCollision(crono, boss) && crono.invincibleTimer === 0) {
+
+                crono.hp -= 18;
+
+                crono.invincibleTimer = 50;
+
+                screenShake = 20;
+
+                checkGameOver();
+
+            }
+
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+
+            let p = particles[i];
+
+            p.x += p.vx;
+
+            p.y += p.vy;
+
+            p.life--;
+
+            if (p.life <= 0) particles.splice(i, 1);
+
+        }
+
+        if (currentLevel < 10 && portals.length > 0) {
+
+            if (checkCollision(crono, portals[0])) {
+
+                if (currentLevel < maxLevels) {
+
+                    if (currentLevel >= unlockedLevel) unlockedLevel = currentLevel + 1;
+
+                    currentLevel++;
+
+                    saveGame();
+
+                    loadLevel(currentLevel);
+
+                    crono.x = 80;
+
+                    crono.y = 280;
+
+                }
+
+            }
+
+        }
+
+        if (currentLevel === 10 && boss && boss.hp <= 0) {
+
+            gameState = "VICTORY";
+
+            saveGame();
+
+        }
+
+    }
+
+    function checkMeleeHit() {
+
+        let swordHitbox = {
+
+            x: crono.facing === 1 ? crono.x + crono.w : crono.x - 52,
+
+            y: crono.y + 2,
+
+            w: 52,
+
+            h: 42
+
+        };
+
+        let hitSomething = false;
+
+        enemies.forEach((e, idx) => {
+
+            if (checkCollision(swordHitbox, e)) {
+
+                hitSomething = true;
+
+                let isCrit = Math.random() < 0.25;
+
+                let finalDmg = isCrit ? upgrades.swordDmg * 1.5 : upgrades.swordDmg;
+
+                e.hp -= finalDmg;
+
+                spawnHitParticles(e.x + e.w/2, e.y + e.h/2, isCrit ? "#f1c40f" : "#ff3300");
+
+                if (e.hp <= 0) {
+
+                    gold += (e.type === "skeleton_knight" ? 35 : 15);
+
+                    enemies.splice(idx, 1);
+
+                }
+
+            }
+
+        });
+
+        if (boss && boss.hp > 0 && checkCollision(swordHitbox, boss)) {
+
+            hitSomething = true;
+
+            let isCrit = Math.random() < 0.2;
+
+            let finalDmg = isCrit ? upgrades.swordDmg * 1.5 : upgrades.swordDmg;
+
+            boss.hp -= finalDmg;
+
+            spawnHitParticles(boss.x + boss.w/2, boss.y + boss.h/2, "#ffcc00");
+
+            screenShake = 8;
+
+            if (boss.hp <= 0) gold += 500;
+
+        }
+
+        if (hitSomething) {
+
+            crono.recoilTimer = 10;
+
+            crono.x -= crono.facing * 12;
+
+        }
+
+    }
+
+    function fireMagicWave() {
+
+        if (currentLevel === 10 && boss && boss.hp > 0 && Math.abs(crono.x - boss.x) < 550) {
+
+            spawnHitParticles(boss.x + boss.w/2, boss.y + boss.h/2, "#3498db");
+
+            return;
+
+        }
+
+        particles.push({
+
+            x: crono.x + (crono.facing === 1 ? crono.w : -35),
+
+            y: crono.y + 16,
+
+            vx: crono.facing * 9,
+
+            vy: 0,
+
+            w: 34,
+
+            h: 16,
+
+            life: 55,
+
+            type: "magic_wave",
+
+            dmg: upgrades.magicDmg
+
+        });
+
+    }
+
+    function updateMagicProjectiles() {
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+
+            let p = particles[i];
+
+            if (p.type === "magic_wave") {
+
+                p.x += p.vx;
+
+                enemies.forEach((e, eIdx) => {
+
+                    if (checkCollision(p, e)) {
+
+                        e.hp -= p.dmg;
+
+                        spawnHitParticles(e.x, e.y, "#00ffcc");
+
+                        p.life = 0;
+
+                        if (e.hp <= 0) {
+
+                            gold += 15;
+
+                            enemies.splice(eIdx, 1);
+
+                        }
+
+                    }
+
+                });
+
+            }
+
+        }
+
+    }
+
+    function spawnHitParticles(x, y, color) {
+
+        for (let i = 0; i < 7; i++) {
+
+            particles.push({
+
+                x: x,
+
+                y: y,
+
+                vx: (Math.random() - 0.5) * 7,
+
+                vy: (Math.random() - 0.5) * 7,
+
+                w: 4,
+
+                h: 4,
+
+                life: 28,
+
+                color: color,
+
+                type: "spark"
+
+            });
+
+        }
+
+    }
+
+    function checkCollision(r1, r2) {
+
+        return r1.x < r2.x + r2.w &&
+
+               r1.x + r1.w > r2.x &&
+
+               r1.y < r2.y + r2.h &&
+
+               r1.y + r1.h > r2.y;
+
+    }
+
+    function checkGameOver() {
+
+        if (crono.hp <= 0) {
+
+            crono.hp = 0;
+
+            gameState = "GAMEOVER";
+
+        }
+
+    }
+
+    function draw() {
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (gameState === "MENU") { drawMenuBackground(); return; }
+
+        if (gameState === "LEVELSELECT") { drawLevelSelectScreen(); return; }
+
+        ctx.save();
+
+        if (screenShake > 0) {
+
+            let shakeX = (Math.random() - 0.5) * screenShake;
+
+            let shakeY = (Math.random() - 0.5) * screenShake;
+
+            ctx.translate(shakeX, shakeY);
+
+        }
+
+        drawBackground();
+
+        ctx.translate(-cameraX, 0);
+
+        platforms.forEach(p => {
+
+            if (p.type === "floor") {
+
+                ctx.fillStyle = "#3d2817";
+
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+
+                ctx.fillStyle = "#27ae60";
+
+                ctx.fillRect(p.x, p.y, p.w, 10);
+
+            } else if (p.type === "castle_stone") {
+
+                ctx.fillStyle = "#7f8c8d";
+
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+
+                ctx.strokeStyle = "#2c3e50";
+
+                ctx.lineWidth = 2;
+
+                ctx.strokeRect(p.x, p.y, p.w, p.h);
+
+                for (let bx = p.x + 15; bx < p.x + p.w; bx += 30) {
+
+                    ctx.beginPath();
+
+                    ctx.moveTo(bx, p.y);
+
+                    ctx.lineTo(bx, p.y + p.h);
+
+                    ctx.stroke();
+
+                }
+
+            } else {
+
+                ctx.fillStyle = "#5d6d7e";
+
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+
+                ctx.strokeStyle = "#34495e";
+
+                ctx.strokeRect(p.x, p.y, p.w, p.h);
+
+            }
+
+        });
+
+        portals.forEach(pt => {
+
+            ctx.fillStyle = "#9b59b6";
+
+            ctx.fillRect(pt.x, pt.y, pt.w, pt.h);
+
+            ctx.strokeStyle = "#ecf0f1";
+
+            ctx.lineWidth = 3;
+
+            ctx.strokeRect(pt.x, pt.y, pt.w, pt.h);
+
+            ctx.fillStyle = "#fff";
+
+            ctx.font = "11px monospace";
+
+            ctx.fillText("PORTAL", pt.x + 2, pt.y - 6);
+
+        });
+
+        enemies.forEach(e => {
+
+            if (e.type === "fireball") {
+
+                ctx.fillStyle = "#e67e22";
+
+                ctx.beginPath();
+
+                ctx.arc(e.x + 13, e.y + 13, 11, 0, Math.PI * 2);
+
+                ctx.fill();
+
+            } else {
+
+                ctx.fillStyle = "#e0e6ed";
+
+                ctx.fillRect(e.x + 4, e.y + 14, 18, 14);
+
+                ctx.beginPath();
+
+                ctx.arc(e.x + 13, e.y + 8, 8, 0, Math.PI * 2);
+
+                ctx.fill();
+
+                ctx.fillStyle = "#9b59b6";
+
+                ctx.fillRect(e.x + 9, e.y + 6, 2, 3);
+
+                ctx.fillRect(e.x + 14, e.y + 6, 2, 3);
+
+                if (e.type === "skeleton_knight") {
+
+                    ctx.fillStyle = "#34495e";
+
+                    ctx.fillRect(e.x + 3, e.y, 20, 7);
+
+                }
+
+            }
+
+            if (e.hp > 0 && e.type !== "fireball") {
+
+                ctx.fillStyle = "#000";
+
+                ctx.fillRect(e.x, e.y - 8, e.w, 4);
+
+                ctx.fillStyle = "#e74c3c";
+
+                ctx.fillRect(e.x, e.y - 8, e.w * (e.hp / e.maxHp), 4);
+
+            }
+
+        });
+
+        if (boss && boss.hp > 0) {
+
+            ctx.fillStyle = "#c0392b";
+
+            ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
+
+            ctx.fillStyle = "#962d22";
+
+            ctx.beginPath();
+
+            ctx.moveTo(boss.x + 40, boss.y + 30);
+
+            ctx.lineTo(boss.x - 30, boss.y - 10);
+
+            ctx.lineTo(boss.x + 40, boss.y + 85);
+
+            ctx.fill();
+
+            ctx.fillStyle = "#e74c3c";
+
+            ctx.fillRect(boss.x - 25, boss.y + 20, 38, 32);
+
+            ctx.fillStyle = "#f39c12";
+
+            ctx.fillRect(boss.x - 38, boss.y + 10, 12, 16);
+
+            let barW = 400;
+
+            let barX = cameraX + canvas.width / 2 - barW / 2;
+
+            ctx.fillStyle = "rgba(0,0,0,0.75)";
+
+            ctx.fillRect(barX, 18, barW, 20);
+
+            ctx.fillStyle = "#e74c3c";
+
+            ctx.fillRect(barX, 18, barW * (boss.hp / boss.maxHp), 20);
+
+            ctx.strokeStyle = "#fff";
+
+            ctx.lineWidth = 2;
+
+            ctx.strokeRect(barX, 18, barW, 20);
+
+            ctx.fillStyle = "#fff";
+
+            ctx.font = "12px monospace";
+
+            ctx.fillText("DRAGÓN ROJO (Inmune a la Magia X)", barX + 65, 33);
+
+        }
+
+        if (crono.invincibleTimer % 4 < 2) {
+
+            ctx.fillStyle = "#7f8c8d";
+
+            ctx.fillRect(crono.x + 4, crono.y + 14, crono.w - 8, 24);
+
+            ctx.fillStyle = "#bdc3c7";
+
+            ctx.fillRect(crono.x + 7, crono.y + 16, crono.w - 14, 10);
+
+            ctx.fillStyle = "#95a5a6";
+
+            ctx.fillRect(crono.x + 6, crono.y, 20, 16);
+
+            ctx.fillStyle = "#2c3e50";
+
+            ctx.fillRect(crono.x + (crono.facing === 1 ? 14 : 6), crono.y + 6, 10, 4);
+
+            let legOffset = Math.sin(crono.walkAnim) * 5;
+
+            ctx.fillStyle = "#5d6d7e";
+
+            ctx.fillRect(crono.x + 5, crono.y + 38, 9, 14 + (crono.grounded ? legOffset : 0));
+
+            ctx.fillRect(crono.x + 18, crono.y + 38, 9, 14 - (crono.grounded ? legOffset : 0));
+
+            ctx.fillStyle = "#f39c12";
+
+            let handX = crono.facing === 1 ? crono.x + 24 : crono.x + 4;
+
+            ctx.fillRect(handX, crono.y + 22, 6, 6);
+
+            if (crono.attacking) {
+
+                ctx.fillStyle = "#ecf0f1";
+
+                let swordX = crono.facing === 1 ? crono.x + crono.w : crono.x - 45;
+
+                ctx.fillRect(swordX, crono.y + 14, 42, 8);
+
+                ctx.fillStyle = "#d35400";
+
+                ctx.fillRect(crono.facing === 1 ? swordX + 32 : swordX + 10, crono.y + 10, 4, 16);
+
+            } else {
+
+                ctx.fillStyle = "#ecf0f1";
+
+                let swordX = crono.facing === 1 ? crono.x + 28 : crono.x - 14;
+
+                ctx.fillRect(swordX, crono.y + 14, 8, 28);
+
+                ctx.fillStyle = "#d35400";
+
+                ctx.fillRect(swordX - 3, crono.y + 22, 14, 4);
+
+            }
+
+        }
+
+        updateMagicProjectiles();
+
+        particles.forEach(p => {
+
+            if (p.type === "magic_wave") {
+
+                ctx.fillStyle = "#00ffcc";
+
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+
+            } else if (p.type === "spark") {
+
+                ctx.fillStyle = p.color;
+
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+
+            }
+
+        });
+
+        ctx.restore();
+
+        drawHUD();
+
+        if (gameState === "GAMEOVER") drawGameOverScreen();
+
+        else if (gameState === "VICTORY") drawVictoryScreen();
+
+    }
+
+    function drawBackground() {
+
+        if (currentLevel < 10) {
+
+            let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+
+            grad.addColorStop(0, "#2c3e50");
+
+            grad.addColorStop(1, "#1a252f");
+
+            ctx.fillStyle = grad;
+
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            let houseParallax = cameraX * 0.3;
+
+            for (let i = -1; i < 6; i++) {
+
+                let hx = i * 400 - (houseParallax % 400);
+
+                ctx.fillStyle = "#3e2723";
+
+                ctx.fillRect(hx, 200, 170, 180);
+
+                ctx.fillStyle = "#5d4037";
+
+                ctx.beginPath();
+
+                ctx.moveTo(hx - 20, 200);
+
+                ctx.lineTo(hx + 85, 110);
+
+                ctx.lineTo(hx + 190, 200);
+
+                ctx.fill();
+
+                ctx.fillStyle = "#2c1d11";
+
+                ctx.fillRect(hx + 65, 290, 40, 90);
+
+                ctx.fillStyle = "#f1c40f";
+
+                ctx.fillRect(hx + 95, 330, 4, 4);
+
+                ctx.fillStyle = "#f1c40f";
+
+                ctx.fillRect(hx + 25, 230, 30, 40);
+
+                ctx.fillRect(hx + 115, 230, 30, 40);
+
+                ctx.strokeStyle = "#1a0f0a";
+
+                ctx.lineWidth = 2;
+
+                ctx.strokeRect(hx + 25, 230, 30, 40);
+
+                ctx.strokeRect(hx + 115, 230, 30, 40);
+
+            }
+
+        } else {
+
+            let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+
+            grad.addColorStop(0, "#141414");
+
+            grad.addColorStop(1, "#050505");
+
+            ctx.fillStyle = grad;
+
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#243342";
+
+            for (let i = -1; i < 9; i++) {
+
+                let wx = i * 300 - ((cameraX * 0.5) % 300);
+
+                ctx.fillRect(wx, 0, 280, 380);
+
+                ctx.strokeStyle = "#101820";
+
+                ctx.lineWidth = 4;
+
+                ctx.strokeRect(wx, 0, 280, 380);
+
+            }
+
+        }
+
+    }
+
+    function drawMenuBackground() {
+
+        let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+
+        grad.addColorStop(0, "#2c3e50");
+
+        grad.addColorStop(1, "#07070d");
+
+        ctx.fillStyle = grad;
+
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#ffcc00";
+
+        ctx.font = "bold 26px 'Courier New'";
+
+        ctx.textAlign = "center";
+
+        ctx.fillText("LA ODISEA DEL TIEMPO", canvas.width / 2, 110);
+
+        ctx.fillStyle = "#00ffcc";
+
+        ctx.font = "16px 'Courier New'";
+
+        ctx.fillText("EDAD MEDIA - EDICIÓN DEFINITIVA", canvas.width / 2, 150);
+
+        ctx.fillStyle = "#fff";
+
+        ctx.font = "13px 'Courier New'";
+
+        ctx.fillText("Presiona [ENTER] o [ ESPACIO ] para comenzar la aventura", canvas.width / 2, 230);
+
+        ctx.fillText("Visita la Tienda Mágica para volverte más fuerte", canvas.width / 2, 270);
+
+        ctx.textAlign = "left";
+
+    }
+
+    function drawLevelSelectScreen() {
+
+        ctx.fillStyle = "#111";
+
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#ffcc00";
+
+        ctx.font = "bold 20px 'Courier New'";
+
+        ctx.textAlign = "center";
+
+        ctx.fillText("SELECCIÓN DE NIVEL / CASTILLO", canvas.width / 2, 45);
+
+        let startX = 150;
+
+        let startY = 110;
+
+        for (let i = 1; i <= maxLevels; i++) {
+
+            let col = (i - 1) % 5;
+
+            let row = Math.floor((i - 1) / 5);
+
+            let bx = startX + col * 110;
+
+            let by = startY + row * 105;
+
+            ctx.fillStyle = i <= unlockedLevel ? (i === 10 ? "#c0392b" : "#2980b9") : "#444";
+
+            ctx.fillRect(bx, by, 90, 75);
+
+            ctx.strokeStyle = "#fff";
+
+            ctx.lineWidth = 2;
+
+            ctx.strokeRect(bx, by, 90, 75);
+
+            ctx.fillStyle = "#fff";
+
+            ctx.font = "bold 13px 'Courier New'";
+
+            ctx.fillText(i === 10 ? "CASTILLO" : `Nivel ${i}`, bx + 12, by + 43);
+
+        }
+
+        ctx.fillStyle = "#aaa";
+
+        ctx.font = "12px 'Courier New'";
+
+        ctx.fillText("Haz clic en cualquier nivel desbloqueado para jugar", canvas.width / 2, 395);
+
+        ctx.textAlign = "left";
+
+    }
+
+    canvas.addEventListener("click", (e) => {
+
+        if (gameState === "LEVELSELECT") {
+
+            let rect = canvas.getBoundingClientRect();
+
+            let mouseX = (e.clientX - rect.left) * canvas.width / rect.width;
+
+            let mouseY = (e.clientY - rect.top) * canvas.height / rect.height;
+
+            let startX = 150;
+
+            let startY = 110;
+
+            for (let i = 1; i <= maxLevels; i++) {
+
+                let col = (i - 1) % 5;
+
+                let row = Math.floor((i - 1) / 5);
+
+                let bx = startX + col * 110;
+
+                let by = startY + row * 105;
+
+                if (mouseX >= bx && mouseX <= bx + 90 && mouseY >= by && mouseY <= by + 75) {
+
+                    if (i <= unlockedLevel) {
+
+                        currentLevel = i;
+
+                        startGame(currentLevel);
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    });
+
+    function drawHUD() {
+
+        ctx.fillStyle = "rgba(0,0,0,0.65)";
+
+        ctx.fillRect(15, 15, 190, 26);
+
+        ctx.fillStyle = "#e74c3c";
+
+        ctx.fillRect(15, 15, 190 * (crono.hp / crono.maxHp), 26);
+
+        ctx.strokeStyle = "#fff";
+
+        ctx.lineWidth = 2;
+
+        ctx.strokeRect(15, 15, 190, 26);
+
+        ctx.fillStyle = "#fff";
+
+        ctx.font = "bold 12px 'Courier New'";
+
+        ctx.fillText(`VIDA: ${Math.max(0, Math.floor(crono.hp))}`, 22, 32);
+
+        ctx.fillText(`Nivel: ${currentLevel}/10`, 225, 32);
+
+        ctx.fillStyle = "#f1c40f";
+
+        ctx.fillText(`🪙 Oro: ${gold}`, 335, 32);
+
+    }
+
+    function drawGameOverScreen() {
+
+        ctx.fillStyle = "rgba(0,0,0,0.88)";
+
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#e74c3c";
+
+        ctx.font = "bold 32px 'Courier New'";
+
+        ctx.textAlign = "center";
+
+        ctx.fillText("GAME OVER", canvas.width / 2, 160);
+
+        ctx.fillStyle = "#fff";
+
+        ctx.font = "15px 'Courier New'";
+
+        ctx.fillText("Tus corazones se han agotado por completo.", canvas.width / 2, 220);
+
+        ctx.fillText("Presiona [ENTER] para regresar al Menú Principal", canvas.width / 2, 275);
+
+        ctx.textAlign = "left";
+
+    }
+
+    function drawVictoryScreen() {
+
+        ctx.fillStyle = "rgba(0,0,0,0.9)";
+
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#f1c40f";
+
+        ctx.font = "bold 32px 'Courier New'";
+
+        ctx.textAlign = "center";
+
+        ctx.fillText("¡VICTORIA TRIUNFAL!", canvas.width / 2, 140);
+
+        ctx.fillStyle = "#00ffcc";
+
+        ctx.font = "17px 'Courier New'";
+
+        ctx.fillText("Has vencido al Dragón Rojo en las profundidades del castillo.", canvas.width / 2, 200);
+
+        ctx.fillStyle = "#fff";
+
+        ctx.font = "14px 'Courier New'";
+
+        ctx.fillText("Presiona [ENTER] para volver al menú", canvas.width / 2, 270);
+
+        ctx.textAlign = "left";
+
+    }
+
+    function gameLoop() {
+
+        update();
+
+        draw();
+
+        requestAnimationFrame(gameLoop);
+
+    }
+
+    updateShopUI();
+
+    gameLoop();
+
+});
+
+</script>
+
+</body>
+
+</html>
