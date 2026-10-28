@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Tenis Neón Multijugador & Bot</title>
+   <!-- Tailwind CSS para el diseño minimalista de la interfaz -->
+   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+   <style>
+       body {
+           background-color: #0b0f19;
+           color: #f3f4f6;
+           font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           overflow: hidden;
+           user-select: none;
+       }
+       /* El canvas mantiene sus coordenadas lógicas al escalar en pantallas pequeñas. */
+       #tennisCanvas { display: block; max-width: 100%; height: auto; }
+       #scoreboard { max-width: min(900px, calc(100vw - 20px)); }
+       #footerInfo { text-align: center; flex-wrap: wrap; justify-content: center; padding: 0 12px; }
+       body { padding: 12px; }
+       @media (max-width: 940px) {
+           body { justify-content: center; }
+           #configMenu { padding: 14px; overflow-y: auto; }
+           .epic-alert { font-size: clamp(1.1rem, 5vw, 2.8rem); }
+       }
+       canvas {
+           box-shadow: 0 0 50px rgba(59, 130, 246, 0.15);
+           border-radius: 16px;
+       }
+       .key-badge {
+           background: rgba(255, 255, 255, 0.08);
+           border: 1px solid rgba(255, 255, 255, 0.15);
+           padding: 4px 10px;
+           border-radius: 6px;
+           font-weight: bold;
+           font-family: monospace;
+       }
+       @keyframes popUp {
+           0% { transform: scale(0.5) translate(-50%, -50%); opacity: 0; }
+           50% { transform: scale(1.1) translate(-50%, -50%); opacity: 1; }
+           100% { transform: scale(1) translate(-50%, -50%); opacity: 0; }
+       }
+       .epic-alert {
+           position: absolute;
+           top: 40%;
+           left: 50%;
+           transform: translate(-50%, -50%);
+           pointer-events: none;
+           animation: popUp 1.2s ease-out forwards;
+           font-size: 2.8rem;
+           font-weight: 900;
+           text-transform: uppercase;
+           letter-spacing: 2px;
+           z-index: 50;
+           white-space: nowrap;
+       }
+       .menu-btn {
+           transition: all 0.2s ease;
+       }
+       .menu-btn:hover {
+           transform: translateY(-2px);
+           box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+       }
+       .menu-btn.active {
+           background: #2563eb !important;
+           border-color: #38bdf8 !important;
+           box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+       }
+   </style>
+</head>
+<body class="flex flex-col items-center justify-center h-screen m-0">
+
+
+   <!-- Encabezado / Marcador -->
+   <div id="scoreboard" class="hidden justify-between items-center w-[900px] mb-4 px-6 py-3 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-2xl shadow-xl">
+       <div class="flex items-center space-x-3">
+           <span class="w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee]"></span>
+           <span id="labelPlayer1" class="text-sm tracking-wider uppercase font-semibold text-cyan-400">Jugador 1</span>
+           <div class="flex space-x-2 ml-4">
+               <span class="key-badge">W</span>
+               <span class="key-badge">S</span>
+           </div>
+       </div>
+
+
+       <div class="text-3xl font-black tracking-widest px-8 py-1 bg-slate-950 rounded-xl border border-slate-800 shadow-inner">
+           <span id="score1" class="text-cyan-400">0</span>
+           <span class="text-slate-600 mx-3">-</span>
+           <span id="score2" class="text-pink-500">0</span>
+       </div>
+
+
+       <div class="flex items-center space-x-3">
+           <div id="controlsP2" class="flex space-x-2 mr-4">
+               <span class="key-badge">▲</span>
+               <span class="key-badge">▼</span>
+           </div>
+           <span id="labelPlayer2" class="text-sm tracking-wider uppercase font-semibold text-pink-500">Jugador 2</span>
+           <span class="w-4 h-4 rounded-full bg-pink-500 shadow-[0_0_12px_#ec4899]"></span>
+       </div>
+   </div>
+
+
+   <!-- Contenedor del Juego -->
+   <div class="relative">
+       <canvas id="tennisCanvas" width="900" height="500"></canvas>
+       <div id="alertContainer"></div>
+
+
+       <!-- Menú de Configuración Inicial (Overlay) -->
+       <div id="configMenu" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-8 rounded-2xl z-40">
+           <h1 class="text-4xl font-black tracking-wider text-white mb-2 bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">TENIS NEÓN</h1>
+           <p class="text-slate-400 text-sm mb-8">Personaliza tu partida antes de comenzar</p>
+
+
+           <!-- Selección de Modo -->
+           <div class="w-full max-w-md mb-6">
+               <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Modo de Juego</label>
+               <div class="grid grid-cols-2 gap-4">
+                   <button id="btnPvp" onclick="setGameMode('pvp')" class="menu-btn active py-3 px-4 bg-slate-900 border border-slate-700 rounded-xl text-white font-semibold cursor-pointer">
+                       👥 Multijugador (2P)
+                   </button>
+                   <button id="btnBot" onclick="setGameMode('bot')" class="menu-btn py-3 px-4 bg-slate-900 border border-slate-700 rounded-xl text-white font-semibold cursor-pointer">
+                       🤖 Contra la Máquina
+                   </button>
+               </div>
+           </div>
+
+
+           <!-- Selección de Puntos -->
+           <div class="w-full max-w-md mb-8">
+               <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Puntos para Ganar</label>
+               <div class="grid grid-cols-3 gap-4">
+                   <button id="btnScore5" onclick="setWinningScore(5)" class="menu-btn active py-3 bg-slate-900 border border-slate-700 rounded-xl text-white font-bold cursor-pointer">
+                       5 Puntos
+                   </button>
+                   <button id="btnScore10" onclick="setWinningScore(10)" class="menu-btn py-3 bg-slate-900 border border-slate-700 rounded-xl text-white font-bold cursor-pointer">
+                       10 Puntos
+                   </button>
+                   <button id="btnScore15" onclick="setWinningScore(15)" class="menu-btn py-3 bg-slate-900 border border-slate-700 rounded-xl text-white font-bold cursor-pointer">
+                       15 Puntos
+                   </button>
+               </div>
+           </div>
+
+
+           <!-- Botón Jugar -->
+           <button onclick="startGameSession()" class="w-full max-w-md py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-lg uppercase tracking-wider rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.5)] cursor-pointer transition-all transform hover:scale-[1.02]">
+               ¡Comenzar Partido!
+           </button>
+       </div>
+   </div>
+
+
+   <!-- Controles en pantalla inferior -->
+   <div id="footerInfo" class="hidden mt-4 text-xs text-slate-400 tracking-wider items-center space-x-6">
+       <span>Gana el primero en llegar a <strong id="maxPointsDisplay" class="text-white font-bold">5</strong> puntos</span>
+       <span>•</span>
+       <span>Cada golpe acelera la pelota y aumenta la intensidad</span>
+   </div>
+
+
+   <script>
+       const canvas = document.getElementById('tennisCanvas');
+       const ctx = canvas.getContext('2d');
+
+
+       let gameMode = 'pvp';
+       let winningScore = 5;
+
+
+       let score1 = 0;
+       let score2 = 0;
+
+
+       let gameState = 'MENU';
+       let winnerText = '';
+
+
+       const ball = {
+           x: canvas.width / 2,
+           y: canvas.height / 2,
+           radius: 9,
+           speed: 6.5,
+           velocityX: 6.5,
+           velocityY: 3,
+           maxSpeed: 18,
+           trail: []
+       };
+
+
+       const paddleWidth = 24;
+       const paddleHeight = 110;
+       const playerSpeed = 13.5;
+
+
+       const player1 = {
+           x: 40,
+           y: canvas.height / 2 - paddleHeight / 2,
+           width: paddleWidth,
+           height: paddleHeight,
+           color: '#22d3ee', // Celeste Jugador 1
+           scoreText: document.getElementById('score1')
+       };
+
+
+       const player2 = {
+           x: canvas.width - 40 - paddleWidth,
+           y: canvas.height / 2 - paddleHeight / 2,
+           width: paddleWidth,
+           height: paddleHeight,
+           color: '#ec4899', // Rosa Jugador 2 / Bot
+           scoreText: document.getElementById('score2')
+       };
+
+
+       let particles = [];
+       let rallyCount = 0;
+
+
+       const praisePhrases = ["AURA", "la rompiste", "papeada termonuclear", "bueeena", "the goat"];
+       // Mensajes de celebración para el jugador que gana el punto.
+
+
+       function setGameMode(mode) {
+           gameMode = mode;
+           document.getElementById('btnPvp').classList.toggle('active', mode === 'pvp');
+           document.getElementById('btnBot').classList.toggle('active', mode === 'bot');
+       }
+
+
+       function setWinningScore(score) {
+           winningScore = score;
+           document.getElementById('btnScore5').classList.toggle('active', score === 5);
+           document.getElementById('btnScore10').classList.toggle('active', score === 10);
+           document.getElementById('btnScore15').classList.toggle('active', score === 15);
+       }
+
+
+       function startGameSession() {
+           document.getElementById('configMenu').style.display = 'none';
+           document.getElementById('scoreboard').style.display = 'flex';
+           document.getElementById('footerInfo').style.display = 'flex';
+          
+           if (gameMode === 'bot') {
+               document.getElementById('labelPlayer2').innerText = 'Bot (IA)';
+               document.getElementById('controlsP2').style.display = 'none';
+           } else {
+               document.getElementById('labelPlayer2').innerText = 'Jugador 2';
+               document.getElementById('controlsP2').style.display = 'flex';
+           }
+           document.getElementById('maxPointsDisplay').innerText = winningScore;
+
+
+           resetGame();
+           gameState = 'PLAYING';
+       }
+
+
+       function createParticles(x, y, color) {
+           for (let i = 0; i < 22; i++) {
+               particles.push({
+                   x: x,
+                   y: y,
+                   vx: (Math.random() - 0.5) * 12,
+                   vy: (Math.random() - 0.5) * 12,
+                   radius: Math.random() * 3 + 1,
+                   color: color,
+                   alpha: 1,
+                   decay: Math.random() * 0.03 + 0.02
+               });
+           }
+       }
+
+
+       function triggerEpicAnimation(text, targetColor) {
+           const container = document.getElementById('alertContainer');
+           const alertDiv = document.createElement('div');
+           alertDiv.className = 'epic-alert';
+          
+           // Asignar el color exacto del jugador al que va dirigido el mensaje
+           alertDiv.style.color = targetColor;
+           alertDiv.style.textShadow = `0 0 20px ${targetColor}, 0 0 40px ${targetColor}`;
+
+
+           alertDiv.innerText = text;
+           container.appendChild(alertDiv);
+           setTimeout(() => {
+               alertDiv.remove();
+           }, 1400);
+       }
+
+
+       const keys = {};
+       window.addEventListener('keydown', (e) => {
+           if (['ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) e.preventDefault();
+           keys[e.code] = true;
+           if (e.code === 'Space') {
+               if (gameState === 'GAMEOVER') {
+                   resetGame();
+                   gameState = 'PLAYING';
+               }
+           }
+       });
+
+
+       window.addEventListener('keyup', (e) => {
+           keys[e.code] = false;
+       });
+
+
+       function handleInput() {
+           if (keys['KeyW']) {
+               player1.y -= playerSpeed;
+           } else if (keys['KeyS']) {
+               player1.y += playerSpeed;
+           }
+
+
+           if (gameMode === 'pvp') {
+               if (keys['ArrowUp']) {
+                   player2.y -= playerSpeed;
+               } else if (keys['ArrowDown']) {
+                   player2.y += playerSpeed;
+               }
+           } else {
+               let targetY = ball.y - player2.height / 2;
+               let botSpeed = 8.5;
+               if (player2.y < targetY) {
+                   player2.y += Math.min(botSpeed, targetY - player2.y);
+               } else if (player2.y > targetY) {
+                   player2.y -= Math.min(botSpeed, player2.y - targetY);
+               }
+           }
+
+
+           const margin = 15;
+           player1.y = Math.max(margin, Math.min(canvas.height - player1.height - margin, player1.y));
+           player2.y = Math.max(margin, Math.min(canvas.height - player2.height - margin, player2.y));
+       }
+
+
+       function resetBall(servingPlayer) {
+           ball.x = canvas.width / 2;
+           ball.y = canvas.height / 2;
+           ball.speed = 6.5;
+           const direction = servingPlayer === 1 ? 1 : -1;
+           ball.velocityX = direction * ball.speed;
+           ball.velocityY = (Math.random() * 4 - 2);
+           rallyCount = 0;
+           ball.trail = [];
+       }
+
+
+       function resetGame() {
+           score1 = 0;
+           score2 = 0;
+           player1.y = canvas.height / 2 - paddleHeight / 2;
+           player2.y = canvas.height / 2 - paddleHeight / 2;
+           player1.scoreText.innerText = '0';
+           player2.scoreText.innerText = '0';
+           resetBall(1);
+       }
+
+
+       function checkCollision(p) {
+           return ball.x - ball.radius < p.x + p.width &&
+                  ball.x + ball.radius > p.x &&
+                  ball.y + ball.radius > p.y &&
+                  ball.y - ball.radius < p.y + p.height;
+       }
+
+
+       function update() {
+           if (gameState !== 'PLAYING') return;
+
+
+           handleInput();
+
+
+           ball.trail.push({ x: ball.x, y: ball.y });
+           if (ball.trail.length > 12) ball.trail.shift();
+
+
+           ball.x += ball.velocityX;
+           ball.y += ball.velocityY;
+
+
+           if (ball.y - ball.radius < 15 || ball.y + ball.radius > canvas.height - 15) {
+               ball.velocityY = -ball.velocityY;
+               createParticles(ball.x, ball.y, '#94a3b8');
+           }
+
+
+           if (ball.velocityX < 0 && checkCollision(player1)) {
+               rallyCount++;
+               let collidePoint = ball.y - (player1.y + player1.height / 2);
+               collidePoint = collidePoint / (player1.height / 2);
+               let angleRad = (Math.PI / 4) * collidePoint;
+              
+               if (ball.speed < ball.maxSpeed) ball.speed += 0.65;
+              
+               ball.velocityX = ball.speed * Math.cos(angleRad);
+               ball.velocityY = ball.speed * Math.sin(angleRad);
+               ball.x = player1.x + player1.width + ball.radius;
+
+               createParticles(player1.x + player1.width, ball.y, player1.color);
+           }
+
+
+           if (ball.velocityX > 0 && checkCollision(player2)) {
+               rallyCount++;
+               let collidePoint = ball.y - (player2.y + player2.height / 2);
+               collidePoint = collidePoint / (player2.height / 2);
+               let angleRad = (Math.PI / 4) * collidePoint;
+              
+               if (ball.speed < ball.maxSpeed) ball.speed += 0.65;
+              
+               ball.velocityX = -ball.speed * Math.cos(angleRad);
+               ball.velocityY = ball.speed * Math.sin(angleRad);
+               ball.x = player2.x - ball.radius;
+
+               createParticles(player2.x, ball.y, player2.color);
+           }
+
+
+           // La pelota que sale por la izquierda da punto al jugador derecho (P2), y viceversa.
+           if (ball.x + ball.radius < 0 || ball.x - ball.radius > canvas.width) {
+               const winner = ball.x + ball.radius < 0 ? 2 : 1;
+               const scorer = winner === 1 ? player1 : player2;
+               if (winner === 1) {
+                   score1++;
+                   player1.scoreText.innerText = score1;
+               } else {
+                   score2++;
+                   player2.scoreText.innerText = score2;
+               }
+               createParticles(canvas.width / 2, canvas.height / 2, scorer.color);
+               const phrase = praisePhrases[Math.floor(Math.random() * praisePhrases.length)];
+               triggerEpicAnimation(phrase, scorer.color);
+               if (score1 >= winningScore || score2 >= winningScore) {
+                   gameState = 'GAMEOVER';
+                   winnerText = winner === 1 ? '¡JUGADOR 1 GANA!' :
+                       (gameMode === 'bot' ? '¡EL BOT GANA!' : '¡JUGADOR 2 GANA!');
+               } else {
+                   resetBall(winner === 1 ? 2 : 1);
+               }
+           }
+
+           for (let i = particles.length - 1; i >= 0; i--) {
+               let p = particles[i];
+               p.x += p.vx;
+               p.y += p.vy;
+               p.alpha -= p.decay;
+               if (p.alpha <= 0) particles.splice(i, 1);
+           }
+       }
+
+
+       function drawRealisticRacquet(x, y, width, height, color) {
+           ctx.save();
+           ctx.translate(x, y);
+
+
+           const handleLength = 45;
+           const handleWidth = 10;
+           ctx.fillStyle = '#1e293b';
+           ctx.fillRect(width/2 - handleWidth/2, height - handleLength, handleWidth, handleLength + 10);
+          
+           ctx.strokeStyle = '#475569';
+           ctx.lineWidth = 1.5;
+           for (let hY = height - handleLength + 5; hY < height + 5; hY += 6) {
+               ctx.beginPath();
+               ctx.moveTo(width/2 - handleWidth/2, hY);
+               ctx.lineTo(width/2 + handleWidth/2, hY + 3);
+               ctx.stroke();
+           }
+
+
+           ctx.fillStyle = color;
+           ctx.beginPath();
+           ctx.roundRect(width/2 - handleWidth/2 - 2, height + 8, handleWidth + 4, 6, 3);
+           ctx.fill();
+
+
+           ctx.strokeStyle = color;
+           ctx.lineWidth = 4;
+           ctx.beginPath();
+           ctx.moveTo(width/2 - handleWidth/2, height - handleLength);
+           ctx.lineTo(width/2 - 12, height - handleLength - 25);
+           ctx.moveTo(width/2 + handleWidth/2, height - handleLength);
+           ctx.lineTo(width/2 + 12, height - handleLength - 25);
+           ctx.stroke();
+
+
+           const headHeight = height - handleLength - 10;
+           const headCenterY = headHeight / 2;
+           const headCenterX = width / 2;
+           const radiusX = width / 2 - 2;
+           const radiusY = headHeight / 2;
+
+
+           ctx.shadowColor = color;
+           ctx.shadowBlur = 12;
+           ctx.strokeStyle = color;
+           ctx.lineWidth = 4.5;
+           ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+
+
+           ctx.beginPath();
+           ctx.ellipse(headCenterX, headCenterY, radiusX, radiusY, 0, 0, Math.PI * 2);
+           ctx.fill();
+           ctx.stroke();
+
+
+           ctx.shadowBlur = 0;
+
+
+           ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+           ctx.lineWidth = 1;
+
+
+           for (let vx = -radiusX + 6; vx < radiusX - 4; vx += 5.5) {
+               ctx.beginPath();
+               ctx.moveTo(headCenterX + vx, headCenterY - radiusY + 6);
+               ctx.lineTo(headCenterX + vx, headCenterY + radiusY - 6);
+               ctx.stroke();
+           }
+
+
+           for (let hy = -radiusY + 8; hy < radiusY - 6; hy += 6) {
+               ctx.beginPath();
+               ctx.moveTo(headCenterX - radiusX + 6, headCenterY + hy);
+               ctx.lineTo(headCenterX + radiusX - 6, headCenterY + hy);
+               ctx.stroke();
+           }
+
+
+           ctx.fillStyle = color;
+           ctx.beginPath();
+           ctx.arc(headCenterX, headCenterY + 15, 4, 0, Math.PI * 2);
+           ctx.fill();
+
+
+           ctx.restore();
+       }
+
+
+       function draw() {
+           ctx.fillStyle = '#0f172a';
+           ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+           ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+           ctx.lineWidth = 3;
+           ctx.strokeRect(15, 15, canvas.width - 30, canvas.height - 30);
+
+
+           ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+           ctx.lineWidth = 3;
+           ctx.setLineDash([10, 10]);
+           ctx.beginPath();
+           ctx.moveTo(canvas.width / 2, 15);
+           ctx.lineTo(canvas.width / 2, canvas.height - 15);
+           ctx.stroke();
+           ctx.setLineDash([]);
+
+
+           ctx.beginPath();
+           ctx.arc(canvas.width / 2, canvas.height / 2, 60, 0, Math.PI * 2);
+           ctx.stroke();
+
+
+           for (let i = 0; i < ball.trail.length; i++) {
+               let p = ball.trail[i];
+               let ratio = (i + 1) / ball.trail.length;
+               ctx.fillStyle = `rgba(56, 189, 248, ${ratio * 0.35})`;
+               ctx.beginPath();
+               ctx.arc(p.x, p.y, ball.radius * ratio, 0, Math.PI * 2);
+               ctx.fill();
+           }
+
+
+           ctx.save();
+           ctx.shadowColor = '#84cc16';
+           ctx.shadowBlur = 10;
+           ctx.fillStyle = '#bef264';
+           ctx.beginPath();
+           ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+           ctx.fill();
+
+
+           ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+           ctx.lineWidth = 1.5;
+           ctx.beginPath();
+           ctx.arc(ball.x - 2, ball.y, ball.radius - 2, -Math.PI/3, Math.PI/3);
+           ctx.stroke();
+           ctx.restore();
+
+
+           for (let p of particles) {
+               ctx.fillStyle = p.color;
+               ctx.globalAlpha = p.alpha;
+               ctx.beginPath();
+               ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+               ctx.fill();
+           }
+           ctx.globalAlpha = 1.0;
+
+
+           drawRealisticRacquet(player1.x, player1.y, player1.width, player1.height, player1.color);
+           drawRealisticRacquet(player2.x, player2.y, player2.width, player2.height, player2.color);
+
+
+           if (gameState === 'GAMEOVER') {
+               ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+               ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+               ctx.fillStyle = '#eab308';
+               ctx.font = 'bold 42px system-ui';
+               ctx.textAlign = 'center';
+               ctx.fillText(winnerText, canvas.width / 2, canvas.height / 2 - 30);
+
+
+               ctx.fillStyle = '#ffffff';
+               ctx.font = '18px system-ui';
+               ctx.fillText('Presiona [ ESPACIO ] para la Revancha', canvas.width / 2, canvas.height / 2 + 30);
+           }
+       }
+
+
+       function gameLoop() {
+           update();
+           draw();
+           requestAnimationFrame(gameLoop);
+       }
+
+
+       gameLoop();
+   </script>
+</body>
+</html>
+
