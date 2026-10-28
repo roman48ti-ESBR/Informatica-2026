@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html class="h-full" lang="es">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   Lookify - Comparador y Tienda de Ropa
+  </title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <!-- FontAwesome para iconos -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <!-- Google Fonts: Playfair Display para un toque vintage/elegante e Inter para cuerpo -->
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+  <script>
+   tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        vintage: {
+                            50: '#FDFBF7',
+                            100: '#F4EFEA',
+                            200: '#E6DCd0',
+                            300: '#D2C2B1',
+                            400: '#B8A38F',
+                            500: '#9E856F',
+                            600: '#826A54',
+                            700: '#695340',
+                            800: '#524031',
+                            900: '#3D3025',
+                        },
+                        cream: '#FAF6F0',
+                        terracotta: '#C86D51',
+                        sand: '#E9E2D5',
+                        warmbrown: '#795548',
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+  </script>
+  <style>
+   body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF7;
+            color: #3D3025;
+        }
+        h1, h2, h3, .font-vintage {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Ocultar barra de desplazamiento manteniendo funcionalidad */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+  </style>
+ </head>
+ <body class="h-full flex flex-col bg-vintage-50 text-vintage-900 selection:bg-vintage-200">
+  <!-- Notificación emergente / Toast -->
+  <div class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-vintage-900 text-vintage-50 px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3" id="toast">
+   <i class="fa-solid fa-circle-check text-emerald-400 text-lg" id="toast-icon">
+   </i>
+   <span class="text-sm font-medium" id="toast-message">
+    Acción realizada con éxito
+   </span>
+  </div>
+  <!-- Modal de Detalle de Prenda y Comparativa -->
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto" id="product-modal">
+   <div class="bg-vintage-50 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-vintage-200 relative animate-fadeIn">
+    <button class="absolute top-4 right-4 z-10 w-10 h-10 bg-vintage-100 hover:bg-vintage-200 text-vintage-800 rounded-full flex items-center justify-center transition-colors" onclick="closeProductModal()">
+     <i class="fa-solid fa-xmark text-lg">
+     </i>
+    </button>
+    <div class="p-6 md:p-8" id="modal-content">
+     <!-- Se llena dinámicamente -->
+    </div>
+   </div>
+  </div>
+  <!-- Modal de Venta / Emprendimiento (Publicar prenda) -->
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto" id="sell-modal">
+   <div class="bg-vintage-50 rounded-2xl max-w-xl w-full p-6 md:p-8 shadow-2xl border border-vintage-200 relative">
+    <button class="absolute top-4 right-4 text-vintage-700 hover:text-vintage-900" onclick="toggleSellModal(false)">
+     <i class="fa-solid fa-xmark text-xl">
+     </i>
+    </button>
+    <h3 class="text-2xl font-serif font-bold text-vintage-900 mb-2">
+     Inicia tu Emprendimiento en Lookify
+    </h3>
+    <p class="text-xs text-vintage-600 mb-6">
+     Publica tus prendas nuevas o de segunda mano, conecta con compradores y haz crecer tu tienda local.
+    </p>
+    <form class="space-y-4" id="sell-form" onsubmit="handlePublishProduct(event)">
+     <div>
+      <label class="block text-xs font-semibold text-vintage-700 uppercase mb-1">
+       Nombre de tu Emprendimiento / Tienda
+      </label>
+      <input class="w-full bg-white border border-vintage-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-vintage-600" id="shop-name" placeholder="Ej: Vintage Chic BA" required="" type="text"/>
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+       <label class="block text-xs font-semibold text-vintage-700 uppercase mb-1">
+        Título de la Prenda
+       </label>
+       <input class="w-full bg-white border border-vintage-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-vintage-600" id="item-title" placeholder="Ej: Camisa de Lino Oversized" required="" type="text"/>
+      </div>
+      <div>
+       <label class="block text-xs font-semibold text-vintage-700 uppercase mb-1">
+        Sección
+       </label>
+       <select class="w-full bg-white border border-vintage-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-vintage-600" id="item-category">
+        <option value="mujer">
+         Mujer
+        </option>
+        <option value="hombre">
+         Hombre
+        </option>
+        <option value="adolescentes">
+         Adolescentes
+        </option>
+        <option value="ninos">
+         Niños
+        </option>
+        <option value="bebe">
+         Bebé
+        </option>
+        <option value="embarazadas">
+         Embarazadas
+        </option>
+       </select>
+      </div>
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+       <label class="block text-xs font-semibold text-vintage-700 uppercase mb-1">
+        Precio ($ARS)
+       </label>
+       <input class="w-full bg-white border border-vintage-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-vintage-600" id="item-price" placeholder="14500" required="" type="number"/>
+      </div>
+      <div>
+       <label class="block text-xs font-semibold text-vintage-700 uppercase mb-1">
+        Talles Disponibles
+       </label>
+       <input class="w-full bg-white border border-vintage-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-vintage-600" id="item-sizes" placeholder="S, M, L" required="" type="text"/>
+      </div>
+      <div>
+       <label class="block text-xs font-semibold text-vintage-700 uppercase mb-1">
+        Tipo de Envío
+       </label>
+       <input class="w-full bg-white border border-vintage-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-vintage-600" id="item-shipping" placeholder="Envío gratis en 48hs" required="" type="text"/>
+      </div>
+     </div>
+     <div>
+      <label class="block text-xs font-semibold text-vintage-700 uppercase mb-1">
+       URL de Imagen de la Prenda
+      </label>
+      <input class="w-full bg-white border border-vintage-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-vintage-600" id="item-image" placeholder="https://images.unsplash.com/..." required="" type="url"/>
+      <span class="text-[10px] text-vintage-500 mt-1 block">
+       Puedes usar fotos de Unsplash o cualquier enlace directo de imagen.
+      </span>
+     </div>
+     <div>
+      <label class="block text-xs font-semibold text-vintage-700 uppercase mb-1">
+       Descripción y Calidad
+      </label>
+      <textarea class="w-full bg-white border border-vintage-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-vintage-600" id="item-desc" placeholder="Detalla la calidad de la tela, estado y recomendaciones..." required="" rows="3"></textarea>
+     </div>
+     <button class="w-full bg-vintage-800 hover:bg-vintage-900 text-vintage-50 font-medium py-3 rounded-xl transition-all shadow-md" type="submit">
+      Publicar Prenda en Lookify
+     </button>
+    </form>
+   </div>
+  </div>
+  <!-- Header Principal -->
+  <header class="bg-vintage-100/80 backdrop-blur-md sticky top-0 z-40 border-b border-vintage-200">
+   <!-- Barra superior utilitaria -->
+   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+     <button class="text-vintage-800 hover:text-vintage-900 p-1.5 rounded-lg hover:bg-vintage-200 transition-colors md:hidden" onclick="toggleSidebar()">
+      <i class="fa-solid fa-bars text-lg">
+      </i>
+     </button>
+     <a class="flex items-center gap-2" href="#" onclick="switchTab('home')">
+      <div class="w-9 h-9 rounded-xl bg-vintage-800 text-vintage-50 flex items-center justify-center font-serif font-bold text-xl shadow-inner">
+       L
+      </div>
+      <span class="font-serif font-bold text-2xl tracking-tight text-vintage-900">
+       Lookify
+      </span>
+     </a>
+    </div>
+    <!-- Buscador central -->
+    <div class="flex-1 max-w-xl mx-4 hidden md:block">
+     <div class="relative">
+      <input class="w-full bg-white/80 border border-vintage-300 rounded-full pl-11 pr-4 py-2 text-sm text-vintage-900 focus:outline-none focus:border-vintage-600 shadow-sm transition-all" id="search-input" oninput="handleSearch(this.value)" placeholder="Busca prendas, marcas (Ej: Nike), tiendas o estilos..." type="text"/>
+      <i class="fa-solid fa-magnifying-glass absolute left-4 top-3 text-vintage-400">
+      </i>
+     </div>
+    </div>
+    <!-- Accesos rápidos derecha -->
+    <div class="flex items-center gap-2 sm:gap-4">
+     <button class="hidden sm:flex items-center gap-2 bg-vintage-800 hover:bg-vintage-900 text-vintage-50 px-4 py-2 rounded-full text-xs font-medium transition-all shadow-sm" onclick="toggleSellModal(true)">
+      <i class="fa-solid fa-store">
+      </i>
+      <span>
+       Vende aquí
+      </span>
+     </button>
+     <button class="p-2 text-vintage-800 hover:bg-vintage-200 rounded-full transition-colors relative" onclick="switchTab('history')" title="Historial y Vistas Recientes">
+      <i class="fa-solid fa-clock-rotate-left text-lg">
+      </i>
+      <span class="absolute -top-1 -right-1 bg-terracotta text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold hidden" id="history-badge">
+       0
+      </span>
+     </button>
+     <button class="p-2 text-vintage-800 hover:bg-vintage-200 rounded-full transition-colors relative" onclick="switchTab('cart')" title="Carrito">
+      <i class="fa-solid fa-bag-shopping text-lg">
+      </i>
+      <span class="absolute -top-1 -right-1 bg-terracotta text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold hidden" id="cart-badge">
+       0
+      </span>
+     </button>
+    </div>
+   </div>
+   <!-- Barra de Secciones de Ropa (Navegación Horizontal) -->
+   <div class="border-t border-vintage-200 bg-vintage-50/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto no-scrollbar py-2.5 gap-6">
+     <nav class="flex items-center gap-6 min-w-max text-xs sm:text-sm font-medium">
+      <button class="category-nav-btn text-vintage-900 font-semibold border-b-2 border-vintage-800 pb-1 transition-all" id="nav-all" onclick="filterCategory('all')">
+       Todo el Catálogo
+      </button>
+      <button class="category-nav-btn text-vintage-700 hover:text-vintage-900 pb-1 transition-all" id="nav-mujer" onclick="filterCategory('mujer')">
+       Mujer
+      </button>
+      <button class="category-nav-btn text-vintage-700 hover:text-vintage-900 pb-1 transition-all" id="nav-hombre" onclick="filterCategory('hombre')">
+       Hombre
+      </button>
+      <button class="category-nav-btn text-vintage-700 hover:text-vintage-900 pb-1 transition-all" id="nav-adolescentes" onclick="filterCategory('adolescentes')">
+       Adolescentes
+      </button>
+      <button class="category-nav-btn text-vintage-700 hover:text-vintage-900 pb-1 transition-all" id="nav-ninos" onclick="filterCategory('ninos')">
+       Niños
+      </button>
+      <button class="category-nav-btn text-vintage-700 hover:text-vintage-900 pb-1 transition-all" id="nav-bebe" onclick="filterCategory('bebe')">
+       Bebé
+      </button>
+      <button class="category-nav-btn text-vintage-700 hover:text-vintage-900 pb-1 transition-all" id="nav-embarazadas" onclick="filterCategory('embarazadas')">
+       Embarazadas
+      </button>
+     </nav>
+     <div class="flex items-center gap-3 min-w-max">
+      <button class="text-xs font-semibold text-vintage-800 hover:text-vintage-900 bg-vintage-200/60 px-3 py-1.5 rounded-lg transition-colors" onclick="switchTab('reviews')">
+       <i class="fa-solid fa-comments mr-1.5">
+       </i>
+       Reseñas &amp; Calidades
+      </button>
+      <button class="text-xs font-semibold text-vintage-800 hover:text-vintage-900 bg-vintage-200/60 px-3 py-1.5 rounded-lg transition-colors" onclick="switchTab('marketplace')">
+       <i class="fa-solid fa-store mr-1.5">
+       </i>
+       Emprendimientos Locales
+      </button>
+     </div>
+    </div>
+   </div>
+  </header>
+  <!-- Cuerpo principal y Sidebar -->
+  <div class="flex-1 flex max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-8">
+   <!-- Sidebar de Navegación y Carpetas Destacadas -->
+   <aside class="fixed inset-y-0 left-0 z-50 w-72 bg-vintage-100 p-6 shadow-2xl transform -translate-x-full transition-transform duration-300 md:translate-x-0 md:static md:w-64 md:bg-transparent md:p-0 md:shadow-none md:border-r md:border-vintage-200 md:pr-6 flex flex-col justify-between" id="sidebar">
+    <div>
+     <!-- Cerrar sidebar móvil -->
+     <div class="flex items-center justify-between mb-6 md:hidden">
+      <span class="font-serif font-bold text-xl text-vintage-900">
+       Menú Lookify
+      </span>
+      <button class="text-vintage-700" onclick="toggleSidebar()">
+       <i class="fa-solid fa-xmark text-xl">
+       </i>
+      </button>
+     </div>
+     <div class="space-y-6">
+      <!-- Menú Principal -->
+      <div>
+       <h4 class="text-[11px] font-bold text-vintage-500 uppercase tracking-wider mb-3">
+        Navegación
+       </h4>
+       <ul class="space-y-1.5 text-sm">
+        <li>
+         <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-vintage-900 hover:bg-vintage-200/70 font-medium transition-colors" href="#" onclick="switchTab('home'); closeSidebar();">
+          <i class="fa-solid fa-compass text-vintage-700 w-5">
+          </i>
+          Explorar Tiendas
+         </a>
+        </li>
+        <li>
+         <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-vintage-900 hover:bg-vintage-200/70 font-medium transition-colors" href="#" onclick="switchTab('recommended'); closeSidebar();">
+          <i class="fa-solid fa-wand-magic-sparkles text-vintage-700 w-5">
+          </i>
+          Recomendados para Ti
+         </a>
+        </li>
+        <li>
+         <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-vintage-900 hover:bg-vintage-200/70 font-medium transition-colors" href="#" onclick="switchTab('history'); closeSidebar();">
+          <i class="fa-solid fa-clock-rotate-left text-vintage-700 w-5">
+          </i>
+          Historial y Vistas
+         </a>
+        </li>
+        <li>
+         <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-vintage-900 hover:bg-vintage-200/70 font-medium transition-colors" href="#" onclick="switchTab('reviews'); closeSidebar();">
+          <i class="fa-solid fa-star-half-stroke text-vintage-700 w-5">
+          </i>
+          Reseñas &amp; Comentarios
+         </a>
+        </li>
+       </ul>
+      </div>
+      <!-- Carpetas y Favoritos Destacados -->
+      <div>
+       <div class="flex items-center justify-between mb-3">
+        <h4 class="text-[11px] font-bold text-vintage-500 uppercase tracking-wider">
+         Carpetas Destacadas
+        </h4>
+        <button class="text-vintage-700 hover:text-vintage-900 text-xs font-semibold" onclick="createFolderPrompt()" title="Nueva Carpeta">
+         <i class="fa-solid fa-plus">
+         </i>
+         Nueva
+        </button>
+       </div>
+       <div class="space-y-1 text-sm" id="folders-list">
+        <!-- Se carga mediante JS -->
+       </div>
+      </div>
+      <!-- Filtros Rápidos de Zona / Tienda -->
+      <div>
+       <h4 class="text-[11px] font-bold text-vintage-500 uppercase tracking-wider mb-3">
+        Comparar Tiendas
+       </h4>
+       <div class="space-y-2 text-xs">
+        <label class="flex items-center gap-2 cursor-pointer">
+         <input checked="" class="store-filter rounded border-vintage-300 text-vintage-800 focus:ring-0" onchange="filterStore('all')" type="checkbox"/>
+         <span>
+          Todas las tiendas de la zona
+         </span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+         <input class="store-filter rounded border-vintage-300 text-vintage-800 focus:ring-0" onchange="filterStore('NIKE')" type="checkbox"/>
+         <span>
+          NIKE Store Local
+         </span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+         <input class="store-filter rounded border-vintage-300 text-vintage-800 focus:ring-0" onchange="filterStore('ZARA')" type="checkbox"/>
+         <span>
+          ZARA &amp; Boutique Vintage
+         </span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+         <input class="store-filter rounded border-vintage-300 text-vintage-800 focus:ring-0" onchange="filterStore('Emprendimiento')" type="checkbox"/>
+         <span>
+          Emprendedores Locales
+         </span>
+        </label>
+       </div>
+      </div>
+     </div>
+    </div>
+    <!-- Banner Inferior Sidebar -->
+    <div class="bg-vintage-200/60 p-4 rounded-2xl border border-vintage-300/50 mt-6 hidden md:block">
+     <h5 class="font-serif font-bold text-xs text-vintage-900 mb-1">
+      ¿Tienes un local?
+     </h5>
+     <p class="text-[11px] text-vintage-600 mb-3">
+      Compara precios y atrae compradores de tu zona en Lookify.
+     </p>
+     <button class="w-full bg-vintage-800 hover:bg-vintage-900 text-vintage-50 text-xs font-medium py-2 rounded-xl transition-colors" onclick="toggleSellModal(true)">
+      Publicar ahora
+     </button>
+    </div>
+   </aside>
+   <!-- Contenido Dinámico Principal -->
+   <main class="flex-1 min-w-0" id="main-content-area">
+    <!-- Se inyectan las vistas de acuerdo a la pestaña activa -->
+   </main>
+  </div>
+  <!-- Footer Estético -->
+  <footer class="bg-vintage-100 border-t border-vintage-200 mt-12 py-8">
+   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-vintage-700">
+    <div class="flex items-center gap-2">
+     <div class="w-6 h-6 rounded-lg bg-vintage-800 text-vintage-50 flex items-center justify-center font-serif font-bold text-xs">
+      L
+     </div>
+     <span class="font-serif font-bold text-base text-vintage-900">
+      Lookify
+     </span>
+     <span>
+      — Tu guía comparativa y de emprendimientos de moda local.
+     </span>
+    </div>
+    <div class="flex items-center gap-6">
+     <a class="hover:text-vintage-900 transition-colors" href="#" onclick="switchTab('home')">
+      Explorar
+     </a>
+     <a class="hover:text-vintage-900 transition-colors" href="#" onclick="switchTab('reviews')">
+      Reseñas
+     </a>
+     <a class="hover:text-vintage-900 transition-colors" href="#" onclick="switchTab('marketplace')">
+      Emprendimientos
+     </a>
+     <a class="hover:text-vintage-900 transition-colors font-semibold" href="#" onclick="toggleSellModal(true)">
+      Vender Prenda
+     </a>
+    </div>
+   </div>
+  </footer>
+  <!-- Lógica JavaScript -->
+  <script>
+   // Base de Datos inicial robusta con prendas reales, marcas y precios comparativos
+        let products = [
+            // Mujer
+            {
+                id: 1,
+                title: "Camisa de Lino Estilo Vintage",
+                category: "mujer",
+                store: "ZARA",
+                price: 24500,
+                rating: 4.8,
+                reviewsCount: 34,
+                image: "https://images.unsplash.com/photo-1598554747436-c9293d6a588f?auto=format&fit=crop&w=800&q=80",
+                sizes: ["S", "M", "L", "XL"],
+                shipping: "Envío gratis en 24hs",
+                quality: "Excelente lino orgánico, costuras reforzadas, no encoge al lavar.",
+                description: "Camisa de corte relajado ideal para media estación. Talles cómodos y holgados.",
+                comparisons: [
+                    { store: "Boutique Local Centro", price: 21000, shipping: "Retiro en local hoy", quality: "Muy buena" },
+                    { store: "Tienda Online BuenosAires", price: 26000, shipping: "Envío 48hs", quality: "Excelente" }
+                ]
+            },
+            {
+                id: 2,
+                title: "Pantalón Wide Leg Tiro Alto",
+                category: "mujer",
+                store: "Boutique Local Centro",
+                price: 31000,
+                rating: 4.6,
+                reviewsCount: 19,
+                image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=800&q=80",
+                sizes: ["XS", "S", "M", "L"],
+                shipping: "Envío estándar 48hs",
+                quality: "Tela sastrera pesada con caída perfecta. Talles reales.",
+                description: "Pantalón clásico de gran comodidad y estilo vintage minimalista.",
+                comparisons: [
+                    { store: "ZARA", price: 34900, shipping: "Envío 24hs", quality: "Alta" },
+                    { store: "Lookify Emprendimiento Ana", price: 28000, shipping: "Envío en moto", quality: "Muy buena" }
+                ]
+            },
+            {
+                id: 3,
+                title: "Blazer Oversized Neutro",
+                category: "mujer",
+                store: "ZARA",
+                price: 48000,
+                rating: 4.9,
+                reviewsCount: 42,
+                image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80",
+                sizes: ["S", "M", "L"],
+                shipping: "Envío gratis express",
+                quality: "Forrado interior completo, hombreras sutiles, excelente durabilidad.",
+                description: "El infaltable blazer estructurado en tonos tierra para cualquier ocasión.",
+                comparisons: [
+                    { store: "Showroom Palermo", price: 45000, shipping: "Envío en el día", quality: "Excelente" }
+                ]
+            },
+            // Hombre
+            {
+                id: 4,
+                title: "Campera Cortavientos Vintage",
+                category: "hombre",
+                store: "NIKE",
+                price: 55000,
+                rating: 4.7,
+                reviewsCount: 56,
+                image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80",
+                sizes: ["M", "L", "XL"],
+                shipping: "Envío gratis a todo el país",
+                quality: "Impermeable liviano, cierres metálicos de alta gama.",
+                description: "Inspirada en diseños clásicos deportivos con un calce moderno.",
+                comparisons: [
+                    { store: "Deportes Zona Norte", price: 58000, shipping: "Retiro inmediato", quality: "Original garantizada" }
+                ]
+            },
+            {
+                id: 5,
+                title: "Buzo de Algodón Rústico",
+                category: "hombre",
+                store: "Emprendimiento",
+                price: 29000,
+                rating: 4.5,
+                reviewsCount: 15,
+                image: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=800&q=80",
+                sizes: ["S", "M", "L", "XL", "XXL"],
+                shipping: "Envío en 48hs",
+                quality: "Algodón peinado 100% suave al tacto, no hace pelotitas.",
+                description: "Buzo básico sin estampa con calce cómodo y abrigado.",
+                comparisons: [
+                    { store: "NIKE", price: 42000, shipping: "Envío 24hs", quality: "Muy buena" }
+                ]
+            },
+            {
+                id: 6,
+                title: "Pantalón Chino Slim Earth",
+                category: "hombre",
+                store: "Boutique Local Centro",
+                price: 27500,
+                rating: 4.8,
+                reviewsCount: 22,
+                image: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=800&q=80",
+                sizes: ["38", "40", "42", "44", "46"],
+                shipping: "Envío gratis en zona",
+                quality: "Gabardina elastizada muy cómoda para uso diario.",
+                description: "Pantalón chino en tono beige tostado combinable con todo.",
+                comparisons: [
+                    { store: "ZARA", price: 32000, shipping: "Envío estándar", quality: "Alta" }
+                ]
+            },
+            // Adolescentes
+            {
+                id: 7,
+                title: "Remera Oversized Gráfica Retro",
+                category: "adolescentes",
+                store: "Emprendimiento",
+                price: 15000,
+                rating: 4.9,
+                reviewsCount: 38,
+                image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80",
+                sizes: ["XS", "S", "M", "L"],
+                shipping: "Envío rápido 24hs",
+                quality: "Algodón pesado 24/1, estampa serigrafía duradera.",
+                description: "Estilo urbano aesthetic con lavado vintage gastado.",
+                comparisons: [
+                    { store: "ZARA Teens", price: 19900, shipping: "Envío 48hs", quality: "Buena" }
+                ]
+            },
+            {
+                id: 8,
+                title: "Jean Cargo Unisex Urbano",
+                category: "adolescentes",
+                store: "ZARA",
+                price: 36000,
+                rating: 4.6,
+                reviewsCount: 27,
+                image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=800&q=80",
+                sizes: ["S", "M", "L"],
+                shipping: "Envío gratis en compras mayores",
+                quality: "Denim rígido de gran resistencia con múltiples bolsillos.",
+                description: "Pantalón cargo de tendencia con ajuste en botamanga.",
+                comparisons: [
+                    { store: "Boutique Local Centro", price: 33000, shipping: "Envío local", quality: "Muy buena" }
+                ]
+            },
+            // Niños
+            {
+                id: 9,
+                title: "Conjunto Moletón Algodón Kids",
+                category: "ninos",
+                store: "Boutique Local Centro",
+                price: 18500,
+                rating: 4.9,
+                reviewsCount: 40,
+                image: "https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=800&q=80",
+                sizes: ["4", "6", "8", "10", "12"],
+                shipping: "Envío gratis en zona",
+                quality: "Tela suave hipoalergénica pensada para pieles sensibles.",
+                description: "Conjunto de buzo y pantalón cómodo para jugar todo el día.",
+                comparisons: [
+                    { store: "Tienda Infantil Kids", price: 21000, shipping: "Envío 24hs", quality: "Excelente" }
+                ]
+            },
+            // Bebé
+            {
+                id: 10,
+                title: "Mameluco Tejido de Algodón Orgánico",
+                category: "bebe",
+                store: "Emprendimiento",
+                price: 14000,
+                rating: 5.0,
+                reviewsCount: 51,
+                image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80",
+                sizes: ["Recién Nacido", "3-6 Meses", "6-12 Meses"],
+                shipping: "Envío prioritario recién nacido",
+                quality: "Algodón 100% virgen sin tinturas tóxicas, botones de madera.",
+                description: "Prenda delicada y abrigada para los primeros meses del bebé.",
+                comparisons: [
+                    { store: "Boutique Bebé", price: 17500, shipping: "Envío estándar", quality: "Alta" }
+                ]
+            },
+            // Embarazadas
+            {
+                id: 11,
+                title: "Vestido Midi Maternidad Lino",
+                category: "embarazadas",
+                store: "ZARA",
+                price: 32000,
+                rating: 4.8,
+                reviewsCount: 20,
+                image: "https://images.unsplash.com/photo-1566207471250-501dae6cdf3f?auto=format&fit=crop&w=800&q=80",
+                sizes: ["S/M", "M/L", "L/XL"],
+                shipping: "Envío express sin cargo",
+                quality: "Corte pensado para acompañar el crecimiento de la panza sin presionar.",
+                description: "Vestido fresco y elegante con tirმეs ajustables y gran amplitud.",
+                comparisons: [
+                    { store: "Mamá Chic Local", price: 29500, shipping: "Envío en el día", quality: "Excelente" }
+                ]
+            }
+        ];
+
+        // Estado Global de la App
+        let activeTab = 'home';
+        let activeCategory = 'all';
+        let activeStoreFilter = 'all';
+        let searchQuery = '';
+        let cart = [];
+        let history = []; // IDs de productos vistos
+        let userFolders = [
+            { name: "NIKE", items: [4] },
+            { name: "Básicos Otoño", items: [1, 5] },
+            { name: "Favoritos ZARA", items: [3, 8] }
+        ];
+        let userReviews = [
+            { id: 1, user: "Carla Méndez", store: "ZARA", quality: "Excelente calidad en linos", shipping: "Llegó en 24 horas exactas", sizing: "Talles fieles a la tabla", comment: "Muy conforme con la compra. La prenda vino impecable y con bolsa ecológica.", rating: 5, date: "Hace 2 días" },
+            { id: 2, user: "Lucas Gómez", store: "NIKE", quality: "Muy buena durabilidad", shipping: "Demoró 3 días por zona lejana", sizing: "Un poco justo de hombros", comment: "El cortavientos es original y facha total. Recomiendo pedir un talle más si te gusta holgado.", rating: 4, date: "Hace 5 días" },
+            { id: 3, user: "Valeria Ríos", store: "Emprendimiento Local", quality: "Calidad artesanal hermosa", shipping: "Envío rápido en moto", sizing: "Talle oversize real", comment: "Apoyemos los emprendimientos locales! La remera superó mis expectativas de suavidad.", rating: 5, date: "Hace 1 semana" }
+        ];
+
+        // Inicializar aplicación al cargar la ventana
+        window.onload = function() {
+            renderFolders();
+            renderContent();
+            updateBadges();
+        };
+
+        // Cambiar pestaña activa
+        function switchTab(tab) {
+            activeTab = tab;
+            renderContent();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Filtrar por categoría superior
+        function filterCategory(cat) {
+            activeCategory = cat;
+            // Actualizar botones de categoría visualmente
+            document.querySelectorAll('.category-nav-btn').forEach(btn => {
+                btn.classList.remove('text-vintage-900', 'font-semibold', 'border-b-2', 'border-vintage-800');
+                btn.classList.add('text-vintage-700');
+            });
+            const activeBtn = document.getElementById(`nav-${cat}`);
+            if(activeBtn) {
+                activeBtn.classList.add('text-vintage-900', 'font-semibold', 'border-b-2', 'border-vintage-800');
+                activeBtn.classList.remove('text-vintage-700');
+            }
+            if(activeTab !== 'home' && activeTab !== 'recommended') {
+                activeTab = 'home';
+            }
+            renderContent();
+        }
+
+        // Filtrar por tienda en el sidebar
+        function filterStore(store) {
+            activeStoreFilter = store;
+            renderContent();
+        }
+
+        // Búsqueda en tiempo real
+        function handleSearch(query) {
+            searchQuery = query.toLowerCase();
+            if(activeTab !== 'home') activeTab = 'home';
+            renderContent();
+        }
+
+        // Renderizador central de contenido dinámico según la pestaña
+        function renderContent() {
+            const container = document.getElementById('main-content-area');
+            
+            if (activeTab === 'home') {
+                container.innerHTML = renderHomeView();
+            } else if (activeTab === 'recommended') {
+                container.innerHTML = renderRecommendedView();
+            } else if (activeTab === 'history') {
+                container.innerHTML = renderHistoryView();
+            } else if (activeTab === 'reviews') {
+                container.innerHTML = renderReviewsView();
+            } else if (activeTab === 'marketplace') {
+                container.innerHTML = renderMarketplaceView();
+            } else if (activeTab === 'cart') {
+                container.innerHTML = renderCartView();
+            } else if (activeTab.startsWith('folder:')) {
+                const folderName = activeTab.replace('folder:', '');
+                container.innerHTML = renderFolderDetailView(folderName);
+            }
+        }
+
+        // Vista Principal (Explorar Tiendas, Ropa y Comparador)
+        function renderHomeView() {
+            // Filtrar productos
+            let filtered = products.filter(p => {
+                let matchesCategory = (activeCategory === 'all' || p.category === activeCategory);
+                let matchesStore = (activeStoreFilter === 'all' || p.store.toLowerCase().includes(activeStoreFilter.toLowerCase()));
+                let matchesSearch = (searchQuery === '' || p.title.toLowerCase().includes(searchQuery) || p.store.toLowerCase().includes(searchQuery) || p.category.toLowerCase().includes(searchQuery));
+                return matchesCategory && matchesStore && matchesSearch;
+            });
+
+            let categoryNames = {
+                'all': 'Todo el Catálogo y Tiendas',
+                'mujer': 'Ropa de Mujer — Tendencias y Básicos',
+                'hombre': 'Ropa de Hombre — Urbano y Casual',
+                'adolescentes': 'Adolescentes — Estilo Urban & Retro',
+                'ninos': 'Ropa de Niños — Comodidad y Durabilidad',
+                'bebe': 'Ropa de Bebé — Algodón Hipoalergénico',
+                'embarazadas': 'Embarazadas — Confort y Elegancia'
+            };
+
+            let html = `
+                <div class="space-y-6">
+                    <!-- Banner de Bienvenida Estilo Vintage -->
+                    <div class="bg-gradient-to-r from-vintage-200/80 via-vintage-100 to-vintage-200/50 p-6 md:p-8 rounded-2xl border border-vintage-300/60 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div class="max-w-lg">
+                            <span class="inline-block bg-vintage-800 text-vintage-50 text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Comparador de Moda Local</span>
+                            <h1 class="text-3xl md:text-4xl font-serif font-bold text-vintage-900 mb-2">Compara precios, marcas y envíos en tu zona</h1>
+                            <p class="text-xs md:text-sm text-vintage-700 leading-relaxed mb-4">Encuentra dónde conviene comprar cada prenda, lee reseñas reales de comodidad y apoya a emprendedores locales.</p>
+                            <div class="flex items-center gap-3">
+                                <button onclick="switchTab('recommended')" class="bg-vintage-900 hover:bg-vintage-800 text-vintage-50 px-5 py-2.5 rounded-xl text-xs font-semibold shadow transition-all">
+                                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Ver Recomendados
+                                </button>
+                                <button onclick="toggleSellModal(true)" class="bg-vintage-200 hover:bg-vintage-300 text-vintage-900 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all border border-vintage-300">
+                                    <i class="fa-solid fa-store mr-2"></i> Publicar Mi Tienda
+                                </button>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-72 h-44 rounded-xl overflow-hidden shadow-md flex-shrink-0 relative">
+                            <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80" alt="Lookify Store" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-3">
+                                <span class="text-white text-xs font-medium"><i class="fa-solid fa-location-dot mr-1"></i> Comercios locales actualizados</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Título de Categoría Activa -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl md:text-2xl font-serif font-bold text-vintage-900">${categoryNames[activeCategory] || 'Prendas'}</h2>
+                            <p class="text-xs text-vintage-600">Mostrando ${filtered.length} resultados disponibles con comparativa de tiendas</p>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-vintage-600">Ordenar por:</span>
+                            <select onchange="sortProducts(this.value)" class="bg-white border border-vintage-300 rounded-lg px-3 py-1.5 text-xs text-vintage-900 focus:outline-none">
+                                <option value="relevantes">Más Relevantes</option>
+                                <option value="menor-precio">Menor Precio</option>
+                                <option value="mayor-precio">Mayor Precio</option>
+                                <option value="mejor-calificacion">Mejor Calificación</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Grilla de Productos -->
+                    ${filtered.length === 0 ? `
+                        <div class="bg-white/60 border border-vintage-200 rounded-2xl p-12 text-center">
+                            <i class="fa-solid fa-shirt text-4xl text-vintage-400 mb-3"></i>
+                            <h3 class="text-lg font-serif font-bold text-vintage-900 mb-1">No se encontraron prendas</h3>
+                            <p class="text-xs text-vintage-600 mb-4">Prueba cambiando los filtros de categoría o el término de búsqueda.</p>
+                            <button onclick="filterCategory('all'); handleSearch(''); const search = document.getElementById('search-input'); if(search) search.value='';" class="bg-vintage-800 text-vintage-50 px-4 py-2 rounded-xl text-xs font-medium">Ver todo el catálogo</button>
+                        </div>
+                    ` : `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${filtered.map(p => `
+                                <div class="bg-white rounded-2xl border border-vintage-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
+                                    <div class="relative h-64 overflow-hidden bg-vintage-100 cursor-pointer" onclick="openProductDetail(${p.id})">
+                                        <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x600/E6DCD0/3D3025?text=Lookify'">
+                                        <div class="absolute top-3 left-3 bg-vintage-900/80 backdrop-blur-sm text-vintage-50 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                                            ${p.store}
+                                        </div>
+                                        <button onclick="event.stopPropagation(); openFolderSelector(${p.id})" class="absolute top-3 right-3 w-8 h-8 bg-white/90 hover:bg-white text-vintage-800 rounded-full flex items-center justify-center shadow transition-colors" title="Guardar en carpeta">
+                                            <i class="fa-regular fa-bookmark text-xs"></i>
+                                        </button>
+                                        <div class="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg flex items-center justify-between text-xs">
+                                            <span class="font-semibold text-vintage-900"><i class="fa-solid fa-truck text-vintage-600 mr-1"></i> ${p.shipping}</span>
+                                            <span class="text-amber-600 font-bold"><i class="fa-solid fa-star mr-0.5"></i> ${p.rating}</span>
+                                        </div>
+                                    </div>
+                                    <div class="p-5 flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <div class="flex items-center justify-between text-[11px] text-vintage-500 uppercase tracking-wider mb-1">
+                                                <span>${p.category}</span>
+                                                <span>${p.sizes.join(', ')}</span>
+                                            </div>
+                                            <h3 onclick="openProductDetail(${p.id})" class="font-serif font-bold text-base text-vintage-900 hover:text-vintage-700 cursor-pointer mb-2">${p.title}</h3>
+                                            <p class="text-xs text-vintage-600 line-clamp-2 mb-4">${p.description}</p>
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-4">
+                                                <div>
+                                                    <span class="text-[10px] text-vintage-500 block">Mejor Precio en zona</span>
+                                                    <span class="text-xl font-bold font-serif text-vintage-900">$${p.price.toLocaleString()}</span>
+                                                </div>
+                                                <span class="text-[11px] bg-vintage-100 text-vintage-800 px-2.5 py-1 rounded-lg font-medium">
+                                                    ${p.comparisons ? p.comparisons.length + 1 : 1} tiendas comparadas
+                                                </span>
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <button onclick="openProductDetail(${p.id})" class="bg-vintage-100 hover:bg-vintage-200 text-vintage-900 text-xs font-semibold py-2.5 rounded-xl transition-colors">
+                                                    Comparar Tiendas
+                                                </button>
+                                                <button onclick="addToCart(${p.id})" class="bg-vintage-800 hover:bg-vintage-900 text-vintage-50 text-xs font-semibold py-2.5 rounded-xl transition-colors">
+                                                    Comprar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+            `;
+            return html;
+        }
+
+        // Vista de Recomendados según historial y búsquedas
+        function renderRecommendedView() {
+            // Basado en prendas vistas recientemente o categorías populares
+            let recommendedList = products.slice(0, 6); // Simulación inteligente de recomendados
+
+            return `
+                <div class="space-y-6">
+                    <div class="bg-vintage-200/50 border border-vintage-300 p-6 rounded-2xl">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-vintage-800 text-xl"></i>
+                            <h1 class="text-2xl font-serif font-bold text-vintage-900">Recomendados para Ti</h1>
+                        </div>
+                        <p class="text-xs text-vintage-700">Seleccionado automáticamente basándonos en tus últimas búsquedas, tus tiendas favoritas y prendas de tu estilo.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${recommendedList.map(p => `
+                            <div class="bg-white rounded-2xl border border-vintage-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
+                                <div class="relative h-56 overflow-hidden bg-vintage-100 cursor-pointer" onclick="openProductDetail(${p.id})">
+                                    <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover">
+                                    <div class="absolute top-3 left-3 bg-amber-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                        98% Match con tu estilo
+                                    </div>
+                                </div>
+                                <div class="p-5 flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <span class="text-[11px] text-vintage-500 uppercase">${p.store}</span>
+                                        <h3 class="font-serif font-bold text-base text-vintage-900 mb-1">${p.title}</h3>
+                                        <p class="text-xs text-vintage-600 mb-3">$${p.price.toLocaleString()}</p>
+                                    </div>
+                                    <button onclick="openProductDetail(${p.id})" class="w-full bg-vintage-800 text-vintage-50 text-xs font-medium py-2 rounded-xl">
+                                        Ver Comparativa y Detalles
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Vista de Historial (Vistas Recientes y Compras)
+        function renderHistoryView() {
+            let viewedProducts = history.map(id => products.find(p => p.id === id)).filter(Boolean);
+
+            return `
+                <div class="space-y-6">
+                    <div class="border-b border-vintage-200 pb-4">
+                        <h1 class="text-2xl font-serif font-bold text-vintage-900 mb-1">Historial de Prendas Vistas</h1>
+                        <p class="text-xs text-vintage-600">Aquí encuentras rápidamente las prendas que exploraste recientemente en distintas tiendas.</p>
+                    </div>
+
+                    ${viewedProducts.length === 0 ? `
+                        <div class="bg-white border border-vintage-200 rounded-2xl p-12 text-center">
+                            <i class="fa-solid fa-clock-rotate-left text-4xl text-vintage-400 mb-3"></i>
+                            <h3 class="text-lg font-serif font-bold text-vintage-900 mb-1">Tu historial está vacío</h3>
+                            <p class="text-xs text-vintage-600 mb-4">Haz clic en cualquier prenda del catálogo para ver su comparativa y guardarla aquí.</p>
+                            <button onclick="switchTab('home')" class="bg-vintage-800 text-vintage-50 px-4 py-2 rounded-xl text-xs font-medium">Ir a explorar</button>
+                        </div>
+                    ` : `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${viewedProducts.map(p => `
+                                <div class="bg-white rounded-2xl border border-vintage-200 overflow-hidden shadow-sm flex flex-col">
+                                    <div class="relative h-48 overflow-hidden bg-vintage-100 cursor-pointer" onclick="openProductDetail(${p.id})">
+                                        <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover">
+                                        <span class="absolute top-3 left-3 bg-vintage-900 text-vintage-50 text-[10px] px-2 py-1 rounded-full">${p.store}</span>
+                                    </div>
+                                    <div class="p-4 flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <h3 class="font-serif font-bold text-sm text-vintage-900 mb-1">${p.title}</h3>
+                                            <p class="text-xs font-semibold text-vintage-800">$${p.price.toLocaleString()}</p>
+                                        </div>
+                                        <button onclick="openProductDetail(${p.id})" class="mt-3 w-full bg-vintage-100 hover:bg-vintage-200 text-vintage-900 text-xs py-2 rounded-lg font-medium">
+                                            Volver a ver
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        // Vista de Reseñas y Comentarios de usuarios
+        function renderReviewsView() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-vintage-200 pb-4">
+                        <div>
+                            <h1 class="text-2xl font-serif font-bold text-vintage-900 mb-1">Reseñas y Experiencias de Compradores</h1>
+                            <p class="text-xs text-vintage-600">Calidad de las telas, duración de envíos y comodidad de talles según usuarios reales de la zona.</p>
+                        </div>
+                        <button onclick="openReviewModal()" class="bg-vintage-800 hover:bg-vintage-900 text-vintage-50 px-4 py-2.5 rounded-xl text-xs font-semibold shadow transition-all">
+                            <i class="fa-solid fa-pen-to-square mr-2"></i> Escribir Reseña
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white p-5 rounded-2xl border border-vintage-200 shadow-sm text-center">
+                            <span class="text-3xl font-serif font-bold text-vintage-900">4.8 / 5.0</span>
+                            <div class="text-amber-500 text-sm my-1">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                            </div>
+                            <span class="text-xs text-vintage-600">Calificación promedio en tiendas locales</span>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-vintage-200 shadow-sm text-center">
+                            <span class="text-3xl font-serif font-bold text-vintage-900">24 - 48 hs</span>
+                            <div class="text-vintage-800 text-sm my-1"><i class="fa-solid fa-truck-fast"></i></div>
+                            <span class="text-xs text-vintage-600">Tiempo promedio de envíos zonales</span>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-vintage-200 shadow-sm text-center">
+                            <span class="text-3xl font-serif font-bold text-vintage-900">96%</span>
+                            <div class="text-emerald-600 text-sm my-1"><i class="fa-solid fa-circle-check"></i></div>
+                            <span class="text-xs text-vintage-600">Talles reales según tablas publicadas</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4" id="reviews-list-container">
+                        ${userReviews.map(r => `
+                            <div class="bg-white p-6 rounded-2xl border border-vintage-200 shadow-sm">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-vintage-200 text-vintage-900 font-serif font-bold flex items-center justify-center">
+                                            ${r.user.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h4 class="font-serif font-bold text-sm text-vintage-900">${r.user}</h4>
+                                            <span class="text-[11px] text-vintage-500">Tienda: <strong class="text-vintage-800">${r.store}</strong> • ${r.date}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-amber-500 text-xs">
+                                        ${'<i class="fa-solid fa-star"></i>'.repeat(r.rating)}
+                                    </div>
+                                </div>
+                                <p class="text-xs text-vintage-800 font-medium mb-3">"${r.comment}"</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-vintage-50 p-3 rounded-xl text-[11px] text-vintage-700">
+                                    <div><i class="fa-solid fa-shirt text-vintage-500 mr-1"></i> Calidad: <strong>${r.quality}</strong></div>
+                                    <div><i class="fa-solid fa-truck text-vintage-500 mr-1"></i> Envío: <strong>${r.shipping}</strong></div>
+                                    <div><i class="fa-solid fa-ruler text-vintage-500 mr-1"></i> Talle: <strong>${r.sizing}</strong></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Vista de Emprendimientos (Marketplace de usuarios)
+        function renderMarketplaceView() {
+            let emprendimientos = products.filter(p => p.store === 'Emprendimiento' || p.store.includes('Emprendimiento') || p.isUserPublished);
+
+            return `
+                <div class="space-y-6">
+                    <div class="bg-vintage-100 border border-vintage-300 p-6 md:p-8 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div>
+                            <span class="text-[10px] font-bold bg-vintage-800 text-vintage-50 px-3 py-1 rounded-full uppercase tracking-wider mb-2 inline-block">Comunidad Lookify</span>
+                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-vintage-900 mb-2">Emprendimientos y Ventas de Usuarios</h1>
+                            <p class="text-xs md:text-sm text-vintage-700 max-w-xl">Publica tus prendas, hazte conocer en tu zona, interactúa con otros creadores y genera ventas de manera directa.</p>
+                        </div>
+                        <button onclick="toggleSellModal(true)" class="bg-vintage-900 hover:bg-vintage-800 text-vintage-50 px-6 py-3 rounded-xl text-xs font-semibold shadow transition-all whitespace-nowrap">
+                            <i class="fa-solid fa-store mr-2"></i> Iniciar mi Emprendimiento
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-serif font-bold text-xl text-vintage-900">Prendas de Emprendedores Locales</h3>
+                        <span class="text-xs text-vintage-600">${emprendimientos.length} publicaciones activas</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${emprendimientos.map(p => `
+                            <div class="bg-white rounded-2xl border border-vintage-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
+                                <div class="relative h-56 overflow-hidden bg-vintage-100 cursor-pointer" onclick="openProductDetail(${p.id})">
+                                    <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover">
+                                    <span class="absolute top-3 left-3 bg-terracotta text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+                                        Emprendimiento
+                                    </span>
+                                </div>
+                                <div class="p-5 flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <h3 class="font-serif font-bold text-base text-vintage-900 mb-1">${p.title}</h3>
+                                        <p class="text-xs text-vintage-600 line-clamp-2 mb-3">${p.description}</p>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-lg font-bold font-serif text-vintage-900">$${p.price.toLocaleString()}</span>
+                                            <span class="text-[11px] text-vintage-500">${p.shipping}</span>
+                                        </div>
+                                        <button onclick="openProductDetail(${p.id})" class="w-full bg-vintage-800 hover:bg-vintage-900 text-vintage-50 text-xs font-semibold py-2.5 rounded-xl">
+                                            Contactar y Comprar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Vista de Carrito de Compras
+        function renderCartView() {
+            let total = cart.reduce((sum, item) => sum + item.price, 0);
+
+            return `
+                <div class="space-y-6 max-w-3xl mx-auto">
+                    <div class="border-b border-vintage-200 pb-4">
+                        <h1 class="text-2xl font-serif font-bold text-vintage-900 mb-1">Tu Bolsa de Compras en Lookify</h1>
+                        <p class="text-xs text-vintage-600">Revisa tus prendas seleccionadas de distintas tiendas antes de confirmar.</p>
+                    </div>
+
+                    ${cart.length === 0 ? `
+                        <div class="bg-white border border-vintage-200 rounded-2xl p-12 text-center">
+                            <i class="fa-solid fa-bag-shopping text-4xl text-vintage-400 mb-3"></i>
+                            <h3 class="text-lg font-serif font-bold text-vintage-900 mb-1">Tu bolsa está vacía</h3>
+                            <p class="text-xs text-vintage-600 mb-4">Agrega prendas desde el catálogo o comparador para avanzar.</p>
+                            <button onclick="switchTab('home')" class="bg-vintage-800 text-vintage-50 px-4 py-2 rounded-xl text-xs font-medium">Ver catálogo</button>
+                        </div>
+                    ` : `
+                        <div class="space-y-4">
+                            ${cart.map((item, idx) => `
+                                <div class="bg-white p-4 rounded-2xl border border-vintage-200 flex items-center gap-4">
+                                    <img src="${item.image}" alt="${item.title}" class="w-16 h-16 object-cover rounded-xl bg-vintage-100 flex-shrink-0">
+                                    <div class="flex-1">
+                                        <span class="text-[10px] text-vintage-500 uppercase">${item.store}</span>
+                                        <h4 class="font-serif font-bold text-sm text-vintage-900">${item.title}</h4>
+                                        <span class="text-xs font-semibold text-vintage-800">$${item.price.toLocaleString()}</span>
+                                    </div>
+                                    <button onclick="removeFromCart(${idx})" class="text-vintage-500 hover:text-terracotta p-2">
+                                        <i class="fa-solid fa-trash text-sm"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+
+                            <div class="bg-vintage-100 p-6 rounded-2xl border border-vintage-300 mt-6 space-y-4">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-vintage-700">Subtotal de prendas</span>
+                                    <span class="font-semibold text-vintage-900">$${total.toLocaleString()}</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-vintage-700">Envío combinado zonal</span>
+                                    <span class="font-semibold text-emerald-700">GRATIS</span>
+                                </div>
+                                <div class="border-t border-vintage-300 pt-4 flex items-center justify-between">
+                                    <span class="font-serif font-bold text-lg text-vintage-900">Total Final</span>
+                                    <span class="font-serif font-bold text-xl text-vintage-900">$${total.toLocaleString()}</span>
+                                </div>
+                                <button onclick="checkoutCart()" class="w-full bg-vintage-900 hover:bg-vintage-800 text-vintage-50 py-3 rounded-xl font-medium text-sm transition-all shadow">
+                                    Finalizar Compra Segura
+                                </button>
+                            </div>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        // Vista Detalle de Carpeta Personalizada
+        function renderFolderDetailView(folderName) {
+            let folder = userFolders.find(f => f.name === folderName);
+            let folderProducts = folder ? folder.items.map(id => products.find(p => p.id === id)).filter(Boolean) : [];
+
+            return `
+                <div class="space-y-6">
+                    <div class="border-b border-vintage-200 pb-4 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold bg-vintage-800 text-vintage-50 px-3 py-1 rounded-full uppercase tracking-wider mb-2 inline-block">Carpeta Destacada</span>
+                            <h1 class="text-2xl font-serif font-bold text-vintage-900">${folderName}</h1>
+                            <p class="text-xs text-vintage-600">Tus prendas guardadas en esta colección personalizada.</p>
+                        </div>
+                        <button onclick="switchTab('home')" class="text-xs text-vintage-800 font-semibold hover:underline">
+                            <i class="fa-solid fa-arrow-left mr-1"></i> Volver al catálogo
+                        </button>
+                    </div>
+
+                    ${folderProducts.length === 0 ? `
+                        <div class="bg-white border border-vintage-200 rounded-2xl p-12 text-center">
+                            <i class="fa-regular fa-folder-open text-4xl text-vintage-400 mb-3"></i>
+                            <h3 class="text-lg font-serif font-bold text-vintage-900 mb-1">Esta carpeta está vacía</h3>
+                            <p class="text-xs text-vintage-600 mb-4">Guarda prendas usando el icono de marcador en cualquier producto del catálogo.</p>
+                            <button onclick="switchTab('home')" class="bg-vintage-800 text-vintage-50 px-4 py-2 rounded-xl text-xs font-medium">Explorar prendas</button>
+                        </div>
+                    ` : `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${folderProducts.map(p => `
+                                <div class="bg-white rounded-2xl border border-vintage-200 overflow-hidden shadow-sm flex flex-col">
+                                    <div class="relative h-48 overflow-hidden bg-vintage-100 cursor-pointer" onclick="openProductDetail(${p.id})">
+                                        <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover">
+                                        <span class="absolute top-3 left-3 bg-vintage-900 text-vintage-50 text-[10px] px-2 py-1 rounded-full">${p.store}</span>
+                                    </div>
+                                    <div class="p-4 flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <h3 class="font-serif font-bold text-sm text-vintage-900 mb-1">${p.title}</h3>
+                                            <p class="text-xs font-semibold text-vintage-800">$${p.price.toLocaleString()}</p>
+                                        </div>
+                                        <button onclick="openProductDetail(${p.id})" class="mt-3 w-full bg-vintage-800 text-vintage-50 text-xs py-2 rounded-lg font-medium">
+                                            Ver Comparativa
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        // Abrir Detalle de Prenda y Comparador de Tiendas
+        function openProductDetail(id) {
+            let p = products.find(item => item.id === id);
+            if (!p) return;
+
+            // Registrar en historial si no está
+            if (!history.includes(id)) {
+                history.unshift(id);
+                if(history.length > 10) history.pop();
+                updateBadges();
+            }
+
+            let modalContent = document.getElementById('modal-content');
+            modalContent.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <div class="rounded-2xl overflow-hidden bg-vintage-100 h-80 md:h-[420px]">
+                        <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x600/E6DCD0/3D3025?text=Lookify'">
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <span class="text-xs font-bold bg-vintage-200 text-vintage-900 px-3 py-1 rounded-full uppercase">${p.store}</span>
+                            <h2 class="text-2xl font-serif font-bold text-vintage-900 mt-2 mb-1">${p.title}</h2>
+                            <div class="flex items-center gap-2 text-xs text-amber-600 mb-3">
+                                <i class="fa-solid fa-star"></i>
+                                <span class="font-bold">${p.rating}</span>
+                                <span class="text-vintage-500">(${p.reviewsCount} reseñas verificadas)</span>
+                            </div>
+                            <span class="text-2xl font-bold font-serif text-vintage-900">$${p.price.toLocaleString()}</span>
+                        </div>
+
+                        <p class="text-xs text-vintage-700 leading-relaxed">${p.description}</p>
+
+                        <div class="bg-vintage-100/70 p-4 rounded-xl space-y-2 text-xs">
+                            <div class="flex items-center gap-2 text-vintage-800">
+                                <i class="fa-solid fa-truck text-vintage-600 w-4"></i>
+                                <span>Envío: <strong>${p.shipping}</strong></span>
+                            </div>
+                            <div class="flex items-center gap-2 text-vintage-800">
+                                <i class="fa-solid fa-shirt text-vintage-600 w-4"></i>
+                                <span>Calidad: <strong>${p.quality}</strong></span>
+                            </div>
+                            <div class="flex items-center gap-2 text-vintage-800">
+                                <i class="fa-solid fa-ruler-combined text-vintage-600 w-4"></i>
+                                <span>Talles disponibles: <strong>${p.sizes.join(', ')}</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Comparativa con otras tiendas -->
+                        <div>
+                            <h4 class="text-xs font-bold text-vintage-800 uppercase mb-2">Comparativa de precios en otras tiendas de la zona:</h4>
+                            <div class="space-y-2">
+                                <div class="bg-vintage-900 text-vintage-50 p-2.5 rounded-xl text-xs flex items-center justify-between">
+                                    <span><strong>${p.store}</strong> (Seleccionada)</span>
+                                    <span class="font-bold">$${p.price.toLocaleString()}</span>
+                                </div>
+                                ${p.comparisons && p.comparisons.length > 0 ? p.comparisons.map(c => `
+                                    <div class="bg-white border border-vintage-200 p-2.5 rounded-xl text-xs flex items-center justify-between">
+                                        <div>
+                                            <strong>${c.store}</strong>
+                                            <span class="block text-[10px] text-vintage-500">${c.shipping} • Calidad: ${c.quality}</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="font-bold text-vintage-900">$${c.price.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                `).join('') : '<p class="text-[11px] text-vintage-500">No hay otras tiendas registradas para esta prenda específica.</p>'}
+                            </div>
+                        </div>
+
+                        <div class="pt-2 flex gap-3">
+                            <button onclick="addToCart(${p.id}); closeProductModal();" class="flex-1 bg-vintage-800 hover:bg-vintage-900 text-vintage-50 py-3 rounded-xl text-xs font-semibold transition-all">
+                                Agregar a Bolsa de Compras
+                            </button>
+                            <button onclick="openFolderSelector(${p.id})" class="bg-vintage-200 hover:bg-vintage-300 text-vintage-900 px-4 py-3 rounded-xl text-xs font-semibold transition-all">
+                                <i class="fa-regular fa-bookmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-modal').classList.add('hidden');
+        }
+
+        // Modal de selector de carpeta para guardar
+        function openFolderSelector(productId) {
+            let folderNames = userFolders.map(f => f.name);
+            let folderOptionsHtml = folderNames.map(name => `
+                <button onclick="addToFolder('${name}', ${productId})" class="w-full text-left px-4 py-3 bg-vintage-100 hover:bg-vintage-200 rounded-xl text-xs font-medium text-vintage-900 transition-colors flex items-center justify-between">
+                    <span><i class="fa-solid fa-folder mr-2 text-vintage-700"></i> ${name}</span>
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+            `).join('');
+
+            let modalContent = document.getElementById('modal-content');
+            modalContent.innerHTML = `
+                <div class="max-w-md mx-auto text-center space-y-4">
+                    <div class="w-12 h-12 rounded-full bg-vintage-200 text-vintage-900 flex items-center justify-center mx-auto text-lg">
+                        <i class="fa-solid fa-folder-plus"></i>
+                    </div>
+                    <h3 class="text-xl font-serif font-bold text-vintage-900">Guardar en Carpeta Destacada</h3>
+                    <p class="text-xs text-vintage-600">Elige en qué carpeta deseas organizar esta prenda para comparar después.</p>
+                    <div class="space-y-2 pt-2">
+                        ${folderOptionsHtml}
+                    </div>
+                    <button onclick="createFolderPrompt(${productId})" class="w-full border border-vintage-300 hover:bg-vintage-100 text-vintage-900 text-xs py-2.5 rounded-xl font-medium transition-colors">
+                        + Crear nueva carpeta
+                    </button>
+                    <button onclick="closeProductModal()" class="text-xs text-vintage-500 hover:text-vintage-900 pt-2 block mx-auto">Cancelar</button>
+                </div>
+            `;
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
+        function addToFolder(folderName, productId) {
+            let folder = userFolders.find(f => f.name === folderName);
+            if (folder && !folder.items.includes(productId)) {
+                folder.items.push(productId);
+                showToast(`Prenda guardada en carpeta "${folderName}"`);
+            } else {
+                showToast(`La prenda ya estaba en "${folderName}"`);
+            }
+            closeProductModal();
+            renderFolders();
+        }
+
+        function createFolderPrompt(productIdToSave = null) {
+            let folderName = prompt("Ingresa el nombre de la nueva carpeta (ej: NIKE Verano, Básicos):");
+            if (folderName && folderName.trim() !== '') {
+                userFolders.push({ name: folderName.trim(), items: productIdToSave ? [productIdToSave] : [] });
+                renderFolders();
+                showToast(`Carpeta "${folderName}" creada con éxito`);
+                if(productIdToSave) closeProductModal();
+            }
+        }
+
+        function renderFolders() {
+            let list = document.getElementById('folders-list');
+            if(!list) return;
+            list.innerHTML = userFolders.map(f => `
+                <a href="#" onclick="switchTab('folder:${f.name}')" class="flex items-center justify-between px-3 py-2 rounded-xl text-vintage-800 hover:bg-vintage-200/70 font-medium transition-colors text-xs">
+                    <span class="flex items-center gap-2"><i class="fa-regular fa-folder text-vintage-600"></i> ${f.name}</span>
+                    <span class="bg-vintage-200 text-vintage-800 px-2 py-0.5 rounded-full text-[10px] font-bold">${f.items.length}</span>
+                </a>
+            `).join('');
+        }
+
+        // Carrito de compras
+        function addToCart(productId) {
+            let p = products.find(item => item.id === productId);
+            if (p) {
+                cart.push(p);
+                updateBadges();
+                showToast(`"${p.title}" agregado a la bolsa`);
+            }
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateBadges();
+            renderContent();
+            showToast("Prenda retirada de la bolsa");
+        }
+
+        function checkoutCart() {
+            if (cart.length === 0) return;
+            alert("¡Compra procesada con éxito a través de Lookify! Las tiendas seleccionadas prepararán tus envíos zonales.");
+            cart = [];
+            updateBadges();
+            switchTab('home');
+        }
+
+        // Publicar emprendimiento / prenda
+        function toggleSellModal(show) {
+            let modal = document.getElementById('sell-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function handlePublishProduct(event) {
+            event.preventDefault();
+            let shop = document.getElementById('shop-name').value;
+            let title = document.getElementById('item-title').value;
+            let category = document.getElementById('item-category').value;
+            let price = Number(document.getElementById('item-price').value);
+            let sizes = document.getElementById('item-sizes').value.split(',').map(s => s.trim());
+            let shipping = document.getElementById('item-shipping').value;
+            let image = document.getElementById('item-image').value;
+            let desc = document.getElementById('item-desc').value;
+
+            let newProduct = {
+                id: Math.max(0, ...products.map(p => p.id)) + 1,
+                isUserPublished: true,
+                title: title,
+                category: category,
+                store: shop,
+                price: price,
+                rating: 5.0,
+                reviewsCount: 1,
+                image: image,
+                sizes: sizes,
+                shipping: shipping,
+                quality: "Publicado por emprendedor local en Lookify.",
+                description: desc,
+                comparisons: []
+            };
+
+            products.unshift(newProduct);
+            toggleSellModal(false);
+            document.getElementById('sell-form').reset();
+            switchTab('marketplace');
+            showToast("¡Tu emprendimiento y prenda han sido publicados!");
+        }
+
+        // Escribir Reseña
+        function openReviewModal() {
+            let store = prompt("¿Qué tienda o marca deseas reseñar? (ej: ZARA, NIKE, Emprendimiento)");
+            if(!store) return;
+            let comment = prompt("Escribe tu comentario sobre calidad, envío y comodidad de talles:");
+            if(!comment) return;
+
+            userReviews.unshift({
+                id: userReviews.length + 1,
+                user: "Tú (Usuario Lookify)",
+                store: store,
+                quality: "Excelente",
+                shipping: "Rápido y seguro",
+                sizing: "Talle exacto",
+                comment: comment,
+                rating: 5,
+                date: "Recién"
+            });
+
+            if(activeTab === 'reviews') renderContent();
+            showToast("¡Reseña publicada con éxito!");
+        }
+
+        // Ordenar productos
+        function sortProducts(criteria) {
+            if(criteria === 'menor-precio') {
+                products.sort((a,b) => a.price - b.price);
+            } else if(criteria === 'mayor-precio') {
+                products.sort((a,b) => b.price - a.price);
+            } else if(criteria === 'mejor-calificacion') {
+                products.sort((a,b) => b.rating - a.rating);
+            }
+            renderContent();
+        }
+
+        // Sidebar móvil
+        function toggleSidebar() {
+            let sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        function closeSidebar() {
+            let sidebar = document.getElementById('sidebar');
+            sidebar.classList.add('-translate-x-full');
+        }
+
+        // Sistema de Notificación Toast
+        function showToast(message) {
+            let toast = document.getElementById('toast');
+            let msgEl = document.getElementById('toast-message');
+            msgEl.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Actualizar badges de contadores
+        function updateBadges() {
+            let cartBadge = document.getElementById('cart-badge');
+            if(cart.length > 0) {
+                cartBadge.textContent = cart.length;
+                cartBadge.classList.remove('hidden');
+            } else {
+                cartBadge.classList.add('hidden');
+            }
+
+            let historyBadge = document.getElementById('history-badge');
+            if(history.length > 0) {
+                historyBadge.textContent = history.length;
+                historyBadge.classList.remove('hidden');
+            } else {
+                historyBadge.classList.add('hidden');
+            }
+        }
+  </script>
+ </body>
+</html>
+
