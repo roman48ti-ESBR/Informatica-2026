@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>MiPortal - Tracker de Series y Películas</title>
+   <!-- Tailwind CSS -->
+   <script src="https://cdn.tailwindcss.com"></script>
+   <script>
+       tailwind.config = {
+           darkMode: 'class',
+           theme: {
+               extend: {
+                   colors: {
+                       netflix: {
+                           red: '#E50914',
+                           darkred: '#B20710',
+                           black: '#141414',
+                           gray: '#1f1f1f',
+                           lightgray: '#2f2f2f'
+                       }
+                   }
+               }
+           }
+       }
+   </script>
+   <!-- Font Awesome Icons -->
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+   <!-- Google Fonts Inter -->
+   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+   <style>
+       body { font-family: 'Inter', sans-serif; }
+       ::-webkit-scrollbar { width: 8px; height: 8px; }
+       ::-webkit-scrollbar-track { background: #141414; }
+       ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+       ::-webkit-scrollbar-thumb:hover { background: #E50914; }
+   </style>
+</head>
+<body class="bg-netflix-black text-gray-100 min-h-screen flex flex-col selection:bg-netflix-red selection:text-white">
+
+
+   <!-- Custom Notification Box (Instead of alert) -->
+   <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-32 opacity-0 transition-all duration-300 flex items-center gap-3 bg-netflix-gray border border-gray-700 text-white px-5 py-4 rounded-xl shadow-2xl">
+       <i id="toast-icon" class="fa-solid fa-circle-check text-green-500 text-xl"></i>
+       <div>
+           <h5 id="toast-title" class="font-bold text-sm">Notificación</h5>
+           <p id="toast-msg" class="text-xs text-gray-400">Mensaje descriptivo aquí.</p>
+       </div>
+   </div>
+
+
+   <!-- Header / Navbar -->
+   <header class="sticky top-0 z-40 bg-netflix-black/90 backdrop-blur-md border-b border-gray-800/80 px-4 md:px-8 py-4 flex items-center justify-between">
+       <div class="flex items-center gap-6">
+           <a href="#" class="flex items-center gap-2 text-netflix-red font-black text-2xl tracking-wider">
+               <i class="fa-solid fa-play text-3xl"></i>
+               <span class="bg-gradient-to-r from-netflix-red to-red-500 bg-clip-text text-transparent">MIPORTAL</span>
+           </a>
+           <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-gray-300">
+               <a href="#top-personal" class="hover:text-white transition">Top Personal</a>
+               <a href="#en-proceso" class="hover:text-white transition">En Proceso</a>
+               <a href="#estadisticas" class="hover:text-white transition">Estadísticas</a>
+               <a href="#biblioteca" class="hover:text-white transition">Biblioteca</a>
+               <a href="#abandonados" class="hover:text-white transition">Abandonados</a>
+           </nav>
+       </div>
+       <div class="flex items-center gap-3">
+           <button onclick="openAddModal()" class="bg-netflix-red hover:bg-netflix-darkred text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition shadow-lg shadow-netflix-red/20 active:scale-95">
+               <i class="fa-solid fa-plus"></i>
+               <span>Nuevo Título</span>
+           </button>
+       </div>
+   </header>
+
+
+   <!-- Main Container -->
+   <main class="flex-grow max-w-7xl w-full mx-auto px-4 md:px-8 py-6 flex flex-col gap-10">
+
+
+       <!-- Hero / Top Personal Section -->
+       <section id="top-personal" class="flex flex-col gap-4">
+           <div class="flex items-center justify-between">
+               <div>
+                   <h2 class="text-2xl md:text-3xl font-extrabold flex items-center gap-3">
+                       <i class="fa-solid fa-crown text-amber-400"></i> Top Personal (Favoritos)
+                   </h2>
+                   <p class="text-sm text-gray-400">Tus 10 mejores series y películas mejor puntuadas de todos los tiempos</p>
+               </div>
+           </div>
+           <div id="top-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-x-auto pb-4 pt-1">
+               <!-- Inyectado por JS -->
+           </div>
+       </section>
+
+
+       <!-- En Proceso Section -->
+       <section id="en-proceso" class="flex flex-col gap-4">
+           <div class="flex items-center justify-between">
+               <div>
+                   <h2 class="text-2xl md:text-3xl font-extrabold flex items-center gap-3">
+                       <i class="fa-solid fa-clock-rotate-left text-netflix-red"></i> En Proceso (Viendo Actualmente)
+                   </h2>
+                   <p class="text-sm text-gray-400">Registro detallado de capítulos, temporadas y avance al día</p>
+               </div>
+           </div>
+           <div id="proceso-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+               <!-- Inyectado por JS -->
+           </div>
+       </section>
+
+
+       <!-- Estadisticas / Contador de Avances -->
+       <section id="estadisticas" class="bg-netflix-gray/50 border border-gray-800 rounded-2xl p-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center shadow-lg">
+           <div class="flex flex-col items-center justify-center p-4 bg-netflix-black/40 rounded-xl border border-gray-800">
+               <i class="fa-solid fa-circle-check text-3xl text-emerald-500 mb-2"></i>
+               <span id="stat-completed" class="text-3xl font-black text-white">0</span>
+               <span class="text-xs text-gray-400 mt-1 uppercase tracking-wider font-semibold">Títulos Completados</span>
+           </div>
+           <div class="flex flex-col items-center justify-center p-4 bg-netflix-black/40 rounded-xl border border-gray-800">
+               <i class="fa-solid fa-film text-3xl text-netflix-red mb-2"></i>
+               <span id="stat-episodes" class="text-3xl font-black text-white">0</span>
+               <span class="text-xs text-gray-400 mt-1 uppercase tracking-wider font-semibold">Capítulos Vistos</span>
+           </div>
+           <div class="flex flex-col items-center justify-center p-4 bg-netflix-black/40 rounded-xl border border-gray-800">
+               <i class="fa-solid fa-clock text-3xl text-blue-400 mb-2"></i>
+               <span id="stat-time" class="text-3xl font-black text-white">0h</span>
+               <span class="text-xs text-gray-400 mt-1 uppercase tracking-wider font-semibold">Tiempo Invertido</span>
+           </div>
+           <div class="flex flex-col items-center justify-center p-4 bg-netflix-black/40 rounded-xl border border-gray-800">
+               <i class="fa-solid fa-star text-3xl text-amber-400 mb-2"></i>
+               <span id="stat-avg-score" class="text-3xl font-black text-white">0.0</span>
+               <span class="text-xs text-gray-400 mt-1 uppercase tracking-wider font-semibold">Nota Promedio</span>
+           </div>
+       </section>
+
+
+       <!-- Biblioteca General con Filtros -->
+       <section id="biblioteca" class="flex flex-col gap-6">
+           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+               <div>
+                   <h2 class="text-2xl md:text-3xl font-extrabold flex items-center gap-3">
+                       <i class="fa-solid fa-layer-group text-blue-500"></i> Biblioteca Completa
+                   </h2>
+                   <p class="text-sm text-gray-400">Filtra y organiza por tipo, estado, género o búsqueda libre</p>
+               </div>
+               <!-- Filtros y Buscador -->
+               <div class="flex flex-wrap items-center gap-3">
+                   <div class="relative">
+                       <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                       <input type="text" id="search-input" placeholder="Buscar título..." oninput="filterTitles()" class="bg-netflix-gray border border-gray-700 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-netflix-red text-white w-40 md:w-48">
+                   </div>
+                   <select id="filter-type" onchange="filterTitles()" class="bg-netflix-gray border border-gray-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-netflix-red text-white">
+                       <option value="all">Todo Tipo</option>
+                       <option value="Serie">Series</option>
+                       <option value="Película">Películas</option>
+                   </select>
+                   <select id="filter-status" onchange="filterTitles()" class="bg-netflix-gray border border-gray-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-netflix-red text-white">
+                       <option value="all">Todo Estado</option>
+                       <option value="En Proceso">En Proceso</option>
+                       <option value="Finalizada">Finalizadas</option>
+                       <option value="Abandonada">Abandonadas</option>
+                   </select>
+                   <select id="filter-genre" onchange="filterTitles()" class="bg-netflix-gray border border-gray-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-netflix-red text-white">
+                       <option value="all">Todo Género</option>
+                       <option value="Drama">Drama</option>
+                       <option value="Romance">Romance</option>
+                       <option value="Ciencia Ficción">Ciencia Ficción</option>
+                       <option value="Thriller">Thriller</option>
+                       <option value="Comedia">Comedia</option>
+                       <option value="Musical">Musical</option>
+                   </select>
+               </div>
+           </div>
+
+
+           <!-- Grid de Biblioteca -->
+           <div id="library-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+               <!-- Inyectado por JS -->
+           </div>
+       </section>
+
+
+       <!-- Abandonados Section -->
+       <section id="abandonados" class="flex flex-col gap-4">
+           <div class="flex items-center justify-between">
+               <div>
+                   <h2 class="text-2xl md:text-3xl font-extrabold flex items-center gap-3 text-rose-500">
+                       <i class="fa-solid fa-heart-crack"></i> Abandonados
+                   </h2>
+                   <p class="text-sm text-gray-400">Series y películas que pausé o dejé de ver, con su respectivo motivo</p>
+               </div>
+           </div>
+           <div id="abandoned-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+               <!-- Inyectado por JS -->
+           </div>
+       </section>
+
+
+   </main>
+
+
+   <!-- Footer -->
+   <footer class="border-t border-gray-800/80 bg-netflix-black py-8 mt-12 text-center text-sm text-gray-500">
+       <p>MiPortal Streaming Tracker &copy; 2026 - Diseñado con estilo moderno y adaptable.</p>
+   </footer>
+
+
+   <!-- MODAL: Agregar / Editar Título -->
+   <div id="title-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
+       <div class="bg-netflix-gray border border-gray-700 rounded-2xl max-w-xl w-full p-6 relative shadow-2xl my-8">
+           <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl p-2"><i class="fa-solid fa-xmark"></i></button>
+           <h3 id="modal-title" class="text-xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-film text-netflix-red"></i> Agregar Nuevo Título</h3>
+          
+           <form id="title-form" onsubmit="saveTitle(event)" class="space-y-4">
+               <input type="hidden" id="item-id">
+              
+               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div>
+                       <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Título</label>
+                       <input type="text" id="item-name" required placeholder="Ej. Stranger Things" class="w-full bg-netflix-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-netflix-red">
+                   </div>
+                   <div>
+                       <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Tipo</label>
+                       <select id="item-type" class="w-full bg-netflix-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-netflix-red">
+                           <option value="Serie">Serie</option>
+                           <option value="Película">Película</option>
+                       </select>
+                   </div>
+               </div>
+
+
+               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                   <div>
+                       <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Estado</label>
+                       <select id="item-status" onchange="toggleStatusFields()" class="w-full bg-netflix-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-netflix-red">
+                           <option value="En Proceso">En Proceso</option>
+                           <option value="Finalizada">Finalizada</option>
+                           <option value="Abandonada">Abandonada</option>
+                       </select>
+                   </div>
+                   <div>
+                       <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Puntuación (1-10)</label>
+                       <input type="number" id="item-score" min="1" max="10" required value="8" class="w-full bg-netflix-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-netflix-red">
+                   </div>
+                   <div>
+                       <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Género</label>
+                       <select id="item-genre" class="w-full bg-netflix-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-netflix-red">
+                           <option value="Drama">Drama</option>
+                           <option value="Romance">Romance</option>
+                           <option value="Ciencia Ficción">Ciencia Ficción</option>
+                           <option value="Thriller">Thriller</option>
+                           <option value="Comedia">Comedia</option>
+                           <option value="Musical">Musical</option>
+                       </select>
+                   </div>
+               </div>
+
+
+               <!-- Campos específicos para En Proceso -->
+               <div id="process-fields" class="grid grid-cols-2 gap-4 bg-netflix-black/50 p-3 rounded-xl border border-gray-800">
+                   <div>
+                       <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Temporada Actual</label>
+                       <input type="number" id="item-season" min="1" value="1" class="w-full bg-netflix-gray border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-netflix-red">
+                   </div>
+                   <div>
+                       <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Capítulo Actual</label>
+                       <input type="number" id="item-episode" min="1" value="1" class="w-full bg-netflix-gray border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-netflix-red">
+                   </div>
+               </div>
+
+
+               <!-- Campo específico para Abandonada -->
+               <div id="abandoned-field" class="hidden">
+                   <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Razón de Abandono</label>
+                   <textarea id="item-reason" rows="2" placeholder="Ej. Se volvió muy repetitiva..." class="w-full bg-netflix-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-netflix-red"></textarea>
+               </div>
+
+
+               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div>
+                       <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">URL de Póster / Imagen</label>
+                       <input type="url" id="item-image" placeholder="https://ejemplo.com/imagen.jpg" class="w-full bg-netflix-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-netflix-red">
+                   </div>
+                   <div>
+                       <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Total Capítulos (o Duración min)</label>
+                       <input type="number" id="item-total-ep" min="1" value="10" class="w-full bg-netflix-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-netflix-red">
+                   </div>
+               </div>
+
+
+               <div>
+                   <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Descripción Breve</label>
+                   <textarea id="item-desc" rows="2" placeholder="Sinopsis corta..." class="w-full bg-netflix-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-netflix-red"></textarea>
+               </div>
+
+
+               <div class="flex justify-end gap-3 pt-4">
+                   <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-semibold transition">Cancelar</button>
+                   <button type="submit" class="px-5 py-2 bg-netflix-red hover:bg-netflix-darkred text-white rounded-lg text-sm font-semibold transition shadow-lg shadow-netflix-red/20">Guardar Título</button>
+               </div>
+           </form>
+       </div>
+   </div>
+
+
+   <!-- Application Logic -->
+   <script>
+       // Base de datos inicial con 20+ elementos precargados (incluyendo peticiones del usuario)
+       const defaultDatabase = [
+           {
+               id: 1,
+               name: "Go! Vive a tu manera",
+               type: "Serie",
+               genre: "Musical",
+               status: "Finalizada",
+               score: 9,
+               season: 2,
+               episode: 15,
+               totalEpisodes: 30,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80",
+               description: "Mía, una talentosa joven con espíritu libre, consigue una beca en la prestigiosa Academia Saint Mary para estudiar danza."
+           },
+           {
+               id: 2,
+               name: "Stranger Things",
+               type: "Serie",
+               genre: "Ciencia Ficción",
+               status: "En Proceso",
+               score: 10,
+               season: 4,
+               episode: 7,
+               totalEpisodes: 34,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=600&auto=format&fit=crop&q=80",
+               description: "Cuando un niño desaparece, un pequeño pueblo descubre un misterio que involucra experimentos secretos y fuerzas paranormales."
+           },
+           {
+               id: 3,
+               name: "Amor en la puerta de al lado (Love Next Door)",
+               type: "Serie",
+               genre: "Romance",
+               status: "Finalizada",
+               score: 9,
+               season: 1,
+               episode: 16,
+               totalEpisodes: 16,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80",
+               description: "Una mujer intenta reiniciar su vida caótica en Corea, cruzándose con su amigo de la infancia con quien comparte un pasado."
+           },
+           {
+               id: 4,
+               name: "Rebelde Way",
+               type: "Serie",
+               genre: "Drama",
+               status: "Finalizada",
+               score: 10,
+               season: 2,
+               episode: 318,
+               totalEpisodes: 318,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600&auto=format&fit=crop&q=80",
+               description: "Adolescentes de élite en una exclusiva escuela secundaria de Buenos Aires forman una banda secreta de rock."
+           },
+           {
+               id: 5,
+               name: "Scream",
+               type: "Película",
+               genre: "Thriller",
+               status: "Finalizada",
+               score: 8,
+               season: 1,
+               episode: 1,
+               totalEpisodes: 1,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop&q=80",
+               description: "Un misterioso asesino enmascarado conocido como Ghostface aterroriza a un grupo de estudiantes universitarios."
+           },
+           {
+               id: 6,
+               name: "Outer Banks",
+               type: "Serie",
+               genre: "Drama",
+               status: "En Proceso",
+               score: 9,
+               season: 3,
+               episode: 5,
+               totalEpisodes: 30,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80",
+               description: "En una isla costera, un joven arrastra a sus mejores amigos a buscar un tesoro legendario vinculado a la desaparición de su padre."
+           },
+           {
+               id: 7,
+               name: "La chica del siglo 20 (20th Century Girl)",
+               type: "Película",
+               genre: "Romance",
+               status: "Finalizada",
+               score: 10,
+               season: 1,
+               episode: 1,
+               totalEpisodes: 1,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80",
+               description: "En 1999, una adolescente observadora vigila a un chico de la escuela para ayudar a su mejor amiga enamorada."
+           },
+           {
+               id: 8,
+               name: "Élite",
+               type: "Serie",
+               genre: "Drama",
+               status: "Finalizada",
+               score: 8,
+               season: 3,
+               episode: 8,
+               totalEpisodes: 24,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80",
+               description: "Cuando tres jóvenes de clase trabajadora ingresan a una escuela privada exclusiva en España, el choque con los alumnos ricos desemboca en un asesinato."
+           },
+           {
+               id: 9,
+               name: "Bridgerton",
+               type: "Serie",
+               genre: "Romance",
+               status: "En Proceso",
+               score: 9,
+               season: 3,
+               episode: 4,
+               totalEpisodes: 24,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?w=600&auto=format&fit=crop&q=80",
+               description: "Los ocho hermanos de la familia Bridgerton buscan amor y felicidad en la alta sociedad londinense del siglo XIX."
+           },
+           {
+               id: 10,
+               name: "One Piece",
+               type: "Serie",
+               genre: "Ciencia Ficción",
+               status: "En Proceso",
+               score: 9,
+               season: 1,
+               episode: 6,
+               totalEpisodes: 8,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80",
+               description: "Monkey D. Luffy zarpa con su vari abigarrada tripulación de piratas en busca del tesoro legendario para convertirse en el Rey de los Piratas."
+           },
+           {
+               id: 11,
+               name: "Euphoria",
+               type: "Serie",
+               genre: "Drama",
+               status: "Abandonada",
+               score: 7,
+               season: 2,
+               episode: 3,
+               totalEpisodes: 18,
+               reason: "Las tramas se volvieron demasiado oscuras y pesadas para seguir disfrutándolo.",
+               image: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&auto=format&fit=crop&q=80",
+               description: "Un grupo de estudiantes de secundaria navega por las drogas, el sexo, la identidad, el trauma y las redes sociales."
+           },
+           {
+               id: 12,
+               name: "Heartstopper",
+               type: "Serie",
+               genre: "Romance",
+               status: "Finalizada",
+               score: 9,
+               season: 2,
+               episode: 8,
+               totalEpisodes: 16,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=600&auto=format&fit=crop&q=80",
+               description: "Los adolescentes Charlie y Nick descubren que su improbable amistad podría ser algo más mientras navegan por la escuela y el amor."
+           },
+           {
+               id: 13,
+               name: "The Witcher",
+               type: "Serie",
+               genre: "Ciencia Ficción",
+               status: "Abandonada",
+               score: 6,
+               season: 2,
+               episode: 4,
+               totalEpisodes: 24,
+               reason: "Perdí el hilo conductor tras los cambios en la narrativa y los personajes.",
+               image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80",
+               description: "Geralt de Rivia, un cazador de monstruos mutante, viaja hacia su destino en un mundo lleno de bestias y corrupción."
+           },
+           {
+               id: 14,
+               name: "Black Mirror",
+               type: "Serie",
+               genre: "Ciencia Ficción",
+               status: "Finalizada",
+               score: 9,
+               season: 6,
+               episode: 3,
+               totalEpisodes: 27,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1635805737707-575885ab0820?w=600&auto=format&fit=crop&q=80",
+               description: "Antología de ciencia ficción que explora un futuro cercano retorcido y de alta tecnología donde las mayores innovaciones humanas chocan con sus instintos más oscuros."
+           },
+           {
+               id: 15,
+               name: "Cobra Kai",
+               type: "Serie",
+               genre: "Comedia",
+               status: "Finalizada",
+               score: 8,
+               season: 5,
+               episode: 10,
+               totalEpisodes: 50,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1533158307587-828f0a76ef46?w=600&auto=format&fit=crop&q=80",
+               description: "Décadas después del torneo que les cambió la vida, la rivalidad entre Johnny Lawrence y Daniel LaRusso se reaviva."
+           },
+           {
+               id: 16,
+               name: "Merlina (Wednesday)",
+               type: "Serie",
+               genre: "Thriller",
+               status: "Finalizada",
+               score: 8,
+               season: 1,
+               episode: 8,
+               totalEpisodes: 8,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80",
+               description: "Los años de Merlina Addams como estudiante en la Academia Nevermore, intentando dominar su habilidad psíquica."
+           },
+           {
+               id: 17,
+               name: "El juego del calamar",
+               type: "Serie",
+               genre: "Thriller",
+               status: "Finalizada",
+               score: 9,
+               season: 1,
+               episode: 9,
+               totalEpisodes: 9,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&auto=format&fit=crop&q=80",
+               description: "Cientos de jugadores con problemas financieros aceptan una invitación para competir en juegos infantiles por un premio multimillonario."
+           },
+           {
+               id: 18,
+               name: "Titanic",
+               type: "Película",
+               genre: "Romance",
+               status: "Finalizada",
+               score: 9,
+               season: 1,
+               episode: 1,
+               totalEpisodes: 1,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80",
+               description: "Un artista pobre y una joven rica se enamoran a bordo del desafortunado trasatlántico en su viaje inaugural."
+           },
+           {
+               id: 19,
+               name: "Spider-Man: Across the Spider-Verse",
+               type: "Película",
+               genre: "Ciencia Ficción",
+               status: "Finalizada",
+               score: 10,
+               season: 1,
+               episode: 1,
+               totalEpisodes: 1,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1635805737707-575885ab0820?w=600&auto=format&fit=crop&q=80",
+               description: "Miles Morales se catapulta a través del Multiverso, donde se encuentra con un equipo de Spider-People encargados de proteger su existencia."
+           },
+           {
+               id: 20,
+               name: "La sociedad de la nieve",
+               type: "Película",
+               genre: "Drama",
+               status: "Finalizada",
+               score: 10,
+               season: 1,
+               episode: 1,
+               totalEpisodes: 1,
+               reason: "",
+               image: "https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?w=600&auto=format&fit=crop&q=80",
+               description: "En 1972, un avión uruguayo se estrella en los Andes, obligando a los sobrevivientes a convertirse en sus propios salvadores."
+           }
+       ];
+
+
+       let titles = JSON.parse(localStorage.getItem('miportal_titles')) || defaultDatabase;
+
+
+       // Inicializar aplicación al cargar la ventana
+       window.onload = function() {
+           renderAll();
+       };
+
+
+       function saveToStorage() {
+           localStorage.setItem('miportal_titles', JSON.stringify(titles));
+       }
+
+
+       function renderAll() {
+           renderTopPersonal();
+           renderEnProceso();
+           renderLibrary();
+           renderAbandoned();
+           updateStats();
+       }
+
+
+       // Render Top Personal (Top 10 automáticos por puntuación)
+       function renderTopPersonal() {
+           const container = document.getElementById('top-container');
+           // Ordenar por puntuación descendente y tomar los primeros 10
+           const sortedByScore = [...titles].sort((a, b) => b.score - a.score).slice(0, 10);
+          
+           if(sortedByScore.length === 0) {
+               container.innerHTML = `<p class="text-sm text-gray-500 col-span-full">No hay títulos registrados todavía.</p>`;
+               return;
+           }
+
+
+           container.innerHTML = sortedByScore.map((item, index) => `
+               <div class="bg-netflix-gray border border-gray-800 rounded-xl overflow-hidden flex flex-col group hover:border-netflix-red transition duration-300 shadow-md relative">
+                   <div class="absolute top-2 left-2 bg-netflix-red text-white w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs z-10 shadow">
+                       #${index + 1}
+                   </div>
+                   <div class="relative h-48 overflow-hidden bg-gray-900">
+                       <img src="${item.image}" alt="${item.name}" onerror="this.src='https://placehold.co/400x600/141414/ffffff?text=Sin+Imagen'" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                       <div class="absolute top-2 right-2 bg-black/70 backdrop-blur-md px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 text-amber-400">
+                           <i class="fa-solid fa-star"></i> ${item.score}
+                       </div>
+                   </div>
+                   <div class="p-3 flex flex-col flex-grow justify-between gap-2">
+                       <div>
+                           <span class="text-[10px] text-gray-400 uppercase font-semibold">${item.genre}</span>
+                           <h4 class="font-bold text-sm text-white line-clamp-1">${item.name}</h4>
+                           <p class="text-xs text-gray-400 line-clamp-2 mt-1">${item.description}</p>
+                       </div>
+                       <div class="flex items-center justify-between pt-2 border-t border-gray-800 text-xs text-gray-400">
+                           <span>${item.status}</span>
+                           <div class="flex gap-2">
+                               <button onclick="openEditModal(${item.id})" class="hover:text-white"><i class="fa-solid fa-pen"></i></button>
+                               <button onclick="deleteTitle(${item.id})" class="hover:text-rose-500"><i class="fa-solid fa-trash"></i></button>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+           `).join('');
+       }
+
+
+       // Render En Proceso
+       function renderEnProceso() {
+           const container = document.getElementById('proceso-container');
+           const processItems = titles.filter(t => t.status === 'En Proceso');
+
+
+           if(processItems.length === 0) {
+               container.innerHTML = `<p class="text-sm text-gray-500 col-span-full">No hay series o películas en proceso actualmente.</p>`;
+               return;
+           }
+
+
+           container.innerHTML = processItems.map(item => {
+               const percent = Math.min(100, Math.round(((item.episode) / (item.totalEpisodes || 12)) * 100));
+               return `
+                   <div class="bg-netflix-gray/80 border border-gray-800 rounded-2xl p-4 flex gap-4 items-center relative overflow-hidden group hover:border-gray-600 transition">
+                       <div class="w-24 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gray-900">
+                           <img src="${item.image}" alt="${item.name}" onerror="this.src='https://placehold.co/300x450/141414/ffffff?text=Sin+Imagen'" class="w-full h-full object-cover">
+                       </div>
+                       <div class="flex flex-col flex-grow gap-2">
+                           <div class="flex items-start justify-between">
+                               <div>
+                                   <span class="text-[10px] uppercase font-bold text-netflix-red tracking-wider">${item.type} · ${item.genre}</span>
+                                   <h4 class="font-bold text-base text-white leading-snug">${item.name}</h4>
+                               </div>
+                               <div class="flex items-center gap-1 text-amber-400 text-xs font-bold bg-black/40 px-2 py-0.5 rounded">
+                                   <i class="fa-solid fa-star"></i> ${item.score}
+                               </div>
+                           </div>
+                           <div class="bg-netflix-black/60 px-3 py-2 rounded-xl border border-gray-800 flex items-center justify-between">
+                               <span class="text-xs text-gray-300 font-medium">Temp ${item.season} · Cap ${item.episode}</span>
+                               <div class="flex items-center gap-1">
+                                   <button onclick="incrementEpisode(${item.id})" class="w-7 h-7 bg-netflix-red hover:bg-netflix-darkred rounded-lg flex items-center justify-center text-white text-xs transition active:scale-95" title="Siguiente Capítulo"><i class="fa-solid fa-plus"></i></button>
+                               </div>
+                           </div>
+                           <!-- Barra de progreso -->
+                           <div class="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                               <div class="bg-netflix-red h-full rounded-full" style="width: ${percent}%"></div>
+                           </div>
+                           <div class="flex justify-between items-center text-[11px] text-gray-400 pt-1">
+                               <span>Progreso aprox: ${percent}%</span>
+                               <div class="flex gap-3">
+                                   <button onclick="openEditModal(${item.id})" class="hover:text-white"><i class="fa-solid fa-pen"></i> Editar</button>
+                                   <button onclick="deleteTitle(${item.id})" class="hover:text-rose-500"><i class="fa-solid fa-trash"></i></button>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+               `;
+           }).join('');
+       }
+
+
+       // Render Biblioteca General con filtros
+       function renderLibrary() {
+           const container = document.getElementById('library-container');
+           const typeFilter = document.getElementById('filter-type').value;
+           const statusFilter = document.getElementById('filter-status').value;
+           const genreFilter = document.getElementById('filter-genre').value;
+           const searchTerm = document.getElementById('search-input').value.toLowerCase();
+
+
+           let filtered = titles.filter(item => {
+               const matchType = typeFilter === 'all' || item.type === typeFilter;
+               const matchStatus = statusFilter === 'all' || item.status === statusFilter;
+               const matchGenre = genreFilter === 'all' || item.genre === genreFilter;
+               const matchSearch = item.name.toLowerCase().includes(searchTerm) || item.description.toLowerCase().includes(searchTerm);
+               return matchType && matchStatus && matchGenre && matchSearch;
+           });
+
+
+           if(filtered.length === 0) {
+               container.innerHTML = `<p class="text-sm text-gray-500 col-span-full py-6 text-center">No se encontraron títulos con los filtros seleccionados.</p>`;
+               return;
+           }
+
+
+           container.innerHTML = filtered.map(item => `
+               <div class="bg-netflix-gray border border-gray-800 rounded-xl overflow-hidden flex flex-col group hover:border-gray-600 transition shadow-md">
+                   <div class="relative h-44 overflow-hidden bg-gray-900">
+                       <img src="${item.image}" alt="${item.name}" onerror="this.src='https://placehold.co/400x600/141414/ffffff?text=Sin+Imagen'" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                       <div class="absolute top-2 right-2 bg-black/70 backdrop-blur-md px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 text-amber-400">
+                           <i class="fa-solid fa-star"></i> ${item.score}
+                       </div>
+                       <div class="absolute top-2 left-2 bg-netflix-black/80 backdrop-blur-md text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                           ${item.status}
+                       </div>
+                   </div>
+                   <div class="p-3 flex flex-col flex-grow justify-between gap-2">
+                       <div>
+                           <div class="flex items-center justify-between">
+                               <span class="text-[10px] font-bold uppercase text-netflix-red">${item.type} · ${item.genre}</span>
+                           </div>
+                           <h4 class="font-bold text-sm text-white line-clamp-1">${item.name}</h4>
+                           <p class="text-xs text-gray-400 line-clamp-2 mt-1">${item.description}</p>
+                       </div>
+                       <div class="flex items-center justify-between pt-2 border-t border-gray-800 text-xs text-gray-400">
+                           <span>${item.status === 'En Proceso' ? `T${item.season} C${item.episode}` : (item.status === 'Abandonada' ? 'Abandonada' : 'Completada')}</span>
+                           <div class="flex gap-2">
+                               <button onclick="openEditModal(${item.id})" class="hover:text-white" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                               <button onclick="deleteTitle(${item.id})" class="hover:text-rose-500" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+           `).join('');
+       }
+
+
+       // Render Abandonados
+       function renderAbandoned() {
+           const container = document.getElementById('abandoned-container');
+           const abandonedItems = titles.filter(t => t.status === 'Abandonada');
+
+
+           if(abandonedItems.length === 0) {
+               container.innerHTML = `<p class="text-sm text-gray-500 col-span-full">¡Ninguna serie o película abandonada por ahora!</p>`;
+               return;
+           }
+
+
+           container.innerHTML = abandonedItems.map(item => `
+               <div class="bg-netflix-gray/80 border border-rose-900/40 rounded-xl p-4 flex flex-col gap-3 relative">
+                   <div class="flex gap-3 items-start">
+                       <div class="w-16 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-900">
+                           <img src="${item.image}" alt="${item.name}" onerror="this.src='https://placehold.co/300x450/141414/ffffff?text=Sin+Imagen'" class="w-full h-full object-cover">
+                       </div>
+                       <div class="flex flex-col flex-grow">
+                           <span class="text-[10px] text-rose-500 font-bold uppercase">${item.type} · Abandonada</span>
+                           <h4 class="font-bold text-base text-white">${item.name}</h4>
+                           <p class="text-xs text-gray-400 mt-1 line-clamp-2">${item.description}</p>
+                       </div>
+                   </div>
+                   <div class="bg-rose-950/20 border border-rose-900/30 p-2.5 rounded-lg text-xs text-rose-200">
+                       <strong class="font-semibold text-rose-400">Razón:</strong> ${item.reason || 'Sin razón especificada.'}
+                   </div>
+                   <div class="flex justify-end gap-3 pt-1 text-xs text-gray-400">
+                       <button onclick="openEditModal(${item.id})" class="hover:text-white"><i class="fa-solid fa-pen"></i> Editar</button>
+                       <button onclick="deleteTitle(${item.id})" class="hover:text-rose-500"><i class="fa-solid fa-trash"></i> Eliminar</button>
+                   </div>
+               </div>
+           `).join('');
+       }
+
+
+       // Actualizar estadísticas / contador de avances
+       function updateStats() {
+           const completedCount = titles.filter(t => t.status === 'Finalizada').length;
+          
+           // Cantidad total de capítulos vistos y tiempo estimado (promedio 45 min por capítulo)
+           let totalEpisodesWatched = 0;
+           titles.forEach(item => {
+               if(item.status === 'Finalizada') {
+                   totalEpisodesWatched += (Number(item.totalEpisodes) || 1);
+               } else if(item.status === 'En Proceso') {
+                   totalEpisodesWatched += Number(item.episode) || 1;
+               }
+           });
+
+
+           // Tiempo invertido en horas (45 minutos por episodio = 0.75 horas)
+           const totalHours = Math.round(totalEpisodesWatched * 0.75);
+
+
+           // Puntuación promedio
+           let totalScore = titles.reduce((acc, curr) => acc + Number(curr.score), 0);
+           let avgScore = titles.length > 0 ? (totalScore / titles.length).toFixed(1) : '0.0';
+
+
+           document.getElementById('stat-completed').innerText = completedCount;
+           document.getElementById('stat-episodes').innerText = totalEpisodesWatched;
+           document.getElementById('stat-time').innerText = totalHours + 'h';
+           document.getElementById('stat-avg-score').innerText = avgScore;
+       }
+
+
+       // Filtrar biblioteca en tiempo real
+       function filterTitles() {
+           renderLibrary();
+       }
+
+
+       // Incrementar capítulo de una serie en proceso
+       function incrementEpisode(id) {
+           const item = titles.find(t => t.id === id);
+           if(item) {
+               item.episode++;
+               saveToStorage();
+               renderAll();
+               showToast("Progreso actualizado", `Avanzaste al capítulo ${item.episode} de ${item.name}`);
+           }
+       }
+
+
+       // Funciones del Modal (CRUD)
+       function openAddModal() {
+           document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-film text-netflix-red"></i> Agregar Nuevo Título';
+           document.getElementById('title-form').reset();
+           document.getElementById('item-id').value = '';
+           document.getElementById('item-score').value = 8;
+           document.getElementById('item-season').value = 1;
+           document.getElementById('item-episode').value = 1;
+           document.getElementById('item-total-ep').value = 12;
+           toggleStatusFields();
+           document.getElementById('title-modal').classList.remove('hidden');
+           document.getElementById('title-modal').classList.add('flex');
+       }
+
+
+       function openEditModal(id) {
+           const item = titles.find(t => t.id === id);
+           if(!item) return;
+
+
+           document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-pen text-netflix-red"></i> Editar Título';
+           document.getElementById('item-id').value = item.id;
+           document.getElementById('item-name').value = item.name;
+           document.getElementById('item-type').value = item.type;
+           document.getElementById('item-status').value = item.status;
+           document.getElementById('item-score').value = item.score;
+           document.getElementById('item-genre').value = item.genre || 'Drama';
+           document.getElementById('item-season').value = item.season || 1;
+           document.getElementById('item-episode').value = item.episode || 1;
+           document.getElementById('item-total-ep').value = item.totalEpisodes || 12;
+           document.getElementById('item-reason').value = item.reason || '';
+           document.getElementById('item-image').value = item.image || '';
+           document.getElementById('item-desc').value = item.description || '';
+
+
+           toggleStatusFields();
+           document.getElementById('title-modal').classList.remove('hidden');
+           document.getElementById('title-modal').classList.add('flex');
+       }
+
+
+       function closeModal() {
+           document.getElementById('title-modal').classList.remove('flex');
+           document.getElementById('title-modal').classList.add('hidden');
+       }
+
+
+       function toggleStatusFields() {
+           const status = document.getElementById('item-status').value;
+           const processFields = document.getElementById('process-fields');
+           const abandonedField = document.getElementById('abandoned-field');
+
+
+           if(status === 'En Proceso') {
+               processFields.classList.remove('hidden');
+               abandonedField.classList.add('hidden');
+           } else if(status === 'Abandonada') {
+               processFields.classList.add('hidden');
+               abandonedField.classList.remove('hidden');
+           } else {
+               processFields.classList.add('hidden');
+               abandonedField.classList.add('hidden');
+           }
+       }
+
+
+       function saveTitle(event) {
+           event.preventDefault();
+           const id = document.getElementById('item-id').value;
+           const name = document.getElementById('item-name').value;
+           const type = document.getElementById('item-type').value;
+           const status = document.getElementById('item-status').value;
+           const score = Number(document.getElementById('item-score').value);
+           const genre = document.getElementById('item-genre').value;
+           const season = Number(document.getElementById('item-season').value) || 1;
+           const episode = Number(document.getElementById('item-episode').value) || 1;
+           const totalEpisodes = Number(document.getElementById('item-total-ep').value) || 12;
+           const reason = document.getElementById('item-reason').value;
+           const image = document.getElementById('item-image').value;
+           const description = document.getElementById('item-desc').value;
+
+
+           if(id) {
+               // Editar existente
+               const index = titles.findIndex(t => t.id == id);
+               if(index !== -1) {
+                   titles[index] = {
+                       id: Number(id),
+                       name, type, status, score, genre, season, episode, totalEpisodes, reason, image, description
+                   };
+               }
+               showToast("Actualizado", `Se actualizó "${name}" con éxito.`);
+           } else {
+               // Crear nuevo
+               const newId = titles.length > 0 ? Math.max(...titles.map(t => t.id)) + 1 : 1;
+               const newItem = {
+                   id: newId,
+                   name, type, status, score, genre, season, episode, totalEpisodes, reason, image, description
+               };
+               titles.unshift(newItem);
+               showToast("Guardado", `Se agregó "${name}" a tu portal.`);
+           }
+
+
+           saveToStorage();
+           renderAll();
+           closeModal();
+       }
+
+
+       function deleteTitle(id) {
+           if(confirm("¿Estás seguro de que deseas eliminar este título de tu portal?")) {
+               titles = titles.filter(t => t.id !== id);
+               saveToStorage();
+               renderAll();
+               showToast("Eliminado", "El título ha sido eliminado correctamente.");
+           }
+       }
+
+
+       // Sistema de Toast (Notificaciones sin alert)
+       function showToast(title, msg) {
+           const toast = document.getElementById('toast');
+           document.getElementById('toast-title').innerText = title;
+           document.getElementById('toast-msg').innerText = msg;
+          
+           toast.classList.remove('translate-y-32', 'opacity-0');
+           setTimeout(() => {
+               toast.classList.add('translate-y-32', 'opacity-0');
+           }, 3500);
+       }
+   </script>
+</body>
+</html>
+
