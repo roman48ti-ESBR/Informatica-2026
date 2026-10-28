@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Dino Runner</title>
+    <!-- Tailwind CSS CDN para la interfaz general -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuente Retro estilo Pixel Art -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Press Start 2P', monospace;
+            background-color: #f7f7f7;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Estilo pixelated para canvas y sprites */
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* Modos oscuro/claro retro estilo Chrome Dino */
+        .night-mode {
+            background-color: #202124 !important;
+            color: #f1f1f1 !important;
+        }
+
+        .night-mode canvas {
+            filter: invert(1);
+        }
+
+        /* Animación suave para interfaz */
+        .btn-retro {
+            box-shadow: 0 4px 0 #333;
+            transition: all 0.1s ease;
+        }
+        .btn-retro:active {
+            box-shadow: 0 0 0 #333;
+            transform: translateY(4px);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 text-gray-800 transition-colors duration-500" id="game-body">
+
+    <!-- Header & Marcadores -->
+    <div class="w-full max-w-3xl flex justify-between items-center mb-4 px-2 text-xs md:text-sm">
+        <div class="flex items-center space-x-2">
+            <span class="inline-block w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+            <span id="level-display" class="tracking-wider">NIVEL 1</span>
+        </div>
+        <div class="flex space-x-4 tracking-widest">
+            <span class="text-gray-400" id="hi-score-text">HI 00000</span>
+            <span id="score-text">00000</span>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal del Juego -->
+    <div class="relative w-full max-w-3xl bg-white border-4 border-gray-800 rounded-lg shadow-2xl overflow-hidden" id="canvas-container">
+        
+        <!-- Canvas para el renderizado Pixel Art -->
+        <canvas id="gameCanvas" width="800" height="300" class="w-full h-auto block bg-[#f7f7f7]"></canvas>
+
+        <!-- Overlay de Inicio / Game Over -->
+        <div id="ui-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/10 backdrop-blur-[1px] p-4 text-center">
+            <!-- Título / Estado -->
+            <h1 id="ui-title" class="text-xl md:text-2xl font-bold mb-4 text-gray-800 tracking-wider">
+                PIXEL DINO RUNNER
+            </h1>
+            <p id="ui-subtitle" class="text-xs md:text-sm text-gray-600 mb-6 max-w-md leading-relaxed">
+                PRESIONA <span class="bg-gray-200 px-2 py-1 rounded border border-gray-400">ESPACIO</span> O <span class="bg-gray-200 px-2 py-1 rounded border border-gray-400">↑</span> PARA EMPEZAR
+            </p>
+
+            <!-- Botón para Iniciar/Reiniciar -->
+            <button id="start-btn" class="btn-retro bg-gray-800 text-white text-xs md:text-sm px-6 py-3 rounded border-2 border-black hover:bg-gray-700 focus:outline-none cursor-pointer flex items-center gap-2">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                JUGAR
+            </button>
+        </div>
+    </div>
+
+    <!-- Panel de Controles Móviles / Ayuda -->
+    <div class="w-full max-w-3xl mt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] md:text-xs text-gray-500">
+        <div class="flex items-center gap-2">
+            <span class="font-bold">CONTROLES:</span>
+            <span class="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded border border-gray-300">ESPACIO / ↑</span> Saltar
+            <span class="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded border border-gray-300">↓</span> Agacharse
+        </div>
+        <div class="flex gap-2">
+            <!-- Botones táctiles virtuales para dispositivos móviles -->
+            <button id="touch-jump" class="md:hidden bg-gray-800 text-white px-4 py-2 rounded font-bold text-xs active:bg-gray-600">SALTAR ⬆</button>
+            <button id="touch-duck" class="md:hidden bg-gray-700 text-white px-4 py-2 rounded font-bold text-xs active:bg-gray-600">AGACHAR ⬇</button>
+        </div>
+    </div>
+
+    <!-- Script del Juego -->
+    <script>
+        /**
+         * MOTOR DE JUEGO DINOSAURIO PIXEL ART
+         * Desarrollado completamente en Canvas HTML5 Vanilla + JS
+         */
+
+        // Inicialización de Canvas y Contexto
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false; // Mantiene los bordes pixelados nítidos
+
+        // Elementos de la Interfaz
+        const scoreText = document.getElementById('score-text');
+        const hiScoreText = document.getElementById('hi-score-text');
+        const levelDisplay = document.getElementById('level-display');
+        const uiOverlay = document.getElementById('ui-overlay');
+        const uiTitle = document.getElementById('ui-title');
+        const uiSubtitle = document.getElementById('ui-subtitle');
+        const startBtn = document.getElementById('start-btn');
+        const gameBody = document.getElementById('game-body');
+
+        // Configuración Global
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 300;
+        const GROUND_Y = 250;
+        const GRAVITY = 0.65;
+
+        // Estado del Juego
+        let isRunning = false;
+        let isGameOver = false;
+        let score = 0;
+        let highScore = (() => { try { return parseInt(localStorage.getItem('dino_high_score')) || 0; } catch { return 0; } })();
+        let speed = 6;
+        let baseSpeed = 6;
+        let maxSpeed = 15;
+        let frameCount = 0;
+        let level = 1;
+        let nightMode = false;
+
+        // Actualizar High Score inicial en pantalla
+        hiScoreText.innerText = `HI ${String(highScore).padStart(5, '0')}`;
+
+        // -------------------------------------------------------------
+        // MATRICES DE SPRITES EN PIXEL ART (0: Transparente, 1: Color principal)
+        // -------------------------------------------------------------
+        
+        // Sprite Dinosaurio De Pie (Animación correr 2 frames)
+        const DINO_RUN_1 = [
+            [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0],
+            [0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0],
+            [1,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0],
+            [1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0],
+            [1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+            [0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0],
+            [0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0],
+            [0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0],
+            [0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0],
+            [0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0]
+        ];
+
+        const DINO_RUN_2 = [
+            [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0],
+            [0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0],
+            [1,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0],
+            [1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0],
+            [1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+            [0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0],
+            [0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0],
+            [0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0],
+            [0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0]
+        ];
+
+        // Sprite Dinosaurio Agachado
+        const DINO_DUCK_1 = [
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1],
+            [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+            [1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
+            [1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+            [1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
+            [0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
+            [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,1,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        ];
+
+        // Sprite Cactus
+        const CACTUS_SPRITE = [
+            [0,0,0,0,1,1,0,0,0,0],
+            [0,0,0,0,1,1,0,0,0,0],
+            [0,1,1,0,1,1,0,0,0,0],
+            [1,1,1,0,1,1,0,1,1,0],
+            [1,1,1,0,1,1,0,1,1,1],
+            [1,1,1,0,1,1,0,1,1,1],
+            [0,1,1,1,1,1,1,1,1,0],
+            [0,0,1,1,1,1,1,1,0,0],
+            [0,0,0,0,1,1,0,0,0,0],
+            [0,0,0,0,1,1,0,0,0,0],
+            [0,0,0,0,1,1,0,0,0,0],
+            [0,0,0,0,1,1,0,0,0,0],
+            [0,0,0,0,1,1,0,0,0,0],
+            [0,0,0,0,1,1,0,0,0,0],
+            [0,0,0,0,1,1,0,0,0,0]
+        ];
+
+        // Sprite Pájaro Pterodáctilo (Frame 1 y Frame 2)
+        const BIRD_WING_UP = [
+            [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+            [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+            [0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0],
+            [0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+            [1,1,1,1,1,1,1,1,1,1,1,0,1,1,0,0],
+            [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
+            [0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0]
+        ];
+
+        const BIRD_WING_DOWN = [
+            [0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0],
+            [1,1,1,1,1,1,1,1,1,1,1,0,1,1,0,0],
+            [0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+            [0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0],
+            [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+            [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        ];
+
+        // Función auxiliar para dibujar matrices de píxeles
+        function drawPixelMatrix(matrix, startX, startY, pixelSize = 3, color = '#333333') {
+            ctx.fillStyle = color;
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[r].length; c++) {
+                    if (matrix[r][c] === 1) {
+                        ctx.fillRect(startX + c * pixelSize, startY + r * pixelSize, pixelSize, pixelSize);
+                    }
+                }
+            }
+        }
+
+        // -------------------------------------------------------------
+        // CLASES DE OBJETOS DEL JUEGO
+        // -------------------------------------------------------------
+
+        // Clase Dinosaurio
+        class Dinosaur {
+            constructor() {
+                this.pixelSize = 3;
+                this.x = 50;
+                this.y = GROUND_Y - (17 * this.pixelSize);
+                this.vy = 0;
+                this.isJumping = false;
+                this.isDucking = false;
+                this.animFrame = 0;
+                this.width = 16 * this.pixelSize;
+                this.height = 17 * this.pixelSize;
+            }
+
+            jump() {
+                if (!this.isJumping && !this.isDucking) {
+                    this.vy = -12.5;
+                    this.isJumping = true;
+                }
+            }
+
+            duck(ducking) {
+                if (!this.isJumping) {
+                    this.isDucking = ducking;
+                }
+            }
+
+            update() {
+                // Aplicar Gravedad
+                this.y += this.vy;
+                this.vy += GRAVITY;
+
+                // Colisión con el suelo
+                const normalHeight = 17 * this.pixelSize;
+                const currentHeight = normalHeight;
+
+                if (this.y >= GROUND_Y - currentHeight) {
+                    this.y = GROUND_Y - currentHeight;
+                    this.vy = 0;
+                    this.isJumping = false;
+                }
+
+                // Ajuste dinámico de Hitbox según postura
+                if (this.isDucking) {
+                    this.width = 22 * this.pixelSize;
+                    this.height = 11 * this.pixelSize;
+                } else {
+                    this.width = 16 * this.pixelSize;
+                    this.height = 17 * this.pixelSize;
+                }
+
+                // Alternar animación de correr
+                if (frameCount % 6 === 0) {
+                    this.animFrame = this.animFrame === 0 ? 1 : 0;
+                }
+            }
+
+            draw() {
+                let currentSprite;
+                if (this.isDucking) {
+                    currentSprite = DINO_DUCK_1;
+                } else if (this.isJumping) {
+                    currentSprite = DINO_RUN_1; // Sprite estático en el aire
+                } else {
+                    currentSprite = this.animFrame === 0 ? DINO_RUN_1 : DINO_RUN_2;
+                }
+
+                if (this.isDucking) {
+                    // Dibujar la postura agachada con la base apoyada en el suelo.
+                    ctx.save();
+                    ctx.translate(0, GROUND_Y);
+                    ctx.scale(1, 11 / 17);
+                    drawPixelMatrix(currentSprite, this.x, -17 * this.pixelSize, this.pixelSize);
+                    ctx.restore();
+                } else {
+                    drawPixelMatrix(currentSprite, this.x, this.y, this.pixelSize);
+                }
+            }
+
+            getHitbox() {
+                // Reducción leve de hitbox para hacer las colisiones más precisas y justas
+                const padding = 4;
+                return {
+                    x: this.x + padding,
+                    y: this.isDucking ? GROUND_Y - this.height + padding : this.y + padding,
+                    width: this.width - (padding * 2),
+                    height: this.height - (padding * 2)
+                };
+            }
+        }
+
+        // Clase Obstáculo (Cactus)
+        class Cactus {
+            constructor(x, groupCount = 1) {
+                this.x = x;
+                this.pixelSize = 3;
+                this.groupCount = groupCount; // 1: Simple, 2: Doble, 3: Triple
+                this.singleWidth = 10 * this.pixelSize;
+                this.height = 15 * this.pixelSize;
+                this.width = this.singleWidth * this.groupCount;
+                this.y = GROUND_Y - this.height;
+                this.type = 'cactus';
+            }
+
+            update() {
+                this.x -= speed;
+            }
+
+            draw() {
+                for (let i = 0; i < this.groupCount; i++) {
+                    drawPixelMatrix(CACTUS_SPRITE, this.x + (i * this.singleWidth), this.y, this.pixelSize);
+                }
+            }
+
+            getHitbox() {
+                return {
+                    x: this.x + 2,
+                    y: this.y + 2,
+                    width: this.width - 4,
+                    height: this.height - 2
+                };
+            }
+        }
+
+        // Clase Obstáculo Volador (Pterodáctilo)
+        class Bird {
+            constructor(x, heightLevel) {
+                this.x = x;
+                this.pixelSize = 3.5;
+                this.width = 16 * this.pixelSize;
+                this.height = 8 * this.pixelSize;
+                this.animFrame = 0;
+                this.type = 'bird';
+
+                // Alturas: 0 = Alto (saltar o quedarse parado), 1 = Medio (saltar), 2 = Bajo (agacharse)
+                if (heightLevel === 0) {
+                    this.y = GROUND_Y - 80;
+                } else if (heightLevel === 1) {
+                    this.y = GROUND_Y - 55;
+                } else {
+                    this.y = GROUND_Y - 32;
+                }
+            }
+
+            update() {
+                this.x -= speed * 1.1; // Vuela ligeramente más rápido que el suelo
+                
+                if (frameCount % 12 === 0) {
+                    this.animFrame = this.animFrame === 0 ? 1 : 0;
+                }
+            }
+
+            draw() {
+                const sprite = this.animFrame === 0 ? BIRD_WING_UP : BIRD_WING_DOWN;
+                drawPixelMatrix(sprite, this.x, this.y, this.pixelSize);
+            }
+
+            getHitbox() {
+                return {
+                    x: this.x + 3,
+                    y: this.y + 3,
+                    width: this.width - 6,
+                    height: this.height - 6
+                };
+            }
+        }
+
+        // Fondo y Suelo Desértico
+        class Ground {
+            constructor() {
+                this.x = 0;
+                this.dots = [];
+                // Generar puntos aleatorios de textura del suelo desértico
+                for (let i = 0; i < 60; i++) {
+                    this.dots.push({
+                        x: Math.random() * CANVAS_WIDTH,
+                        y: GROUND_Y + Math.random() * 45,
+                        size: Math.random() > 0.7 ? 3 : 2
+                    });
+                }
+            }
+
+            update() {
+                this.x -= speed;
+                if (this.x <= -CANVAS_WIDTH) {
+                    this.x = 0;
+                }
+
+                // Mover los puntos de textura del suelo
+                this.dots.forEach(dot => {
+                    dot.x -= speed;
+                    if (dot.x < 0) {
+                        dot.x = CANVAS_WIDTH;
+                        dot.y = GROUND_Y + Math.random() * 45;
+                    }
+                });
+            }
+
+            draw() {
+                // Línea principal del suelo
+                ctx.fillStyle = '#333333';
+                ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, 3);
+
+                // Puntos de textura del desierto
+                this.dots.forEach(dot => {
+                    ctx.fillRect(dot.x, dot.y, dot.size, dot.size);
+                });
+            }
+        }
+
+        // Nubes de Fondo
+        class Cloud {
+            constructor() {
+                this.x = CANVAS_WIDTH + Math.random() * 200;
+                this.y = 30 + Math.random() * 80;
+                this.speed = 0.5 + Math.random() * 0.8;
+            }
+
+            update() {
+                this.x -= this.speed;
+                if (this.x < -60) {
+                    this.x = CANVAS_WIDTH + Math.random() * 100;
+                    this.y = 30 + Math.random() * 80;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = '#d3d3d3';
+                // Forma retro de nube pixelada
+                ctx.fillRect(this.x, this.y, 40, 8);
+                ctx.fillRect(this.x + 10, this.y - 6, 20, 6);
+                ctx.fillRect(this.x + 5, this.y + 8, 30, 4);
+            }
+        }
+
+        // -------------------------------------------------------------
+        // INSTANCIAS Y VARIABLES DEL BUCLE PRINCIPAL
+        // -------------------------------------------------------------
+
+        let dino = new Dinosaur();
+        let ground = new Ground();
+        let obstacles = [];
+        let clouds = [new Cloud(), new Cloud(), new Cloud()];
+
+        // Configuración de Generación de Obstáculos
+        let minObstacleDistance = 250;
+        let lastObstacleX = 0;
+
+        function spawnObstacle() {
+            const currentX = CANVAS_WIDTH + Math.random() * 100;
+            
+            // Asegurar un espacio mínimo entre obstáculos basado en la velocidad
+            if (currentX - lastObstacleX < minObstacleDistance) {
+                return;
+            }
+
+            // Aumento de complejidad de obstáculos según Nivel / Score
+            let rand = Math.random();
+
+            // Pájaro volador aparece a partir de Nivel 2 (Score > 200)
+            if (level >= 2 && rand > 0.6) {
+                // Niveles de altura de pájaros
+                let heightLevel = Math.floor(Math.random() * 3); // 0, 1 o 2
+                obstacles.push(new Bird(currentX, heightLevel));
+            } else {
+                // Cactus
+                let groupCount = 1;
+                if (level >= 2 && rand > 0.3) groupCount = 2; // Cactus dobles
+                if (level >= 3 && rand > 0.7) groupCount = 3; // Cactus triples
+
+                obstacles.push(new Cactus(currentX, groupCount));
+            }
+
+            lastObstacleX = currentX;
+        }
+
+        // Detección de Colisiones AABB (Axis-Aligned Bounding Box)
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        // -------------------------------------------------------------
+        // LÓGICA Y BUCLE DEL JUEGO (GAME LOOP)
+        // -------------------------------------------------------------
+
+        function resetGame() {
+            dino = new Dinosaur();
+            obstacles = [];
+            lastObstacleX = 0;
+            minObstacleDistance = 250;
+            score = 0;
+            level = 1;
+            speed = baseSpeed;
+            frameCount = 0;
+            isGameOver = false;
+            isRunning = true;
+            nightMode = false;
+            gameBody.classList.remove('night-mode');
+
+            uiOverlay.classList.add('hidden');
+            Object.keys(keys).forEach(key => { keys[key] = false; });
+            updateScoreDisplay();
+        }
+
+        function gameOver() {
+            isRunning = false;
+            isGameOver = true;
+
+            // Guardar récord
+            if (score > highScore) {
+                highScore = score;
+                try { localStorage.setItem('dino_high_score', highScore); } catch {}
+                hiScoreText.innerText = `HI ${String(highScore).padStart(5, '0')}`;
+            }
+
+            // Mostrar Interfaz de Game Over
+            uiTitle.innerText = 'G A M E  O V E R';
+            uiSubtitle.innerHTML = `PUNTAJE FINAL: <span class="font-bold text-black">${score}</span>`;
+            startBtn.innerHTML = `
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+                </svg>
+                REINTENTAR
+            `;
+            uiOverlay.classList.remove('hidden');
+        }
+
+        function updateScoreDisplay() {
+            scoreText.innerText = String(score).padStart(5, '0');
+            levelDisplay.innerText = `NIVEL ${level}`;
+        }
+
+        function gameLoop() {
+            // Limpiar Canvas
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            if (isRunning) {
+                frameCount++;
+
+                // Aumentar puntaje paulatinamente
+                if (frameCount % 5 === 0) {
+                    score++;
+                    updateScoreDisplay();
+
+                    // Progresión de Niveles y Dificultad Dinámica
+                    if (score % 200 === 0 && speed < maxSpeed) {
+                        speed += 0.8;
+                        level++;
+                        minObstacleDistance = Math.max(180, 260 - (level * 10));
+                    }
+
+                    // Modo Noche cada 500 puntos (estilo Chrome Dino)
+                    if (score % 500 === 0 && score > 0) {
+                        nightMode = !nightMode;
+                        if (nightMode) {
+                            gameBody.classList.add('night-mode');
+                        } else {
+                            gameBody.classList.remove('night-mode');
+                        }
+                    }
+                }
+
+                // Generar Obstáculos
+                if (obstacles.length === 0 || (CANVAS_WIDTH - obstacles[obstacles.length - 1].x) > minObstacleDistance) {
+                    if (Math.random() < 0.03) {
+                        spawnObstacle();
+                    }
+                }
+
+                // Actualizar Nubes
+                clouds.forEach(cloud => cloud.update());
+
+                // Actualizar Dinosaurio
+                dino.update();
+
+                // Actualizar Suelo
+                ground.update();
+
+                // Actualizar y filtrar Obstáculos fuera de pantalla
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    obstacles[i].update();
+
+                    // Comprobar Colisión
+                    if (checkCollision(dino.getHitbox(), obstacles[i].getHitbox())) {
+                        gameOver();
+                    }
+
+                    // Eliminar obstáculos pasados
+                    if (obstacles[i].x < -100) {
+                        obstacles.splice(i, 1);
+                    }
+                }
+            }
+
+            // -------------------------------------------------------------
+            // RENDERIZADO / DIBUJO
+            // -------------------------------------------------------------
+
+            // Dibujar Nubes
+            clouds.forEach(cloud => cloud.draw());
+
+            // Dibujar Suelo
+            ground.draw();
+
+            // Dibujar Obstáculos
+            obstacles.forEach(obs => obs.draw());
+
+            // Dibujar Dinosaurio
+            dino.draw();
+
+            // Siguiente frame
+            requestAnimationFrame(gameLoop);
+        }
+
+        // -------------------------------------------------------------
+        // CONTROL DE EVENTOS (TECLADO / TÁCTIL)
+        // -------------------------------------------------------------
+
+        const keys = {};
+
+        window.addEventListener('keydown', (e) => {
+            if (['Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
+                e.preventDefault(); // Evitar desplazamiento vertical de la página
+            }
+
+            if (!isRunning && (e.code === 'Space' || e.code === 'ArrowUp')) {
+                resetGame();
+                return;
+            }
+
+            if (isRunning) {
+                if ((e.code === 'Space' || e.code === 'ArrowUp') && !keys[e.code]) {
+                    dino.jump();
+                }
+                if (e.code === 'ArrowDown') {
+                    dino.duck(true);
+                }
+            }
+            keys[e.code] = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowDown') {
+                dino.duck(false);
+            }
+            keys[e.code] = false;
+        });
+
+        // Controles de interfaz (Botón Iniciar / Reiniciar)
+        startBtn.addEventListener('click', () => {
+            resetGame();
+        });
+
+        // Controles Táctiles / Pantalla Móvil
+        const touchJumpBtn = document.getElementById('touch-jump');
+        const touchDuckBtn = document.getElementById('touch-duck');
+
+        touchJumpBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!isRunning) {
+                resetGame();
+            } else {
+                dino.jump();
+            }
+        });
+
+        touchDuckBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (isRunning) dino.duck(true);
+        });
+
+        touchDuckBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (isRunning) dino.duck(false);
+        });
+
+        // Tocar directamente el Canvas para saltar en móviles
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!isRunning) {
+                resetGame();
+            } else {
+                dino.jump();
+            }
+        });
+
+        // Iniciar bucle del juego en espera
+        gameLoop();
+
+    </script>
+</body>
+</html>
