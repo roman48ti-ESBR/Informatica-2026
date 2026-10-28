@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+   <meta charset="UTF-8">
+
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+   <title>Ping Pong Retro Arcade</title>
+
+   <!-- Tailwind CSS para diseño moderno y responsivo -->
+
+   <style>
+
+       /* Fuente local de respaldo para usar sin conexión. */
+
+       body {
+
+           font-family: 'Press Start 2P', monospace;
+
+           background-color: #0b0f19;
+
+           color: #ffffff;
+
+           overflow: hidden;
+
+           touch-action: none;
+
+       }
+
+       .neon-glow-cyan {
+
+           text-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff, 0 0 30px #00f3ff;
+
+       }
+
+       .neon-glow-pink {
+
+           text-shadow: 0 0 10px #ff0055, 0 0 20px #ff0055, 0 0 30px #ff0055;
+
+       }
+
+       .neon-box-cyan {
+
+           box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+
+       }
+
+       .neon-box-pink {
+
+           box-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
+
+       }
+
+       canvas {
+
+           box-shadow: 0 0 30px rgba(0, 243, 255, 0.2), inset 0 0 30px rgba(255, 0, 85, 0.1);
+
+           border: 4px solid #1e293b;
+
+       }
+
+       /* Animación de destello al anotar */
+
+       @keyframes flash {
+
+           0% { background-color: rgba(255, 255, 255, 0); }
+
+           50% { background-color: rgba(0, 243, 255, 0.25); }
+
+           100% { background-color: rgba(255, 255, 255, 0); }
+
+       }
+
+       .screen-flash {
+
+           animation: flash 0.4s ease-out;
+
+       }
+
+
+       /* Estilos locales de respaldo: el juego funciona incluso sin Tailwind. */
+       *, *::before, *::after { box-sizing: border-box; }
+       body { margin: 0; min-height: 100dvh; padding: 20px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 13px; }
+       #start-screen, #gameover-screen { position: fixed; inset: 0; z-index: 20; background: rgba(2,6,23,.97); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; padding: 16px; overflow-y: auto; }
+       .hidden { display: none !important; }
+       #start-screen h1 { font-size: clamp(1.7rem,5vw,3rem); color: #00f3ff; margin: 0; }
+       #start-screen > p { color: #ff79ab; font-size: .7rem; }
+       #start-screen > div { max-width: 570px; width: 100%; text-align: left; padding: 20px; background: #111827; border: 1px solid #334155; border-radius: 12px; font-size: clamp(.55rem,1.8vw,.8rem); line-height: 2; }
+       #start-screen > div h2 { text-align: center; color: #67e8f9; border-bottom: 1px solid #475569; padding-bottom: 10px; }
+       #start-screen > div .grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+       #start-screen > div .grid > div { background: #1e293b; border: 1px solid #475569; padding: 12px; border-radius: 6px; }
+       #start-screen > div p { margin: 10px 0 0; }
+       #start-btn, #restart-btn { background: linear-gradient(110deg,#06b6d4,#2563eb); border: 0; border-radius: 12px; padding: 18px 28px; font: inherit; color: #030712; cursor: pointer; }
+       #restart-btn { background: linear-gradient(110deg,#ec4899,#9333ea); color: white; }
+       #gameover-screen h2 { font-size: clamp(1.5rem,5vw,2.6rem); color:#ff2e76; }
+       #gameover-screen p { color:#cbd5e1; font-size: .7rem; }
+       body > div:nth-of-type(3) { width: min(100%,800px); display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: clamp(.4rem,1.7vw,.75rem); }
+       body > div:nth-of-type(3) > div { display:flex; align-items:center; gap:10px; }
+       #score-1, #score-2 { font-size: clamp(1.2rem,3vw,2rem); }
+       #score-1 { color: #00f3ff; } #score-2 { color: #ff0055; }
+       body > div:nth-of-type(4) { width: min(100%,800px); display:flex; justify-content:center; }
+       #pongCanvas { display:block; width:100%; height:auto; aspect-ratio: 16/9; background:#0f172a; border-radius:9px; }
+       body > div:nth-of-type(5) { color:#94a3b8; font-size: clamp(.43rem,1.7vw,.63rem); line-height:1.8; text-align:center; }
+       #custom-msg { position:fixed; top:16px; left:50%; transform:translateX(-50%); background:#1e293b; border:1px solid #06b6d4; color:#67e8f9; padding:12px; border-radius:9px; opacity:0; pointer-events:none; z-index:30; font-size:.7rem; }
+       @media(max-width:540px){ #start-screen > div .grid{grid-template-columns:1fr;} #start-screen > div{padding:12px;} body{padding:10px 6px;} }
+
+   </style>
+
+</head>
+
+<body class="flex flex-col items-center justify-center h-screen select-none relative" id="body-container">
+
+   <!-- Pantalla de Inicio -->
+
+   <div id="start-screen" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950 bg-opacity-95 p-6 text-center">
+
+       <h1 class="text-4xl md:text-6xl font-bold mb-4 neon-glow-cyan tracking-wider">PING PONG</h1>
+
+       <p class="text-xs md:text-sm text-pink-400 mb-8 tracking-widest uppercase">Duelo Retro Arcade</p>
+
+       <div class="bg-slate-900 border border-slate-700 p-6 rounded-xl max-w-lg mb-8 text-left text-xs md:text-sm leading-relaxed shadow-2xl">
+
+           <h2 class="text-cyan-400 mb-3 text-center border-b border-slate-700 pb-2">--- REGLAS Y CONTROLES ---</h2>
+
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+               <div class="bg-slate-800 p-3 rounded border border-cyan-500/30">
+
+                   <span class="text-cyan-400 font-bold block mb-1">JUGADOR 1 (Izquierda)</span>
+
+                   <p class="text-slate-300">Subir: <strong class="text-white">W</strong></p>
+
+                   <p class="text-slate-300">Bajar: <strong class="text-white">S</strong></p>
+
+               </div>
+
+               <div class="bg-slate-800 p-3 rounded border border-pink-500/30">
+
+                   <span class="text-pink-400 font-bold block mb-1">JUGADOR 2 (Derecha)</span>
+
+                   <p class="text-slate-300">Subir: <strong class="text-white">↑ (Flecha Arriba)</strong></p>
+
+                   <p class="text-slate-300">Bajar: <strong class="text-white">↓ (Flecha Abajo)</strong></p>
+
+               </div>
+
+           </div>
+
+           <p class="text-slate-400 text-center text-[10px] md:text-xs">
+
+               El rebote depende de dónde golpees la paleta. ¡El primer jugador en llegar a <strong class="text-yellow-400">5 PUNTOS</strong> gana la partida!
+
+           </p>
+
+       </div>
+
+       <button id="start-btn" class="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-lg rounded-xl shadow-lg transform hover:scale-105 transition duration-200 neon-box-cyan cursor-pointer">
+
+           ¡JUGAR AHORA!
+
+       </button>
+
+   </div>
+
+   <!-- Pantalla de Victoria / Fin de Partida -->
+
+   <div id="gameover-screen" class="absolute inset-0 z-20 hidden flex flex-col items-center justify-center bg-slate-950 bg-opacity-95 p-6 text-center">
+
+       <h2 id="winner-title" class="text-3xl md:text-5xl font-bold mb-4 neon-glow-pink">¡JUGADOR 1 GANA!</h2>
+
+       <p class="text-sm md:text-base text-slate-300 mb-8">Partida finalizada con éxito.</p>
+
+       <button id="restart-btn" class="px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-bold text-lg rounded-xl shadow-lg transform hover:scale-105 transition duration-200 neon-box-pink cursor-pointer">
+
+           JUGAR REVANCHA
+
+       </button>
+
+   </div>
+
+   <!-- Interfaz de Marcador Superior -->
+
+   <div class="w-full max-w-4xl flex justify-between items-center px-6 py-3 mb-2 z-10">
+
+       <div class="flex items-center space-x-3">
+
+           <span class="text-xs md:text-sm text-cyan-400">JUGADOR 1</span>
+
+           <span id="score-1" class="text-2xl md:text-4xl font-bold neon-glow-cyan">0</span>
+
+       </div>
+
+       <div class="text-xs text-slate-500 tracking-widest">ARCADE PONG</div>
+
+       <div class="flex items-center space-x-3">
+
+           <span id="score-2" class="text-2xl md:text-4xl font-bold neon-glow-pink">0</span>
+
+           <span class="text-xs md:text-sm text-pink-400">JUGADOR 2</span>
+
+       </div>
+
+   </div>
+
+   <!-- Lienzo del Juego -->
+
+   <div class="relative w-full max-w-4xl px-4 flex justify-center z-10">
+
+       <canvas id="pongCanvas" class="bg-slate-900 rounded-lg w-full max-w-[800px] aspect-[4/3] md:aspect-[16/9]"></canvas>
+
+   </div>
+
+   <!-- Mensaje flotante de notificaciones / controles táctiles inferiores si se requiere -->
+
+   <div class="mt-4 text-[10px] md:text-xs text-slate-500 text-center z-10">
+
+       Presiona <strong class="text-slate-400">W / S</strong> y <strong class="text-slate-400">Flechas Arriba / Abajo</strong> para mover las paletas.
+
+   </div>
+
+   <!-- Mensaje emergente alternativo (sin alert nativo) -->
+
+   <div id="custom-msg" class="absolute top-5 bg-slate-800 border border-cyan-500 text-cyan-300 px-4 py-2 rounded-lg text-xs shadow-lg opacity-0 transition-opacity duration-300 pointer-events-none z-30">
+
+       ¡Punto anotado!
+
+   </div>
+
+   <script>
+
+       // Referencias del DOM
+
+       const canvas = document.getElementById('pongCanvas');
+
+       const ctx = canvas.getContext('2d');
+
+       const startScreen = document.getElementById('start-screen');
+
+       const gameoverScreen = document.getElementById('gameover-screen');
+
+       const startBtn = document.getElementById('start-btn');
+
+       const restartBtn = document.getElementById('restart-btn');
+
+       const score1El = document.getElementById('score-1');
+
+       const score2El = document.getElementById('score-2');
+
+       const winnerTitle = document.getElementById('winner-title');
+
+       const bodyContainer = document.getElementById('body-container');
+
+       const customMsg = document.getElementById('custom-msg');
+
+       // Configuración interna del canvas con resolución lógica fija para escalabilidad perfecta
+
+       const LOGICAL_WIDTH = 800;
+
+       const LOGICAL_HEIGHT = 450;
+
+       canvas.width = LOGICAL_WIDTH;
+
+       canvas.height = LOGICAL_HEIGHT;
+
+       // Estado del Juego
+
+       let gameRunning = false;
+
+       let scoreLimit = 5;
+
+       // Estructura de Paletas
+
+       const paddleWidth = 12;
+
+       const paddleHeight = 85;
+
+       const paddleSpeed = 7;
+
+       const player1 = {
+
+           x: 20,
+
+           y: LOGICAL_HEIGHT / 2 - paddleHeight / 2,
+
+           width: paddleWidth,
+
+           height: paddleHeight,
+
+           score: 0,
+
+           color: '#00f3ff'
+
+       };
+
+       const player2 = {
+
+           x: LOGICAL_WIDTH - 20 - paddleWidth,
+
+           y: LOGICAL_HEIGHT / 2 - paddleHeight / 2,
+
+           width: paddleWidth,
+
+           height: paddleHeight,
+
+           score: 0,
+
+           color: '#ff0055'
+
+       };
+
+       // Estructura de la Pelota
+
+       const ball = {
+
+           x: LOGICAL_WIDTH / 2,
+
+           y: LOGICAL_HEIGHT / 2,
+
+           radius: 8,
+
+           speedX: 5,
+
+           speedY: 3,
+
+           baseSpeed: 5,
+
+           maxSpeed: 12,
+
+           color: '#ffffff'
+
+       };
+
+       // Control de Teclado
+
+       const keys = {};
+
+       window.addEventListener('keydown', (e) => {
+
+           keys[e.key.toLowerCase()] = true;
+
+           // Prevenir scroll con flechas o espacio
+
+           if ([' ', 'space', 'arrowup', 'arrowdown', 'w', 's'].includes(e.key.toLowerCase())) {
+
+               if (gameRunning) e.preventDefault();
+
+           }
+
+       });
+
+       window.addEventListener('keyup', (e) => {
+
+           keys[e.key.toLowerCase()] = false;
+
+       });
+
+       // Mostrar notificación elegante en lugar de alert()
+
+       function showNotification(text) {
+
+           customMsg.textContent = text;
+
+           customMsg.style.opacity = '1';
+
+           setTimeout(() => {
+
+               customMsg.style.opacity = '0';
+
+           }, 1500);
+
+       }
+
+       // Iniciar Partida
+
+       startBtn.addEventListener('click', () => {
+
+           startScreen.classList.add('hidden');
+
+           resetGame();
+
+           gameRunning = true;
+
+           beginLoop();
+
+       });
+
+       restartBtn.addEventListener('click', () => {
+
+           gameoverScreen.classList.add('hidden');
+
+           resetGame();
+
+           gameRunning = true;
+
+           beginLoop();
+
+       });
+
+       // Evitar bucles duplicados cuando empieza una nueva partida.
+       let animationId = null;
+       function beginLoop() {
+           if (animationId !== null) cancelAnimationFrame(animationId);
+           animationId = requestAnimationFrame(gameLoop);
+       }
+
+       // Reinicio completo de puntuaciones y posiciones
+
+       function resetGame() {
+
+           Object.keys(keys).forEach(key => keys[key] = false);
+           player1.score = 0;
+
+           player2.score = 0;
+          player1.y = LOGICAL_HEIGHT / 2 - paddleHeight / 2;
+          player2.y = LOGICAL_HEIGHT / 2 - paddleHeight / 2;
+
+           score1El.textContent = '0';
+
+           score2El.textContent = '0';
+
+           resetBall(Math.random() > 0.5 ? 1 : -1);
+
+       }
+
+       // Reiniciar posición de pelota tras un punto
+
+       function resetBall(servingDirection) {
+
+           ball.x = LOGICAL_WIDTH / 2;
+
+           ball.y = LOGICAL_HEIGHT / 2;
+
+           ball.speedX = ball.baseSpeed * servingDirection;
+
+           // Ángulo inicial vertical aleatorio controlado
+
+           const randomAngle = (Math.random() * 2 - 1) * 2.5;
+
+           ball.speedY = Math.abs(randomAngle) < 0.7 ? (randomAngle < 0 ? -0.7 : 0.7) : randomAngle;
+
+       }
+
+       // Actualizar lógica de movimiento y físicas
+
+       function update() {
+
+           if (!gameRunning) return;
+
+           // Movimiento Jugador 1 (W y S)
+
+           if (keys['w'] && player1.y > 0) {
+
+               player1.y -= paddleSpeed;
+
+           }
+
+           if (keys['s'] && player1.y < LOGICAL_HEIGHT - player1.height) {
+
+               player1.y += paddleSpeed;
+
+           }
+
+           // Movimiento Jugador 2 (Flecha Arriba y Flecha Abajo)
+
+           if (keys['arrowup'] && player2.y > 0) {
+
+               player2.y -= paddleSpeed;
+
+           }
+
+           if (keys['arrowdown'] && player2.y < LOGICAL_HEIGHT - player2.height) {
+
+               player2.y += paddleSpeed;
+
+           }
+
+           player1.y = Math.max(0, Math.min(LOGICAL_HEIGHT - paddleHeight, player1.y));
+          player2.y = Math.max(0, Math.min(LOGICAL_HEIGHT - paddleHeight, player2.y));
+
+          // Movimiento de la Pelota
+
+           ball.x += ball.speedX;
+
+           ball.y += ball.speedY;
+
+           // Colisión con paredes superior e inferior
+
+           if (ball.y - ball.radius <= 0) {
+
+               ball.y = ball.radius;
+
+               ball.speedY *= -1;
+
+           } else if (ball.y + ball.radius >= LOGICAL_HEIGHT) {
+
+               ball.y = LOGICAL_HEIGHT - ball.radius;
+
+               ball.speedY *= -1;
+
+           }
+
+           // Colisión con Paleta Jugador 1 (Izquierda)
+
+           if (
+
+               ball.speedX < 0 &&
+              ball.x - ball.radius <= player1.x + player1.width &&
+
+               ball.x + ball.radius >= player1.x &&
+
+               ball.y >= player1.y &&
+
+               ball.y <= player1.y + player1.height
+
+           ) {
+
+               // Cálculo de rebote dinámico basado en el punto de impacto
+
+               let collidePoint = ball.y - (player1.y + player1.height / 2);
+
+               collidePoint = collidePoint / (player1.height / 2); // Valor entre -1 y 1
+
+               let angleRad = (Math.PI / 4) * collidePoint; // Ángulo máximo de 45 grados
+
+               let direction = 1; // Rebota hacia la derecha
+
+               // Aumento gradual de velocidad
+
+               let currentSpeed = Math.sqrt(ball.speedX * ball.speedX + ball.speedY * ball.speedY);
+
+               let newSpeed = Math.min(currentSpeed * 1.05, ball.maxSpeed);
+
+               ball.speedX = direction * newSpeed * Math.cos(angleRad);
+
+               ball.speedY = newSpeed * Math.sin(angleRad);
+
+               // Asegurar que la pelota salga fuera de la paleta para evitar bucles de colisión
+
+               ball.x = player1.x + player1.width + ball.radius;
+
+           }
+
+           // Colisión con Paleta Jugador 2 (Derecha)
+
+           if (
+
+               ball.speedX > 0 &&
+              ball.x + ball.radius >= player2.x &&
+
+               ball.x - ball.radius <= player2.x + player2.width &&
+
+               ball.y >= player2.y &&
+
+               ball.y <= player2.y + player2.height
+
+           ) {
+
+               // Cálculo de rebote dinámico basado en el punto de impacto
+
+               let collidePoint = ball.y - (player2.y + player2.height / 2);
+
+               collidePoint = collidePoint / (player2.height / 2); // Valor entre -1 y 1
+
+               let angleRad = (Math.PI / 4) * collidePoint;
+
+               let direction = -1; // Rebota hacia la izquierda
+
+               let currentSpeed = Math.sqrt(ball.speedX * ball.speedX + ball.speedY * ball.speedY);
+
+               let newSpeed = Math.min(currentSpeed * 1.05, ball.maxSpeed);
+
+               ball.speedX = direction * newSpeed * Math.cos(angleRad);
+
+               ball.speedY = newSpeed * Math.sin(angleRad);
+
+               ball.x = player2.x - ball.radius;
+
+           }
+
+           // Detección de Puntuación (Punto para Jugador 2)
+
+           if (ball.x + ball.radius < 0) {
+
+               player2.score++;
+
+               score2El.textContent = player2.score;
+
+               triggerScoreEffect();
+
+               checkWinCondition();
+
+               if (gameRunning) resetBall(1); // Saque hacia jugador 1
+
+           }
+
+           // Detección de Puntuación (Punto para Jugador 1)
+
+           if (ball.x - ball.radius > LOGICAL_WIDTH) {
+
+               player1.score++;
+
+               score1El.textContent = player1.score;
+
+               triggerScoreEffect();
+
+               checkWinCondition();
+
+               if (gameRunning) resetBall(-1); // Saque hacia jugador 2
+
+           }
+
+       }
+
+       // Efecto visual de destello en pantalla al anotar
+
+       function triggerScoreEffect() {
+
+           bodyContainer.classList.add('screen-flash');
+
+           setTimeout(() => {
+
+               bodyContainer.classList.remove('screen-flash');
+
+           }, 400);
+
+           showNotification('¡Punto anotado!');
+
+       }
+
+       // Comprobar si algún jugador alcanzó el límite de puntos
+
+       function checkWinCondition() {
+
+           if (player1.score >= scoreLimit) {
+
+               gameRunning = false;
+
+               winnerTitle.textContent = "¡JUGADOR 1 GANA!";
+
+               winnerTitle.className = "text-3xl md:text-5xl font-bold mb-4 neon-glow-cyan";
+
+               gameoverScreen.classList.remove('hidden');
+
+           } else if (player2.score >= scoreLimit) {
+
+               gameRunning = false;
+
+               winnerTitle.textContent = "¡JUGADOR 2 GANA!";
+
+               winnerTitle.className = "text-3xl md:text-5xl font-bold mb-4 neon-glow-pink";
+
+               gameoverScreen.classList.remove('hidden');
+
+           }
+
+       }
+
+       // Renderizado gráfico de la escena en el canvas
+
+       function draw() {
+
+           // Limpiar canvas
+
+           ctx.clearRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+
+           // Dibujar línea central de puntos estilo arcade
+
+           ctx.strokeStyle = '#334155';
+
+           ctx.lineWidth = 4;
+
+           ctx.setLineDash([10, 15]);
+
+           ctx.beginPath();
+
+           ctx.moveTo(LOGICAL_WIDTH / 2, 0);
+
+           ctx.lineTo(LOGICAL_WIDTH / 2, LOGICAL_HEIGHT);
+
+           ctx.stroke();
+
+           ctx.setLineDash([]); // Resetear patrón de línea
+
+           // Dibujar Paleta Jugador 1 (Neón Cian)
+
+           ctx.shadowBlur = 15;
+
+           ctx.shadowColor = player1.color;
+
+           ctx.fillStyle = player1.color;
+
+           ctx.fillRect(player1.x, player1.y, player1.width, player1.height);
+
+           // Dibujar Paleta Jugador 2 (Neón Rosa)
+
+           ctx.shadowColor = player2.color;
+
+           ctx.fillStyle = player2.color;
+
+           ctx.fillRect(player2.x, player2.y, player2.width, player2.height);
+
+           // Dibujar Pelota con brillo blanco intenso
+
+           ctx.shadowColor = '#ffffff';
+
+           ctx.fillStyle = ball.color;
+
+           ctx.beginPath();
+
+           ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+
+           ctx.fill();
+
+           ctx.closePath();
+
+           // Limpiar sombra para optimizar rendimiento general
+
+           ctx.shadowBlur = 0;
+
+       }
+
+       // Bucle principal de animación
+
+       function gameLoop() {
+
+           if (!gameRunning) return;
+
+           update();
+
+           draw();
+
+           if (gameRunning) animationId = requestAnimationFrame(gameLoop);
+           else animationId = null;
+
+       }
+
+       // Render inicial estático para mostrar la mesa antes de jugar
+
+       draw();
+
+   </script>
+
+</body>
+
+</html>
+
