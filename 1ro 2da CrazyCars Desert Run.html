@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrazyCars | Desert Run</title>
+<style>
+*{box-sizing:border-box}
+:root{--cyan:#54f6ff;--panel:#0b1524}
+body{margin:0;background:#080e17;color:#fff;font-family:Arial,sans-serif;min-height:100vh;display:grid;place-items:center}
+.game{width:min(1100px,100%);padding:12px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.logo{font-size:clamp(25px,4vw,38px);font-weight:1000;font-style:italic;text-shadow:3px 3px #f05a28}
+.logo span{color:var(--cyan)}
+.stats{display:flex;gap:7px;flex-wrap:wrap}
+.stat{background:var(--panel);border:1px solid #344456;border-radius:9px;padding:8px 11px}
+.stat small{display:block;color:#9fb2c8;font-size:10px;text-transform:uppercase}
+.stat strong{font-size:18px}
+.progress{height:6px;background:#263240;border-radius:9px;overflow:hidden;margin-bottom:9px}
+#bar{height:100%;width:0;background:linear-gradient(90deg,#48e9f2,#a5ff6a)}
+.stage{position:relative;overflow:hidden;border:2px solid #334457;border-radius:15px;background:#d89b51}
+canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;touch-action:pan-y}
+.hud{position:absolute;inset:0;pointer-events:none}
+.tag{position:absolute;top:12px;padding:8px;background:#08111ddd;border:1px solid #ffffff30;border-radius:8px;font-size:12px}
+#zone{left:12px}#power{right:12px;text-align:right;color:var(--cyan)}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#06101abf;padding:15px}
+.dialog{width:min(430px,100%);padding:24px;text-align:center;background:#07111df2;border:1px solid #526579;border-radius:18px}
+.dialog h1{font-size:clamp(30px,6vw,48px);font-style:italic;margin:0}
+.dialog h1 span{color:var(--cyan)}
+.dialog p{color:#c4d0dc;line-height:1.5}
+button{border:0;border-radius:10px;padding:13px 20px;background:linear-gradient(135deg,#6af7ff,#2bc7d7);color:#07131a;font-weight:900;font-size:16px;cursor:pointer}
+.hint{font-size:12px;color:#8fa5bb!important}
+.controls{display:none;gap:10px;margin-top:10px}
+.controls button{flex:1;background:#152332;color:white;border:1px solid #42576d}
+footer{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#8194a8;font-size:11px;padding-top:10px}
+@media(max-width:700px){.controls{display:flex}.game{padding:7px}.stat{padding:6px 8px}.stat strong{font-size:15px}.tag{top:6px;font-size:10px;padding:6px}.dialog{padding:16px}.dialog p{font-size:13px}.dialog h1{font-size:30px}}
+</style>
+</head>
+<body>
+<div class="game">
+<header>
+  <div class="logo">CRAZY<span>CARS</span></div>
+  <div class="stats">
+    <div class="stat"><small>Esquivados</small><strong id="count">0 / 250</strong></div>
+    <div class="stat"><small>Velocidad</small><strong id="speed">120 km/h</strong></div>
+    <div class="stat"><small>Récord</small><strong id="best">0</strong></div>
+  </div>
+</header>
+<div class="progress"><div id="bar"></div></div>
+<div class="stage">
+  <canvas id="game" width="960" height="540"></canvas>
+  <div class="hud">
+    <div class="tag" id="zone">DESIERTO DEL SOL · ZONA 1</div>
+    <div class="tag" id="power">ENERGÍA<br>Sin poder</div>
+  </div>
+  <div class="overlay" id="overlay">
+    <div class="dialog">
+      <h1>CRAZY<span>CARS</span></h1>
+      <p id="message">¡A toda velocidad por el desierto! Esquivá autos, camiones y obstáculos. Recogé poderes y superá los 250.</p>
+      <button id="start">▶ JUGAR</button>
+      <p class="hint">← → para cambiar de carril · También A / D</p>
+    </div>
+  </div>
+</div>
+<div class="controls">
+  <button id="left">◀ IZQUIERDA</button>
+  <button id="right">DERECHA ▶</button>
+</div>
+<footer>
+  <span>Esquivá 250 obstáculos para ganar.</span>
+  <span>Escudo: protección · Turbo: velocidad extra</span>
+</footer>
+</div>
+<script>
+(() => {
+"use strict";
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const W=960,H=540;
+const $=id=>document.getElementById(id);
+let running=false, elapsed=0, last=0, dodged=0;
+let roadScroll=0, speed=120, lane=1, carX=480;
+let spawnTimer=.6, pickupTimer=4, shield=0, turbo=0;
+let obstacles=[], pickups=[], particles=[];
+let best=0;
+try{best=Number(localStorage.getItem("crazycarsBest")||0)}catch(e){}
+$("best").textContent=best;
+function rand(a,b){return a+Math.random()*(b-a)}
+function bounds(y){
+  const half=150+190*y/H;
+  return {left:W/2-half,right:W/2+half,half};
+}
+function laneX(l,y){
+  const b=bounds(y);
+  return b.left+(b.right-b.left)*(l+.5)/3;
+}
+function rect(x,y,w,h,r,fill,stroke){
+  ctx.beginPath();
+  ctx.roundRect(x,y,w,h,r);
+  if(fill){ctx.fillStyle=fill;ctx.fill()}
+  if(stroke){ctx.strokeStyle=stroke;ctx.stroke()}
+}
+// DESIERTO Y CARRETERA
+function drawDesert(){
+  let sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,"#f8c786");
+  sky.addColorStop(.45,"#d78b50");
+  sky.addColorStop(1,"#b96939");
+  ctx.fillStyle=sky;
+  ctx.fillRect(0,0,W,H);
+  // Sol
+  ctx.fillStyle="#ffe7a8";
+  ctx.beginPath();ctx.arc(770,90,38,0,Math.PI*2);ctx.fill();
+  // Montañas
+  ctx.fillStyle="#c57b4c";
+  ctx.beginPath();
+  ctx.moveTo(0,235);ctx.lineTo(100,155);ctx.lineTo(180,220);
+  ctx.lineTo(285,140);ctx.lineTo(390,225);ctx.lineTo(510,165);
+  ctx.lineTo(625,225);ctx.lineTo(750,150);ctx.lineTo(860,215);
+  ctx.lineTo(960,170);ctx.lineTo(960,370);ctx.lineTo(0,370);
+  ctx.fill();
+  ctx.fillStyle="#e4a05b";
+  ctx.beginPath();ctx.moveTo(0,340);
+  ctx.quadraticCurveTo(180,280,340,355);
+  ctx.quadraticCurveTo(540,410,720,330);
+  ctx.quadraticCurveTo(850,290,960,345);
+  ctx.lineTo(960,540);ctx.lineTo(0,540);ctx.fill();
+  ctx.fillStyle="#bd7545";
+  ctx.beginPath();ctx.moveTo(0,430);
+  ctx.quadraticCurveTo(240,360,430,445);
+  ctx.quadraticCurveTo(700,490,960,400);
+  ctx.lineTo(960,540);ctx.lineTo(0,540);ctx.fill();
+  // Cactus
+  for(let i=0;i<12;i++){
+    let x=i%2?890:65;
+    let y=210+(i*43)%280;
+    x+=(i%3-1)*30;
+    ctx.fillStyle="#596b43";
+    ctx.fillRect(x-4,y,8,30);
+    ctx.fillRect(x-13,y+8,9,5);
+    ctx.fillRect(x-13,y+1,4,12);
+    ctx.fillRect(x+4,y+14,9,5);
+    ctx.fillRect(x+9,y+7,4,12);
+  }
+  // Carretera en perspectiva
+  const top=155,halfTop=150,halfBottom=340;
+  ctx.fillStyle="#686965";
+  ctx.beginPath();
+  ctx.moveTo(480-halfTop,top);
+  ctx.lineTo(480+halfTop,top);
+  ctx.lineTo(480+halfBottom,H);
+  ctx.lineTo(480-halfBottom,H);
+  ctx.closePath();ctx.fill();
+  // Bordes
+  ctx.strokeStyle="#f5d5a4";ctx.lineWidth=6;
+  ctx.beginPath();
+  ctx.moveTo(480-halfTop,top);ctx.lineTo(480-halfBottom,H);
+  ctx.moveTo(480+halfTop,top);ctx.lineTo(480+halfBottom,H);
+  ctx.stroke();
+  // Líneas de los tres carriles
+  for(let l=1;l<=2;l++){
+    for(let i=0;i<15;i++){
+      const p=(i/15+roadScroll/180)%1;
+      const y=top+p*(H-top);
+      const b=bounds(y);
+      const x=b.left+(b.right-b.left)*l/3;
+      ctx.strokeStyle="#eee5ce";
+      ctx.lineWidth=1+p*3;
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+5+p*24);ctx.stroke();
+    }
+  }
+  // Textura de asfalto
+  for(let i=0;i<55;i++){
+    let y=(i*83+roadScroll*2)%H;
+    if(y<top)continue;
+    let b=bounds(y);
+    ctx.fillStyle="#ffffff20";
+    ctx.fillRect(b.left+8+((i*127.73)%Math.max(1,b.right-b.left-16)),y,3,1);
+  }
+  // Carteles laterales
+  for(let s=0;s<2;s++){
+    let y=230+(roadScroll*1.1+s*270)%300;
+    let b=bounds(y);
+    let x=s===0?480-b.half-24:480+b.half+24;
+    let p=(y-155)/(H-155);
+    ctx.fillStyle="#584331";
+    ctx.fillRect(x-2,y,4,28*p+8);
+    if(s===1){
+      rect(x-16,y-17,34,22,3,"#f4d89a","#744a2d");
+      ctx.fillStyle="#714b2d";
+      ctx.font="bold 9px Arial";
+      ctx.fillText("RUTA",x-12,y-3);
+    }
+  }
+}
+// AUTOS
+function drawCar(x,y,w,h,color,player=false){
+  ctx.save();
+  ctx.translate(x,y);
+  // Sombra
+  ctx.fillStyle="#17181766";
+  ctx.beginPath();
+  ctx.ellipse(2,h*.36,w*.62,h*.18,0,0,Math.PI*2);
+  ctx.fill();
+  // Ruedas
+  ctx.fillStyle="#171b20";
+  rect(-w*.51,-h*.25,w*.18,h*.43,4,"#171b20");
+  rect(w*.33,-h*.25,w*.18,h*.43,4,"#171b20");
+  rect(-w*.51,h*.15,w*.18,h*.34,4,"#171b20");
+  rect(w*.33,h*.15,w*.18,h*.34,4,"#171b20");
+  // Carrocería
+  rect(-w*.42,-h*.5,w*.84,h,7,color,"#202a32");
+  // Parabrisas
+  ctx.fillStyle="#263d4b";
+  ctx.beginPath();
+  ctx.moveTo(-w*.29,-h*.22);
+  ctx.lineTo(-w*.22,-h*.4);
+  ctx.quadraticCurveTo(0,-h*.48,w*.22,-h*.4);
+  ctx.lineTo(w*.29,-h*.22);
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle="#72d8e9";
+  ctx.beginPath();
+  ctx.moveTo(-w*.22,-h*.2);
+  ctx.lineTo(-w*.16,-h*.36);
+  ctx.lineTo(w*.16,-h*.36);
+  ctx.lineTo(w*.22,-h*.2);
+  ctx.closePath();ctx.fill();
+  rect(-w*.24,-h*.12,w*.48,h*.3,4,
+       player?"#dbe5eb":"#53616b");
+  // Luces
+  rect(-w*.34,-h*.47,w*.18,h*.07,2,"#fff1b8");
+  rect(w*.16,-h*.47,w*.18,h*.07,2,"#fff1b8");
+  rect(-w*.32,h*.39,w*.16,h*.06,2,"#f24f40");
+  rect(w*.16,h*.39,w*.16,h*.06,2,"#f24f40");
+  if(player){
+    ctx.strokeStyle="#7ff8ff";
+    ctx.lineWidth=2;
+    ctx.strokeRect(-w*.44,-h*.51,w*.88,h*1.02);
+  }
+  ctx.restore();
+}
+// CAMIONES
+function drawTruck(x,y,s,color){
+  const w=58*s,h=94*s;
+  ctx.fillStyle="#0005";
+  ctx.beginPath();
+  ctx.ellipse(x,y+h*.35,w*.65,h*.16,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle="#20252a";
+  for(const side of [-1,1]){
+    ctx.fillRect(x+side*w*.42-4*s,y-h*.22,9*s,27*s);
+    ctx.fillRect(x+side*w*.42-4*s,y+h*.17,9*s,27*s);
+  }
+  rect(x-w*.45,y-h*.5,w*.9,h*.7,4,color,"#343b41");
+  rect(x-w*.35,y-h*.46,w*.7,h*.22,3,"#4e6674");
+  ctx.fillStyle="#f5e4b7";
+  ctx.fillRect(x-w*.3,y-h*.48,9*s,4*s);
+  ctx.fillRect(x+w*.14,y-h*.48,9*s,4*s);
+  ctx.fillStyle="#b4b9be";
+  ctx.fillRect(x-w*.42,y+h*.2,w*.84,h*.18);
+}
+// OBSTÁCULOS
+function drawObstacle(o){
+  const x=laneX(o.lane,o.y);
+  const s=.35+(o.y-155)/(H-155)*.95;
+  const y=o.y;
+  if(o.type==="car"){
+    drawCar(x,y,35*s,62*s,o.color);
+  }
+  if(o.type==="truck"){
+    drawTruck(x,y,s,o.color);
+  }
+  if(o.type==="cone"){
+    ctx.fillStyle="#0004";
+    ctx.beginPath();
+    ctx.ellipse(x,y+9*s,18*s,6*s,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle="#ff762e";
+    ctx.beginPath();
+    ctx.moveTo(x,y-27*s);
+    ctx.lineTo(x-14*s,y+8*s);
+    ctx.lineTo(x+14*s,y+8*s);
+    ctx.closePath();ctx.fill();
+    ctx.fillStyle="#fff1d5";
+    ctx.fillRect(x-7*s,y-3*s,14*s,6*s);
+    ctx.fillStyle="#e8e5dc";
+    ctx.fillRect(x-17*s,y+7*s,34*s,6*s);
+  }
+  if(o.type==="sign"){
+    ctx.fillStyle="#66513c";
+    ctx.fillRect(x-3*s,y-8*s,6*s,34*s);
+    rect(x-24*s,y-29*s,48*s,27*s,3,"#f3d28b","#67492e");
+    ctx.fillStyle="#7d4d2c";
+    ctx.font=`bold ${Math.max(6,10*s)}px Arial`;
+    ctx.textAlign="center";
+    ctx.fillText(o.text,x,y-11*s);
+    ctx.textAlign="left";
+  }
+  if(o.type==="barrier"){
+    rect(x-26*s,y-15*s,52*s,26*s,3,"#e6e1d4","#5b5147");
+    ctx.strokeStyle="#e35a36";
+    ctx.lineWidth=6*s;
+    for(let k=-1;k<=1;k++){
+      ctx.beginPath();
+      ctx.moveTo(x+k*19*s,y-13*s);
+      ctx.lineTo(x+(k*19+12)*s,y+9*s);
+      ctx.stroke();
+    }
+  }
+}
+// BOTELLAS DE ENERGÍA
+function drawPickup(p){
+  const x=laneX(p.lane,p.y);
+  const s=.5+p.y/H*.8;
+  ctx.save();
+  ctx.translate(x,p.y);
+  ctx.rotate(Math.sin(elapsed*3+p.y)*.08);
+  ctx.shadowColor=p.kind==="shield"?"#51efff":"#ffca42";
+  ctx.shadowBlur=18*s;
+  rect(-10*s,-19*s,20*s,38*s,6,
+       p.kind==="shield"?"#31d9f2":"#ffb92e","#fff4c6");
+  ctx.shadowBlur=0;
+  ctx.fillStyle="#fff8d9";
+  ctx.fillRect(-5*s,-11*s,10*s,4*s);
+  ctx.fillStyle="#fff";
+  ctx.font=`bold ${15*s}px Arial`;
+  ctx.textAlign="center";
+  ctx.fillText(p.kind==="shield"?"S":"⚡",0,7*s);
+  ctx.restore();
+}
+function spawnObstacle(){
+  const level=Math.floor(dodged/35);
+  let types=["car","car","cone","truck","sign","barrier"];
+  if(level<1)types=["car","cone","car","sign","barrier"];
+  if(level>=3)types=["car","truck","cone","truck","sign","barrier"];
+  const lane=Math.floor(Math.random()*3);
+  const type=types[Math.floor(Math.random()*types.length)];
+  const colors=["#e74f3c","#f3c44e","#3286c8","#e7e8e8","#49a16d","#6c5dd3"];
+  obstacles.push({
+    lane,y:155,type,
+    color:colors[Math.floor(Math.random()*colors.length)],
+    text:["GAS","EXIT","SLOW"][Math.floor(Math.random()*3)],
+    passed:false,hit:false
+  });
+  // Más tráfico en niveles avanzados
+  if(level>=4&&Math.random()<.28){
+    const other=(lane+1+Math.floor(Math.random()*2))%3;
+    obstacles.push({
+      lane:other,y:115,type:"cone",
+      color:"#d8dce1",text:"STOP",
+      passed:false,hit:false
+    });
+  }
+}
+function spawnPickup(){
+  pickups.push({
+    lane:Math.floor(Math.random()*3),
+    y:155,
+    kind:Math.random()<.5?"shield":"turbo",
+    got:false
+  });
+}
+function burst(x,y,color){
+  for(let i=0;i<12;i++){
+    particles.push({
+      x,y,vx:rand(-100,100),vy:rand(-130,50),
+      life:rand(.25,.7),color
+    });
+  }
+}
+// ACTUALIZAR JUEGO
+function update(dt){
+  if(!running)return;
+  elapsed+=dt;
+  const level=Math.floor(dodged/35);
+  speed=120+level*12+(turbo>0?70:0);
+  roadScroll+=dt*(90+speed*.75);
+  spawnTimer-=dt;
+  if(spawnTimer<=0){
+    spawnObstacle();
+    spawnTimer=Math.max(.42,1.12-level*.075)*rand(.78,1.2);
+  }
+  pickupTimer-=dt;
+  if(pickupTimer<=0){
+    if(Math.random()<.78)spawnPickup();
+    pickupTimer=rand(5,8);
+  }
+  const playerY=H-88;
+  const targetX=laneX(lane,playerY);
+  carX+=(targetX-carX)*Math.min(1,dt*12);
+  const movement=dt*(110+level*11+(turbo>0?55:0));
+  obstacles.forEach(o=>o.y+=movement);
+  pickups.forEach(p=>p.y+=movement);
+  for(const o of obstacles){
+    if(o.y>playerY-30&&o.y<playerY+40&&Math.abs(laneX(o.lane,o.y)-carX)<61&&!o.hit){
+      o.hit=true;
+      if(shield>0){
+        shield=0;
+        burst(carX,playerY,"#5af5ff");
+        o.y=H+100;
+      }else{
+        finish(false);
+        return;
+      }
+    }
+    if(!o.passed&&!o.hit&&o.y>playerY+45){
+      o.passed=true;
+      dodged++;
+      burst(laneX(o.lane,o.y),o.y,"#f4c76b");
+      if(dodged>=250){
+        finish(true);
+        return;
+      }
+    }
+  }
+
+  for(const p of pickups){
+    if(!p.got&&p.y>playerY-35&&p.y<playerY+35&&p.lane===lane){
+      p.got=true;
+      if(p.kind==="shield")shield=8;
+      else turbo=5;
+      burst(laneX(p.lane,p.y),p.y,
+            p.kind==="shield"?"#51efff":"#ffca42");
+    }
+  }
+  obstacles=obstacles.filter(o=>o.y<H+100);
+  pickups=pickups.filter(p=>p.y<H+50&&!p.got);
+  for(const p of particles){
+    p.x+=p.vx*dt;
+    p.y+=p.vy*dt;
+    p.vy+=180*dt;
+    p.life-=dt;
+  }
+  particles=particles.filter(p=>p.life>0);
+  shield=Math.max(0,shield-dt);
+  turbo=Math.max(0,turbo-dt);
+  $("count").textContent=dodged+" / 250";
+  $("speed").textContent=Math.round(speed)+" km/h";
+  $("bar").style.width=(dodged/250*100)+"%";
+  $("zone").textContent="DESIERTO DEL SOL · ZONA "+(level+1);
+  $("power").innerHTML="ENERGÍA<br>"+(
+    shield>0?"Escudo "+shield.toFixed(1)+" s":
+    turbo>0?"Turbo "+turbo.toFixed(1)+" s":
+    "Sin poder"
+  );
+}
+// DIBUJAR CADA CUADRO
+function render(){
+  drawDesert();
+  if(turbo>0){
+    ctx.strokeStyle="#ffffff88";
+    ctx.lineWidth=2;
+    for(let i=0;i<18;i++){
+      const x=(i*79+elapsed*250)%W;
+      const y=(i*47+elapsed*390)%H;
+      ctx.beginPath();
+      ctx.moveTo(x,y);
+      ctx.lineTo(x,y+24);
+      ctx.stroke();
+    }
+  }
+  obstacles.forEach(drawObstacle);
+  pickups.forEach(drawPickup);
+  const py=H-88;
+  if(shield>0){
+    ctx.strokeStyle="#6df7ffbb";
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.ellipse(carX,py,39,54,0,0,Math.PI*2);
+    ctx.stroke();
+  }
+  drawCar(carX,py,48,83,turbo>0?"#ffbd37":"#25c9db",true);
+  for(const p of particles){
+    ctx.globalAlpha=Math.max(0,p.life/.7);
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,3,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+}
+// INICIAR Y TERMINAR
+function start(){
+  obstacles=[];
+  pickups=[];
+  particles=[];
+  elapsed=0;
+  dodged=0;
+  roadScroll=0;
+  spawnTimer=.6;
+  pickupTimer=4;
+  shield=0;
+  turbo=0;
+  lane=1;
+  carX=laneX(1,H-88);
+  speed=120;
+  running=true;
+  $("overlay").style.display="none";
+  $("count").textContent="0 / 250";
+  $("bar").style.width="0%";
+  $("power").innerHTML="ENERGÍA<br>Sin poder";
+}
+function finish(victory){
+  running=false;
+  if(dodged>best){
+    best=dodged;
+    $("best").textContent=best;
+    try{localStorage.setItem("crazycarsBest",best)}catch(e){}
+  }
+  $("overlay").style.display="flex";
+  $("message").textContent=victory
+    ?"¡VICTORIA! Superaste los 250 obstáculos. ¡Sos el rey del desierto!"
+    :"¡CHOQUE! Esquivaste "+dodged+" de 250 obstáculos. ¡Volvé a intentarlo!";
+  $("start").textContent=victory?"↻ VOLVER A JUGAR":"↻ REINTENTAR";
+  $("power").innerHTML="ENERGÍA<br>Sin poder";
+}
+// CONTROLES DE TECLADO Y MÓVIL
+function move(dir){
+  if(!running)return;
+  lane=Math.max(0,Math.min(2,lane+dir));
+}
+window.addEventListener("keydown",e=>{
+  if(["ArrowLeft","ArrowRight","a","A","d","D"," "].includes(e.key)){
+    e.preventDefault();
+  }
+  if(!e.repeat&&(e.key==="ArrowLeft"||e.key==="a"||e.key==="A"))move(-1);
+  if(!e.repeat&&(e.key==="ArrowRight"||e.key==="d"||e.key==="D"))move(1);
+  if(e.key===" "&&!running&&$("overlay").style.display!=="none"){
+    start();
+  }
+});
+$("start").addEventListener("click",start);
+$("left").addEventListener("pointerdown",()=>move(-1));
+$("right").addEventListener("pointerdown",()=>move(1));
+// Deslizar el dedo para cambiar de carril
+let touchX=null;
+canvas.addEventListener("touchstart",e=>{
+  touchX=e.changedTouches[0].clientX;
+},{passive:true});
+canvas.addEventListener("touchend",e=>{
+  if(touchX===null)return;
+  const dx=e.changedTouches[0].clientX-touchX;
+  if(Math.abs(dx)>25)move(dx>0?1:-1);
+  touchX=null;
+},{passive:true});
+function loop(timestamp){
+  const dt=Math.min(.035,(timestamp-last)/1000||0);
+  last=timestamp;
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+carX=laneX(1,H-88);
+render();
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
