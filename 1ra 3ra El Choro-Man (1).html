@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Washin-Man: La Aventura Callejera</title>
+   <!-- Tailwind CSS para diseño moderno -->
+   <script src="https://cdn.tailwindcss.com"></script>
+   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+   <style>
+       body {
+           font-family: 'Nunito', sans-serif;
+           background: radial-gradient(circle, #1a1c29 0%, #0d0e15 100%);
+           color: #fff;
+           overflow-x: hidden;
+       }
+       .title-font {
+           font-family: 'Fredoka One', cursive;
+       }
+       canvas {
+           box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+           border-radius: 12px;
+           background-color: #0b0c10;
+       }
+       .retro-btn {
+           background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+           transition: all 0.2s ease;
+           box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+       }
+       .retro-btn:hover {
+           transform: translateY(-2px);
+           box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+       }
+       .retro-btn:active {
+           transform: translateY(1px);
+       }
+   </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4">
+
+
+   <!-- Cabecera del juego -->
+   <header class="text-center my-2">
+       <h1 class="title-font text-4xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 drop-shadow-lg">
+           EL CHORO-MAN
+       </h1>
+       <p class="text-gray-400 text-sm mt-1">¡Ayuda al personaje a juntar todas las moneditas y esquivar a la gorra!</p>
+   </header>
+
+
+   <!-- Panel de Puntuación y Vidas -->
+   <div class="flex items-center justify-between w-full max-w-md bg-gray-900/80 border border-gray-700/50 rounded-xl px-6 py-3 my-2 shadow-inner">
+       <div class="flex flex-col items-center">
+           <span class="text-xs uppercase tracking-wider text-gray-400 font-bold">Botín</span>
+           <span id="scoreVal" class="title-font text-2xl text-yellow-400">0</span>
+       </div>
+       <div class="flex flex-col items-center">
+           <span class="text-xs uppercase tracking-wider text-gray-400 font-bold">Vidas</span>
+           <div id="livesContainer" class="flex gap-1 mt-1 text-xl">
+               ❤️❤️❤️
+           </div>
+       </div>
+       <div class="flex flex-col items-center">
+           <span class="text-xs uppercase tracking-wider text-gray-400 font-bold">Nivel</span>
+           <span id="levelVal" class="title-font text-2xl text-red-400">1</span>
+       </div>
+   </div>
+
+
+   <!-- Contenedor Principal / Canvas y Pantallas superpuestas -->
+   <div class="relative flex items-center justify-center my-2">
+       <canvas id="gameCanvas" width="448" height="496"></canvas>
+
+
+       <!-- Pantalla de Inicio / Game Over / Victoria -->
+       <div id="overlayScreen" class="absolute inset-0 bg-gray-950/90 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center p-6 text-center z-10">
+           <h2 id="overlayTitle" class="title-font text-3xl md:text-4xl text-amber-400 mb-3">¡LISTO PARA JUGAR!</h2>
+           <p id="overlayDesc" class="text-gray-300 text-sm mb-6 max-w-xs leading-relaxed">
+               Usa las <b>flechas del teclado</b> o los botones táctiles para mover al personaje. ¡Agarrá todas las monedas y escapá de la gorra que sale de su celda!
+           </p>
+           <button id="actionBtn" onclick="startGame()" class="retro-btn title-font text-white px-8 py-3 rounded-xl text-lg tracking-wide uppercase">
+               Empezar Laburo
+           </button>
+       </div>
+   </div>
+
+
+   <!-- Controles táctiles para móviles / tablets -->
+   <div class="grid grid-cols-3 gap-2 w-48 my-3 md:hidden">
+       <div></div>
+       <button onclick="setDirection('UP')" class="bg-gray-800 border border-gray-700 text-white p-4 rounded-xl text-xl active:bg-amber-600">⬆️</button>
+       <div></div>
+       <button onclick="setDirection('LEFT')" class="bg-gray-800 border border-gray-700 text-white p-4 rounded-xl text-xl active:bg-amber-600">⬅️</button>
+       <button onclick="setDirection('DOWN')" class="bg-gray-800 border border-gray-700 text-white p-4 rounded-xl text-xl active:bg-amber-600">⬇️</button>
+       <button onclick="setDirection('RIGHT')" class="bg-gray-800 border border-gray-700 text-white p-4 rounded-xl text-xl active:bg-amber-600">➡️</button>
+   </div>
+
+
+   <!-- Pie de página -->
+   <footer class="text-xs text-gray-500 mt-2">
+       Modo Callejero • HTML5 Canvas
+   </footer>
+
+
+   <!-- Código JavaScript del Juego -->
+   <script>
+       const canvas = document.getElementById('gameCanvas');
+       const ctx = canvas.getContext('2d');
+
+
+       const tileSize = 16;
+       const mapData = [
+           [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+           [1,3,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,3,1],
+           [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+           [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+           [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+           [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+           [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+           [1,1,1,1,1,1,0,1,1,1,1,1,2,1,1,2,1,1,1,1,1,0,1,1,1,1,1,1],
+           [2,2,2,2,2,1,0,1,1,1,1,1,2,1,1,2,1,1,1,1,1,0,1,2,2,2,2,2],
+           [2,2,2,2,2,1,0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0,1,2,2,2,2,2],
+           [2,2,2,2,2,1,0,1,1,2,1,1,1,4,4,1,1,1,2,1,1,0,1,2,2,2,2,2],
+           [1,1,1,1,1,1,0,1,1,2,1,4,4,4,4,4,4,1,2,1,1,0,1,1,1,1,1,1], // Celda de salida (ghost house door en 4)
+           [2,2,2,2,2,2,0,2,2,2,1,4,4,4,4,4,4,1,2,2,2,0,2,2,2,2,2,2],
+           [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
+           [2,2,2,2,2,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,2,2,2,2,2],
+           [2,2,2,2,2,1,0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0,1,2,2,2,2,2],
+           [2,2,2,2,2,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,2,2,2,2,2],
+           [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
+           [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+           [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+           [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+           [1,3,0,0,1,1,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,1,1,0,0,3,1],
+           [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+           [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+           [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+           [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+           [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+           [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+       ];
+
+
+       let map = [];
+       let score = 0;
+       let lives = 3;
+       let level = 1;
+       let gameRunning = false;
+       let powerModeTimer = 0;
+       let totalDots = 0;
+       let dotsEaten = 0;
+
+
+       // Protagonista: El Fisura
+       let thief = {
+           x: 13.5 * tileSize,
+           y: 23 * tileSize,
+           speed: 2,
+           dir: 'NONE',
+           nextDir: 'NONE',
+           radius: tileSize / 2 - 2
+       };
+
+
+       // Fantasmas / Policiales (Inician dentro de la jaula en filas centrales)
+       let ghosts = [
+           { x: 13.5 * tileSize, y: 14 * tileSize, color: '#3b82f6', name: 'Policía 1', dir: 'UP', speed: 1.3, inHouse: true },
+           { x: 12.5 * tileSize, y: 14 * tileSize, color: '#ef4444', name: 'Patrullero', dir: 'UP', speed: 1.3, inHouse: true },
+           { x: 14.5 * tileSize, y: 14 * tileSize, color: '#a855f7', name: 'Fiscal', dir: 'UP', speed: 1.3, inHouse: true },
+           { x: 13.5 * tileSize, y: 15 * tileSize, color: '#10b981', name: 'Seguridad', dir: 'UP', speed: 1.3, inHouse: true }
+       ];
+
+
+       function initGame() {
+           map = JSON.parse(JSON.stringify(mapData));
+           score = 0;
+           lives = 3;
+           level = 1;
+           dotsEaten = 0;
+           countDots();
+           resetPositions();
+           updateUI();
+       }
+
+
+       function countDots() {
+           totalDots = 0;
+           for (let r = 0; r < map.length; r++) {
+               for (let c = 0; c < map[r].length; c++) {
+                   if (map[r][c] === 0 || map[r][c] === 3) {
+                       totalDots++;
+                   }
+               }
+           }
+       }
+
+
+       function resetPositions() {
+           thief.x = 13.5 * tileSize;
+           thief.y = 23 * tileSize;
+           thief.dir = 'NONE';
+           thief.nextDir = 'NONE';
+
+
+           // Reiniciar estrictamente dentro de la caja central
+           const ghostStarts = [
+               {x: 13.5, y: 14}, {x: 12.5, y: 14}, {x: 14.5, y: 14}, {x: 13.5, y: 15}
+           ];
+           ghosts.forEach((g, idx) => {
+               g.x = ghostStarts[idx].x * tileSize;
+               g.y = ghostStarts[idx].y * tileSize;
+               g.dir = 'UP';
+               g.inHouse = true; // Comienzan dentro obligatoriamente
+           });
+       }
+
+
+       function updateUI() {
+           document.getElementById('scoreVal').innerText = score;
+           document.getElementById('levelVal').innerText = level;
+           let hearts = '';
+           for(let i=0; i<lives; i++) hearts += '❤️ ';
+           document.getElementById('livesContainer').innerText = hearts;
+       }
+
+
+       window.addEventListener('keydown', e => {
+           switch(e.key) {
+               case 'ArrowUp': case 'w': setDirection('UP'); break;
+               case 'ArrowDown': case 's': setDirection('DOWN'); break;
+               case 'ArrowLeft': case 'a': setDirection('LEFT'); break;
+               case 'ArrowRight': case 'd': setDirection('RIGHT'); break;
+           }
+       });
+
+
+       function setDirection(d) {
+           thief.nextDir = d;
+       }
+
+
+       function startGame() {
+           document.getElementById('overlayScreen').classList.add('hidden');
+           if (!gameRunning) {
+               initGame();
+               gameRunning = true;
+               requestAnimationFrame(gameLoop);
+           }
+       }
+
+
+       function showOverlay(title, desc, btnText) {
+           gameRunning = false;
+           document.getElementById('overlayTitle').innerText = title;
+           document.getElementById('overlayDesc').innerText = desc;
+           document.getElementById('actionBtn').innerText = btnText;
+           document.getElementById('overlayScreen').classList.remove('hidden');
+       }
+
+
+       function gameLoop() {
+           if (!gameRunning) return;
+           update();
+           draw();
+           requestAnimationFrame(gameLoop);
+       }
+
+
+       function update() {
+           if (powerModeTimer > 0) {
+               powerModeTimer--;
+           }
+
+
+           // Movimiento del Ladrón
+           if (canMove(thief.x, thief.y, thief.nextDir)) {
+               thief.dir = thief.nextDir;
+           }
+           if (canMove(thief.x, thief.y, thief.dir)) {
+               moveEntity(thief, thief.dir, thief.speed);
+           }
+
+
+           // Túnel horizontal
+           if (thief.x < 0) thief.x = canvas.width - tileSize;
+           else if (thief.x > canvas.width - tileSize) thief.x = 0;
+
+
+           // Recolectar monedas
+           let tileX = Math.floor((thief.x + tileSize/2) / tileSize);
+           let tileY = Math.floor((thief.y + tileSize/2) / tileSize);
+
+
+           if (tileY >= 0 && tileY < map.length && tileX >= 0 && tileX < map[0].length) {
+               if (map[tileY][tileX] === 0) {
+                   map[tileY][tileX] = 2;
+                   score += 10;
+                   dotsEaten++;
+                   updateUI();
+               } else if (map[tileY][tileX] === 3) {
+                   map[tileY][tileX] = 2;
+                   score += 50;
+                   dotsEaten++;
+                   powerModeTimer = 450;
+                   updateUI();
+               }
+           }
+
+
+           // Siguiente Nivel
+           if (dotsEaten >= totalDots) {
+               level++;
+               map = JSON.parse(JSON.stringify(mapData));
+               dotsEaten = 0;
+               countDots();
+               resetPositions();
+               thief.speed += 0.2;
+               updateUI();
+           }
+
+
+           // Lógica de Fantasmas: Salida automática de la caja y movimiento fluido
+           let collidedThisFrame = false;
+           ghosts.forEach(ghost => {
+               if (collidedThisFrame || !gameRunning) return;
+               let currentSpeed = powerModeTimer > 0 ? ghost.speed * 0.6 : ghost.speed;
+
+
+               // Si el fantasma está dentro de la casa (Ghost House)
+               if (ghost.inHouse) {
+                   // Forzar movimiento hacia arriba para salir de la caja central (puerta en fila 12, columna 13-14)
+                   ghost.y -= currentSpeed * 0.8;
+                   // Si llega a la salida superior de la caja (fila 12), sale al laberinto principal
+                   if (ghost.y <= 12 * tileSize) {
+                       ghost.y = 12 * tileSize;
+                       ghost.inHouse = false;
+                       ghost.dir = 'UP';
+                   }
+                   return;
+               }
+
+
+               // Fuera de la casa: movimiento constante sin atascos
+               let hitWall = !canMove(ghost.x, ghost.y, ghost.dir);
+               let atIntersection = (Math.abs(ghost.x % tileSize) < currentSpeed && Math.abs(ghost.y % tileSize) < currentSpeed);
+
+
+               if (hitWall || atIntersection) {
+                   if (atIntersection) {
+                       ghost.x = Math.round(ghost.x / tileSize) * tileSize;
+                       ghost.y = Math.round(ghost.y / tileSize) * tileSize;
+                   }
+
+
+                   let gx = Math.round(ghost.x / tileSize);
+                   let gy = Math.round(ghost.y / tileSize);
+
+
+                   let validDirs = [];
+                   let dirs = [
+                       {name: 'UP', dx: 0, dy: -1},
+                       {name: 'DOWN', dx: 0, dy: 1},
+                       {name: 'LEFT', dx: -1, dy: 0},
+                       {name: 'RIGHT', dx: 1, dy: 0}
+                   ];
+
+
+                   let opposite = getOppositeDir(ghost.dir);
+
+
+                   dirs.forEach(d => {
+                       let nx = gx + d.dx;
+                       let ny = gy + d.dy;
+                       if (ny >= 0 && ny < map.length && nx >= 0 && nx < map[0].length) {
+                           // Evitar volver a entrar a la caja de salida una vez fuera
+                           if (map[ny][nx] !== 1 && map[ny][nx] !== 4) {
+                               validDirs.push(d.name);
+                           }
+                       }
+                   });
+
+
+                   let nonOppositeDirs = validDirs.filter(d => d !== opposite);
+                   let choices = nonOppositeDirs.length > 0 ? nonOppositeDirs : validDirs;
+
+
+                   if (choices.length > 0) {
+                       if (powerModeTimer > 0) {
+                           ghost.dir = choices[Math.floor(Math.random() * choices.length)];
+                       } else {
+                           let target = { x: Math.floor(thief.x / tileSize), y: Math.floor(thief.y / tileSize) };
+                           let bestDir = choices[0];
+                           let minDist = Infinity;
+
+
+                           choices.sort(() => Math.random() - 0.5);
+
+
+                           choices.forEach(d => {
+                               let dx = 0, dy = 0;
+                               if (d === 'UP') dy = -1;
+                               if (d === 'DOWN') dy = 1;
+                               if (d === 'LEFT') dx = -1;
+                               if (d === 'RIGHT') dx = 1;
+
+
+                               let dist = Math.hypot((gx + dx) - target.x, (gy + dy) - target.y);
+                               if (dist < minDist) {
+                                   minDist = dist;
+                                   bestDir = d;
+                               }
+                           });
+                           ghost.dir = bestDir;
+                       }
+                   } else {
+                       ghost.dir = opposite;
+                   }
+               }
+
+
+               if (canMove(ghost.x, ghost.y, ghost.dir)) {
+                   moveEntity(ghost, ghost.dir, currentSpeed);
+               } else {
+                   let altDirs = ['UP', 'DOWN', 'LEFT', 'RIGHT'].filter(d => canMove(ghost.x, ghost.y, d));
+                   if (altDirs.length > 0) {
+                       ghost.dir = altDirs[Math.floor(Math.random() * altDirs.length)];
+                   }
+               }
+
+
+               if (ghost.x < 0) ghost.x = canvas.width - tileSize;
+               else if (ghost.x > canvas.width - tileSize) ghost.x = 0;
+
+
+               // Colisión con el Ladrón
+               let dist = Math.hypot((thief.x + tileSize/2) - (ghost.x + tileSize/2), (thief.y + tileSize/2) - (ghost.y + tileSize/2));
+               if (dist < tileSize * 0.8) {
+                   if (powerModeTimer > 0) {
+                       score += 200;
+                       ghost.x = 13.5 * tileSize;
+                       ghost.y = 14 * tileSize;
+                       ghost.inHouse = true;
+                       updateUI();
+                   } else {
+                       collidedThisFrame = true;
+                       lives--;
+                       updateUI();
+                       if (lives <= 0) {
+                           showOverlay('¡TE ATRAPÓ LA GORRA!', `¡La policía te encerró! Botín acumulado: $${score}`, 'Jugar de Nuevo');
+                       } else {
+                           resetPositions();
+                       }
+                   }
+               }
+           });
+       }
+
+
+       function canMove(x, y, dir) {
+           if (dir === 'NONE') return false;
+           let nextX = x, nextY = y;
+           let speed = 2;
+
+
+           if (dir === 'UP') nextY -= speed;
+           if (dir === 'DOWN') nextY += speed;
+           if (dir === 'LEFT') nextX -= speed;
+           if (dir === 'RIGHT') nextX += speed;
+
+
+           let corners = [
+               {x: nextX + 2, y: nextY + 2},
+               {x: nextX + tileSize - 2, y: nextY + 2},
+               {x: nextX + 2, y: nextY + tileSize - 2},
+               {x: nextX + tileSize - 2, y: nextY + tileSize - 2}
+           ];
+
+
+           for (let c of corners) {
+               let tx = Math.floor(c.x / tileSize);
+               let ty = Math.floor(c.y / tileSize);
+               if (ty < 0 || ty >= map.length || tx < 0 || tx >= map[0].length) return true;
+               if (map[ty][tx] === 1) return false;
+           }
+           return true;
+       }
+
+
+       function getOppositeDir(dir) {
+           if (dir === 'UP') return 'DOWN';
+           if (dir === 'DOWN') return 'UP';
+           if (dir === 'LEFT') return 'RIGHT';
+           if (dir === 'RIGHT') return 'LEFT';
+           return 'UP';
+       }
+
+
+       function moveEntity(entity, dir, speed) {
+           if (dir === 'UP') entity.y -= speed;
+           if (dir === 'DOWN') entity.y += speed;
+           if (dir === 'LEFT') entity.x -= speed;
+           if (dir === 'RIGHT') entity.x += speed;
+       }
+
+
+       // Dibujo general
+       function draw() {
+           ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+           // Laberinto
+           for (let r = 0; r < map.length; r++) {
+               for (let c = 0; c < map[r].length; c++) {
+                   let tile = map[r][c];
+                   if (tile === 1) {
+                       ctx.fillStyle = '#1e293b';
+                       ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+                       ctx.strokeStyle = '#475569';
+                       ctx.strokeRect(c * tileSize, r * tileSize, tileSize, tileSize);
+                   } else if (tile === 4) {
+                       // Puerta de la caja de fantasmas
+                       ctx.fillStyle = '#f97316';
+                       ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize/3);
+                   } else if (tile === 0) {
+                       ctx.fillStyle = '#fbbf24';
+                       ctx.beginPath();
+                       ctx.arc(c * tileSize + tileSize/2, r * tileSize + tileSize/2, 2.5, 0, Math.PI * 2);
+                       ctx.fill();
+                   } else if (tile === 3) {
+                       if (Math.floor(Date.now() / 200) % 2 === 0) {
+                           ctx.fillStyle = '#f97316';
+                           ctx.beginPath();
+                           ctx.arc(c * tileSize + tileSize/2, r * tileSize + tileSize/2, 6, 0, Math.PI * 2);
+                           ctx.fill();
+                       }
+                   }
+               }
+           }
+
+
+           // Dibujar al Ladrón (Fisura callejero)
+           let tx = thief.x + tileSize/2;
+           let ty = thief.y + tileSize/2;
+           ctx.fillStyle = '#eab308';
+           ctx.beginPath();
+           ctx.arc(tx, ty, thief.radius, 0, Math.PI * 2);
+           ctx.fill();
+           // Capucha / Gorra
+           ctx.fillStyle = '#78716c';
+           ctx.beginPath();
+           ctx.arc(tx, ty - 2, thief.radius - 1, Math.PI, 0, false);
+           ctx.fill();
+           // Anteojos oscuros
+           ctx.fillStyle = '#0f172a';
+           ctx.fillRect(tx - 4, ty - 2, 8, 3);
+
+
+           // Dibujar Enemigos (Policías)
+           ghosts.forEach(ghost => {
+               let gx = ghost.x + tileSize/2;
+               let gy = ghost.y + tileSize/2;
+              
+               ctx.fillStyle = powerModeTimer > 0 ? '#1d4ed8' : ghost.color;
+               ctx.beginPath();
+               ctx.arc(gx, gy - 1, tileSize/2 - 2, Math.PI, 0, false);
+               ctx.lineTo(gx + tileSize/2 - 2, gy + tileSize/2);
+               ctx.lineTo(gx - tileSize/2 + 2, gy + tileSize/2);
+               ctx.closePath();
+               ctx.fill();
+
+
+               // Gorra de policía
+               ctx.fillStyle = '#ffffff';
+               ctx.fillRect(gx - 4, gy - 7, 8, 3);
+               // Sirena intermitente  
+
+
+
+
+
+
+
+
+               if (Math.floor(Date.now() / 250) % 2 === 0) {
+                   ctx.fillStyle = '#ef4444';
+                   ctx.fillRect(gx - 3, gy - 10, 6, 2);
+               }
+           });
+       }
+
+       // Mostrar el laberinto antes de comenzar.
+       initGame();
+       draw();
+   </script>
+</body>
+</html>
