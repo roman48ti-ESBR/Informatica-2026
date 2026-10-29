@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Fast Pizza 3D - 8-Bit Halloween Sunset Edition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #2b1055;
+      color: white;
+      font-family: 'Press Start 2P', monospace;
+      image-rendering: pixelated;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #2b1055;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* Pixel UI Styling */
+    .pixel-box {
+      background: #1b0933;
+      border: 4px solid #ff7b00;
+      box-shadow: 0 0 0 4px #000, inset 0 0 0 4px #0e041d;
+    }
+
+    .pixel-box-purple {
+      background: #311154;
+      border: 4px solid #a855f7;
+      box-shadow: 0 0 0 4px #000, inset 0 0 0 4px #1b0730;
+    }
+
+    .pixel-text-shadow {
+      text-shadow: 3px 3px 0px #000;
+    }
+
+    .touch-btn {
+      background: #311154;
+      border: 3px solid #ff7b00;
+      box-shadow: 0 4px 0 #000;
+      font-family: 'Press Start 2P', monospace;
+    }
+
+    .touch-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #000;
+      background: #ff7b00;
+      color: #000;
+    }
+
+    .popup-text {
+      position: absolute;
+      pointer-events: none;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 14px;
+      color: #ff9e00;
+      text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+      animation: floatUp 1.2s ease-out forwards;
+      z-index: 30;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translate(-50%, 0) scale(0.8); opacity: 1; }
+      50% { transform: translate(-50%, -35px) scale(1.15); opacity: 1; }
+      100% { transform: translate(-50%, -70px) scale(1); opacity: 0; }
+    }
+  </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden">
+
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- HUD Header Overlay -->
+  <div id="hud" class="fixed inset-4 pointer-events-none flex justify-between items-start z-10 text-xs md:text-sm">
+    <div id="stats" class="pixel-box-purple p-3 md:p-4 text-orange-400 pixel-text-shadow leading-relaxed">
+      NIVEL: 1<br>
+      🍕 0/4
+    </div>
+
+    <!-- Speed Boost / Turbo Bar -->
+    <div id="boost-container" class="hidden md:flex flex-col items-center gap-1 pixel-box p-2 bg-purple-950/80">
+      <span class="text-[10px] text-yellow-300">TURBO 🍬</span>
+      <div class="w-28 h-4 bg-black border-2 border-orange-500 p-0.5">
+        <div id="boost-bar" class="h-full bg-gradient-to-r from-yellow-400 to-orange-600 w-0 transition-all"></div>
+      </div>
+    </div>
+    
+    <div id="timer" class="pixel-box p-3 md:p-4 text-yellow-300 text-base md:text-xl pixel-text-shadow tracking-widest min-w-[110px] text-center">
+      02:00
+    </div>
+  </div>
+
+  <!-- Toast Message Bar -->
+  <div id="message" class="fixed top-20 left-1/2 -translate-x-1/2 z-10 pointer-events-none transition-all duration-300">
+    <div class="pixel-box px-4 py-3 text-center text-amber-300 text-xs md:text-sm max-w-[90vw] pixel-text-shadow">
+      <span id="message-text">🎃 ¡SÚBETE A LA VEREDA Y LLEGA A LA PUERTA CON LA FLECHA!</span>
+    </div>
+  </div>
+
+  <!-- Touch Controls (Mobile) -->
+  <div id="touch-controls" class="fixed bottom-6 inset-x-6 flex justify-between items-end z-20 pointer-events-none hidden">
+    <!-- D-Pad -->
+    <div class="grid grid-cols-3 gap-2 w-36 h-36 pointer-events-auto">
+      <div></div>
+      <button id="btn-up" class="touch-btn rounded flex items-center justify-center text-lg text-white">▲</button>
+      <div></div>
+      <button id="btn-left" class="touch-btn rounded flex items-center justify-center text-lg text-white">◀</button>
+      <button id="btn-down" class="touch-btn rounded flex items-center justify-center text-lg text-white">▼</button>
+      <button id="btn-right" class="touch-btn rounded flex items-center justify-center text-lg text-white">▶</button>
+    </div>
+
+    <!-- Action / Delivery Button -->
+    <button id="btn-deliver" class="pointer-events-auto touch-btn rounded-xl w-24 h-24 bg-orange-600 border-2 border-orange-300 flex flex-col items-center justify-center text-white text-[10px] active:bg-orange-500">
+      <span class="text-2xl mb-1">🍕</span>
+      ENTREGAR
+    </button>
+  </div>
+
+  <!-- Start / Game Over Overlay -->
+  <div id="overlay" class="fixed inset-0 z-30 grid place-items-center bg-purple-950/90 p-4">
+    <div id="panel" class="max-w-lg w-full p-6 md:p-8 pixel-box text-center relative">
+      <div class="text-4xl md:text-5xl mb-4 text-orange-500 pixel-text-shadow">🎃🍕👻</div>
+      <h1 class="text-lg md:text-2xl text-orange-400 mb-1 pixel-text-shadow leading-snug">FAST PIZZA 3D</h1>
+      <h2 class="text-xs md:text-sm text-purple-300 mb-6 pixel-text-shadow">8-BIT HALLOWEEN SUNSET</h2>
+      
+      <p class="text-[10px] md:text-xs text-slate-200 mb-6 leading-relaxed">
+        Ayuda a Pepe a repartir pizzas por un barrio de atardecer espeluznante. ¡Súbete al jardín y entra hasta la puerta!
+      </p>
+
+      <div class="bg-purple-900/60 p-3 mb-6 text-left text-[9px] md:text-[10px] text-purple-200 space-y-2 border-2 border-purple-500">
+        <div>• <span class="text-orange-400">W/S / ARRIBA/ABAJO</span>: Avanzar / Retroceder por la calle</div>
+        <div>• <span class="text-orange-400">A/D / IZQ/DER</span>: Dirigirse a Veredas y Porches</div>
+        <div>• <span class="text-orange-400">ESPACIO / BOTÓN</span>: Entregar en la puerta</div>
+        <div>• <span class="text-orange-400">GOMITAS 🍬</span>: Velocidad Turbo</div>
+      </div>
+
+      <button id="start" class="w-full py-4 bg-orange-500 hover:bg-orange-400 text-black font-bold text-sm md:text-base border-4 border-black shadow-[4px_4px_0_#000] cursor-pointer transition-transform active:translate-y-1">
+        ¡REPARTIR PIZZAS!
+      </button>
+    </div>
+  </div>
+
+  <!-- Three.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+  (() => {
+    // --- 8-BIT CHIPTUNE SOUND SYNTHESIZER ---
+    class ChiptuneAudio {
+      constructor() {
+        this.ctx = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playTone(freq, type, duration, vol = 0.1) {
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e){}
+      }
+
+      playDeliver() {
+        if (!this.ctx) return;
+        [523, 659, 783, 1046, 1318].forEach((freq, i) => {
+          setTimeout(() => this.playTone(freq, 'square', 0.12, 0.12), i * 60);
+        });
+      }
+
+      playBoost() {
+        if (!this.ctx) return;
+        for(let i = 0; i < 7; i++) {
+          setTimeout(() => this.playTone(250 + i * 110, 'sawtooth', 0.05, 0.08), i * 25);
+        }
+      }
+
+      playWin() {
+        if (!this.ctx) return;
+        [440, 554, 659, 880, 1108].forEach((freq, i) => {
+          setTimeout(() => this.playTone(freq, 'square', 0.15, 0.15), i * 90);
+        });
+      }
+
+      playLoss() {
+        if (!this.ctx) return;
+        [400, 320, 240, 160].forEach((freq, i) => {
+          setTimeout(() => this.playTone(freq, 'sawtooth', 0.2, 0.15), i * 110);
+        });
+      }
+    }
+
+    const audio = new ChiptuneAudio();
+
+    // DOM Elements
+    const stats = document.getElementById("stats");
+    const timerEl = document.getElementById("timer");
+    const messageEl = document.getElementById("message");
+    const messageText = document.getElementById("message-text");
+    const overlay = document.getElementById("overlay");
+    const panel = document.getElementById("panel");
+    const touchControls = document.getElementById("touch-controls");
+    const boostBar = document.getElementById("boost-bar");
+
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      touchControls.classList.remove('hidden');
+    }
+
+    // Si la biblioteca externa no pudo cargarse, mostrar el problema en vez de dejar una pantalla sin respuesta.
+    if (typeof THREE === 'undefined') {
+      document.getElementById('start').disabled = true;
+      document.getElementById('start').textContent = 'NO SE PUDO CARGAR EL MOTOR 3D';
+      const info = document.createElement('p');
+      info.textContent = 'Este juego necesita conexión a internet para cargar Three.js. Revisá la conexión y actualizá la página.';
+      info.style.cssText = 'font:12px monospace;color:#ffd7a0;line-height:1.7;margin-top:16px';
+      document.getElementById('panel').appendChild(info);
+      return;
+    }
+
+    // --- THREE.JS HALLOWEEN SUNSET SCENE SETUP ---
+    const container = document.getElementById("canvas-container");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x321347); // Spooky Dusk Purple
+    scene.fog = new THREE.Fog(0x321347, 50, 240);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 350);
+
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: false, precision: 'lowp' });
+    } catch (error) {
+      document.getElementById('start').disabled = true;
+      document.getElementById('start').textContent = 'WEBGL NO DISPONIBLE';
+      const info = document.createElement('p');
+      info.textContent = 'El navegador no pudo iniciar los gráficos 3D. Probá habilitar la aceleración por hardware o abrirlo en otro navegador actualizado.';
+      info.style.cssText = 'font:12px monospace;color:#ffd7a0;line-height:1.7;margin-top:16px';
+      document.getElementById('panel').appendChild(info);
+      return;
+    }
+    
+    const PIXEL_SCALE = 3; 
+    function updateRendererSize() {
+      const w = Math.floor(window.innerWidth / PIXEL_SCALE);
+      const h = Math.floor(window.innerHeight / PIXEL_SCALE);
+      renderer.setSize(w, h, false);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    }
+    
+    updateRendererSize();
+    container.appendChild(renderer.domElement);
+
+    // --- AMBIENT & SUNSET LIGHTING ---
+    const ambientLight = new THREE.HemisphereLight(0xff7700, 0x1f0b38, 1.2);
+    scene.add(ambientLight);
+
+    const sunsetLight = new THREE.DirectionalLight(0xff8800, 1.3);
+    sunsetLight.position.set(-20, 30, 10);
+    scene.add(sunsetLight);
+
+    function pixelMat(color, emissive = 0x000000) {
+      return new THREE.MeshLambertMaterial({
+        color: color,
+        emissive: emissive,
+        flatShading: true
+      });
+    }
+
+    function createVoxelBox(width, height, depth, color, x = 0, y = 0, z = 0) {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(width, height, depth),
+        pixelMat(color)
+      );
+      mesh.position.set(x, y, z);
+      return mesh;
+    }
+
+    // --- SCENE ENVIRONMENT BUILD ---
+    // Dark Autumn Lawn
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(350, 900),
+      pixelMat(0x2d2426)
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.set(0, -0.05, -350);
+    scene.add(ground);
+
+    // Asphalt Street Road
+    const road = new THREE.Mesh(
+      new THREE.PlaneGeometry(12, 900),
+      pixelMat(0x221f28)
+    );
+    road.rotation.x = -Math.PI / 2;
+    road.position.set(0, -0.02, -350);
+    scene.add(road);
+
+    // Sidewalks
+    for (const side of [-1, 1]) {
+      const sidewalk = new THREE.Mesh(
+        new THREE.BoxGeometry(3.5, 0.15, 900),
+        pixelMat(0x574a5d)
+      );
+      sidewalk.position.set(side * 7.75, 0.05, -350);
+      scene.add(sidewalk);
+    }
+
+    // Yellow Dashed Center Road Lines
+    for (let z = 50; z > -800; z -= 10) {
+      const dash = createVoxelBox(0.25, 0.05, 3.5, 0xffa000, 0, 0.02, z);
+      scene.add(dash);
+    }
+
+    // Twilight Sun on Horizon
+    const sunMesh = createVoxelBox(8, 8, 1, 0xff5500, 30, 25, -220);
+    scene.add(sunMesh);
+
+    // Spooky Pixel Trees along the road
+    for (let z = 40; z > -800; z -= 30) {
+      for (const side of [-1, 1]) {
+        const treeGroup = new THREE.Group();
+        const trunk = createVoxelBox(0.8, 4.0, 0.8, 0x221100, 0, 2.0, 0);
+        const branch1 = createVoxelBox(1.5, 0.4, 0.4, 0x221100, 0.6, 3.2, 0);
+        const branch2 = createVoxelBox(1.5, 0.4, 0.4, 0x221100, -0.6, 2.6, 0);
+        treeGroup.add(trunk, branch1, branch2);
+        treeGroup.position.set(side * 19.0, 0, z + (Math.random() - 0.5) * 8);
+        scene.add(treeGroup);
+      }
+    }
+
+    // --- JACK-O-LANTERN PUMPKIN CREATOR ---
+    function makePumpkin(x, y, z, scale = 1.0) {
+      const group = new THREE.Group();
+      const body = createVoxelBox(1.0 * scale, 0.8 * scale, 1.0 * scale, 0xff6600, 0, 0.4 * scale, 0);
+      const stem = createVoxelBox(0.18 * scale, 0.3 * scale, 0.18 * scale, 0x336622, 0, 0.95 * scale, 0);
+      const face = createVoxelBox(0.6 * scale, 0.25 * scale, 0.05 * scale, 0xffd000, 0, 0.45 * scale, 0.51 * scale);
+      group.add(body, stem, face);
+      group.position.set(x, y, z);
+      scene.add(group);
+      return group;
+    }
+
+    // --- TARGET BEACON & ARROW ---
+    const targetBeacon = new THREE.Group();
+    const arrowMesh = new THREE.Group();
+
+    for (let i = 0; i < 5; i++) {
+      const rowWidth = (5 - i) * 0.35;
+      const step = createVoxelBox(rowWidth, 0.3, 0.3, 0xff7b00, 0, i * 0.3 + 2.8, 0);
+      arrowMesh.add(step);
+    }
+    const stemArrow = createVoxelBox(0.35, 0.9, 0.3, 0xff7b00, 0, 4.4, 0);
+    arrowMesh.add(stemArrow);
+    targetBeacon.add(arrowMesh);
+
+    // Glowing target marker disc on ground in front of porch door
+    const disc = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.5, 1.5, 0.1, 12),
+      pixelMat(0xff7b00, 0x883300)
+    );
+    disc.position.y = 0.08;
+    targetBeacon.add(disc);
+
+    scene.add(targetBeacon);
+    targetBeacon.visible = false;
+
+    // --- HALLOWEEN VOXEL HOUSE BUILDER ---
+    function createVoxelHouse(side, z, index) {
+      const group = new THREE.Group();
+      
+      const houseColors = [0x582f6e, 0x8c2f39, 0x2b593f, 0x9e5a24, 0x3d348b, 0x6b2d5c, 0x8338ec];
+      const mainColor = houseColors[index % houseColors.length];
+
+      // House Body
+      const body = createVoxelBox(6.0, 4.5, 5.0, mainColor, 0, 2.25, 0);
+      group.add(body);
+
+      // Spooky Dark Roof
+      const roof = new THREE.Mesh(
+        new THREE.ConeGeometry(5.2, 3.2, 4),
+        pixelMat(0x190d24)
+      );
+      roof.position.set(0, 6.0, 0);
+      roof.rotation.y = Math.PI / 4;
+      group.add(roof);
+
+      // Front Porch Platform & Walkway
+      const porch = createVoxelBox(2.2, 0.2, 1.8, 0x382c3e, 0, 0.1, 3.2);
+      const walkway = createVoxelBox(1.6, 0.1, 5.0, 0x4a3b50, 0, 0.05, 5.8);
+      group.add(porch, walkway);
+
+      // Door Hinge & Opening Pivot
+      const doorPivot = new THREE.Group();
+      doorPivot.position.set(-0.6, 0, 2.52); // Door Hinge
+      const doorMesh = createVoxelBox(1.2, 2.4, 0.12, 0x2b1507, 0.6, 1.2, 0);
+      doorPivot.add(doorMesh);
+      group.add(doorPivot);
+
+      // Glowing Warm Halloween Windows
+      const win1 = createVoxelBox(1.2, 1.2, 0.1, 0xffaa00, -1.8, 2.8, 2.52);
+      const win2 = createVoxelBox(1.2, 1.2, 0.1, 0xffaa00, 1.8, 2.8, 2.52);
+      group.add(win1, win2);
+
+      // Pumpkins on Porch
+      makePumpkin(side * 14.0 + (side < 0 ? 1.5 : -1.5), 0.2, z + (side < 0 ? 2.5 : -2.5), 0.85);
+
+      // Position house on left (-1) or right (+1) side of street
+      const houseX = side * 14.0;
+      group.position.set(houseX, 0, z);
+
+      // Rotate house to face the street
+      group.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+
+      scene.add(group);
+
+      // Compute exact front door target location for delivery
+      // For side < 0 (left), door porch is towards +X. For side > 0 (right), door porch is towards -X.
+      const doorTargetX = side < 0 ? houseX + 6.0 : houseX - 6.0;
+      const doorTargetZ = z;
+
+      return {
+        group,
+        doorPivot,
+        side,
+        z,
+        houseX,
+        doorTargetPos: new THREE.Vector3(doorTargetX, 0, doorTargetZ),
+        done: false
+      };
+    }
+
+    // --- PEPE PLAYER VOXEL MODEL (FACING FORWARD TOWARDS -Z) ---
+    const player = new THREE.Group();
+    scene.add(player);
+
+    // Internal model group rotated 180 degrees so back faces camera and front faces down the road (-Z)
+    const playerModel = new THREE.Group();
+    playerModel.rotation.y = Math.PI; // ROTATED 180 DEGREES FORWARD
+    player.add(playerModel);
+
+    const torso = createVoxelBox(0.8, 1.0, 0.5, 0x211728, 0, 1.5, 0);
+    const pizzaBag = createVoxelBox(0.85, 0.85, 0.55, 0xd90429, 0, 1.55, -0.45);
+    const bagLogo = createVoxelBox(0.5, 0.25, 0.05, 0xffb703, 0, 1.6, -0.73);
+    playerModel.add(torso, pizzaBag, bagLogo);
+
+    const head = createVoxelBox(0.6, 0.6, 0.6, 0xffb894, 0, 2.3, 0);
+    const cap = createVoxelBox(0.68, 0.2, 0.68, 0xd90429, 0, 2.65, 0);
+    const visor = createVoxelBox(0.68, 0.06, 0.35, 0xd90429, 0, 2.6, 0.4);
+    playerModel.add(head, cap, visor);
+
+    const armL = createVoxelBox(0.2, 0.7, 0.2, 0xffb894, -0.52, 1.5, 0);
+    const armR = createVoxelBox(0.2, 0.7, 0.2, 0xffb894, 0.52, 1.5, 0);
+    const legL = createVoxelBox(0.25, 0.8, 0.25, 0x111122, -0.22, 0.5, 0);
+    const legR = createVoxelBox(0.25, 0.8, 0.25, 0x111122, 0.22, 0.5, 0);
+    playerModel.add(armL, armR, legL, legR);
+
+    // Skateboard
+    const deck = createVoxelBox(0.9, 0.1, 2.0, 0x38b000, 0, 0.12, 0);
+    playerModel.add(deck);
+
+    for (const x of [-0.4, 0.4]) {
+      for (const z of [-0.6, 0.6]) {
+        const w = createVoxelBox(0.12, 0.2, 0.2, 0x111111, x, 0.08, z);
+        playerModel.add(w);
+      }
+    }
+
+    // --- GAME STATE VARIABLES ---
+    let houses = [];
+    let candies = [];
+    let owners = [];
+    let keys = {};
+
+    let level = 1;
+    let delivered = 0;
+    let timeLeft = 120;
+    let speedBoost = 0;
+    let running = false;
+    let lastTime = 0;
+    let currentHouseIndex = 0;
+    let messageTimeout;
+
+    const levelTimes = [120, 240, 360];
+    const levelHouseCounts = [4, 7, 10];
+
+    function showMessage(text, duration = 2500) {
+      messageText.textContent = text;
+      messageEl.style.opacity = "1";
+      clearTimeout(messageTimeout);
+
+      messageTimeout = setTimeout(() => {
+        if (running) {
+          const house = getCurrentHouse();
+          if (house) {
+            messageText.textContent = "🎃 ACÉRCATE A LA PUERTA CON LA FLECHA Y PULSA ESPACIO";
+          }
+        }
+      }, duration);
+    }
+
+    function triggerFloatingText(text, x, y) {
+      const el = document.createElement("div");
+      el.className = "popup-text";
+      el.textContent = text;
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1200);
+    }
+
+    function clearLevelObjects() {
+      for (const house of houses) {
+        scene.remove(house.group);
+      }
+      for (const candy of candies) {
+        scene.remove(candy.mesh);
+      }
+      for (const owner of owners) {
+        scene.remove(owner.group);
+      }
+      houses = [];
+      candies = [];
+      owners = [];
+    }
+
+    function buildLevel() {
+      clearLevelObjects();
+      currentHouseIndex = 0;
+
+      const houseCount = levelHouseCounts[level - 1];
+
+      for (let i = 0; i < houseCount; i++) {
+        const side = i % 2 === 0 ? -1 : 1;
+        const z = -30 - i * 35;
+        houses.push(createVoxelHouse(side, z, i));
+      }
+
+      // Speed Gummies placed along street & sidewalks
+      for (let i = 0; i < houseCount + 2; i++) {
+        const candyGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+        const candyMat = pixelMat([0xff0055, 0x00f5d4, 0xffb703][i % 3], [0x880033, 0x008888, 0x885500][i % 3]);
+        const mesh = new THREE.Mesh(candyGeo, candyMat);
+
+        const posX = [-5.5, 0, 5.5][i % 3];
+        const posZ = -18 - i * 28;
+        mesh.position.set(posX, 0.6, posZ);
+        scene.add(mesh);
+
+        candies.push({ mesh, taken: false, rotSpeed: 2.5 });
+      }
+
+      updateTargetBeacon();
+      stats.innerHTML = `NIVEL: ${level}<br>🍕 ${delivered}/${houseCount}`;
+    }
+
+    function getCurrentHouse() {
+      while (currentHouseIndex < houses.length && houses[currentHouseIndex].done) {
+        currentHouseIndex++;
+      }
+      return houses[currentHouseIndex] || null;
+    }
+
+    function updateTargetBeacon() {
+      const house = getCurrentHouse();
+      if (house) {
+        targetBeacon.position.copy(house.doorTargetPos);
+        targetBeacon.visible = true;
+      } else {
+        targetBeacon.visible = false;
+      }
+    }
+
+    function startGame() {
+      audio.init();
+      level = 1;
+      delivered = 0;
+      timeLeft = levelTimes[0];
+      speedBoost = 0;
+      player.position.set(0, 0, 8);
+      player.rotation.set(0, 0, 0);
+
+      buildLevel();
+      overlay.style.display = "none";
+      running = true;
+
+      showMessage("🎃 ¡ADELANTE PEPE! CONDUCE HASTA LA PRIMERA PUERTA", 3000);
+
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function finishGame(won) {
+      running = false;
+      overlay.style.display = "grid";
+
+      if (won) {
+        audio.playWin();
+        panel.innerHTML = `
+          <div class="text-4xl mb-2">🏆🍕👻</div>
+          <h1 class="text-xl text-orange-400 mb-2 pixel-text-shadow">¡REPARTO PERFECTO!</h1>
+          <p class="text-xs text-slate-200 mb-6 leading-relaxed">¡Pepe entregó todas las pizzas del barrio bajo el atardecer!</p>
+          <button id="again" class="w-full py-4 bg-orange-500 hover:bg-orange-400 text-black font-bold text-sm border-4 border-black shadow-[4px_4px_0_#000] cursor-pointer">
+            JUGAR DE NUEVO
+          </button>
+        `;
+      } else {
+        audio.playLoss();
+        panel.innerHTML = `
+          <div class="text-4xl mb-2">⏰🍕</div>
+          <h1 class="text-xl text-red-500 mb-2 pixel-text-shadow">¡SE ACABÓ EL TIEMPO!</h1>
+          <p class="text-xs text-slate-200 mb-6 leading-relaxed">Entregaste ${delivered} pizzas. ¡Inténtalo otra vez!</p>
+          <button id="again" class="w-full py-4 bg-orange-500 hover:bg-orange-400 text-black font-bold text-sm border-4 border-black shadow-[4px_4px_0_#000] cursor-pointer">
+            REINTENTAR
+          </button>
+        `;
+      }
+
+      document.getElementById("again").addEventListener("click", startGame);
+    }
+
+    function nextLevel() {
+      if (level === 3) {
+        finishGame(true);
+        return;
+      }
+
+      level++;
+      delivered = 0;
+      timeLeft = levelTimes[level - 1];
+      player.position.set(0, 0, 5);
+      player.rotation.set(0, 0, 0);
+      buildLevel();
+      showMessage(`🎃 ¡NIVEL ${level}! HAY ${levelHouseCounts[level - 1]} CASAS EN ESTA CALLE`, 2800);
+    }
+
+    function spawnOwnerOnPorch(house) {
+      const group = new THREE.Group();
+      const shirtColor = [0x9d4edd, 0xd90429, 0x38b000, 0xf72585, 0xff7b00][Math.floor(Math.random() * 5)];
+
+      const body = createVoxelBox(0.7, 1.0, 0.45, shirtColor, 0, 1.1, 0);
+      const oHead = createVoxelBox(0.5, 0.5, 0.5, 0xffb894, 0, 1.85, 0);
+      
+      // Received Pizza Box in hands
+      const recBox = createVoxelBox(0.7, 0.15, 0.7, 0xffffff, 0, 1.1, 0.4);
+      group.add(body, oHead, recBox);
+
+      // Position owner on front door porch
+      const doorX = house.side < 0 ? house.houseX + 2.6 : house.houseX - 2.6;
+      group.position.set(doorX, 0, house.z);
+      group.rotation.y = house.side < 0 ? Math.PI / 2 : -Math.PI / 2;
+
+      scene.add(group);
+
+      owners.push({
+        group,
+        house,
+        timer: 0
+      });
+    }
+
+    function updateOwners(dt) {
+      for (const owner of owners) {
+        owner.timer += dt;
+
+        // Swing open the front door
+        if (owner.house && owner.house.doorPivot) {
+          const doorAngle = Math.min(owner.timer * 3.5, Math.PI / 1.7);
+          owner.house.doorPivot.rotation.y = owner.house.side > 0 ? -doorAngle : doorAngle;
+        }
+
+        // Happy owner bounce on porch
+        owner.group.position.y = Math.sin(owner.timer * 12) * 0.1;
+      }
+    }
+
+    function deliverPizza() {
+      const house = getCurrentHouse();
+      if (!house) return;
+
+      const dist = player.position.distanceTo(house.doorTargetPos);
+
+      // Delivery range check (must reach porch door marker)
+      if (dist < 6.5) {
+        audio.playDeliver();
+        house.done = true;
+
+        spawnOwnerOnPorch(house);
+        delivered++;
+
+        // Trigger floating retro text popup over target door
+        const screenPos = house.doorTargetPos.clone().project(camera);
+        const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-(screenPos.y * 0.5) + 0.5) * window.innerHeight;
+
+        const praisePhrases = ["🎃 ¡GRACIAS!", "🍕 ¡DELICIOSA!", "👻 SPOOKY GOOD!", "⭐ 5 ESTRELLAS!", "🎃 ¡GENIAL!"];
+        const phrase = praisePhrases[Math.floor(Math.random() * praisePhrases.length)];
+        triggerFloatingText(phrase, x, y);
+
+        updateTargetBeacon();
+
+        stats.innerHTML = `NIVEL: ${level}<br>🍕 ${delivered}/${levelHouseCounts[level - 1]}`;
+
+        if (delivered >= levelHouseCounts[level - 1]) {
+          nextLevel();
+        } else {
+          showMessage("🎃 ¡PIZZA ENTREGADA! 🍕⭐", 2000);
+        }
+      } else {
+        showMessage("🎃 ¡SÚBETE A LA VEREDA Y LLEGA A LA PUERTA CON LA FLECHA!", 2000);
+      }
+    }
+
+    // --- GAME LOOP & UPDATES ---
+    function updateGame(dt) {
+      let forward = 0;
+      if (keys.ArrowUp || keys.w || keys.W) forward = 1;
+      if (keys.ArrowDown || keys.s || keys.S) forward = -0.5;
+
+      const boostActive = speedBoost > 0;
+      const speedMult = boostActive ? 1.75 : 1.0;
+      const moveSpeed = 13 * speedMult;
+      const sideSpeed = 11.5;
+
+      // Lateral steering across street, sidewalk, and garden lawns
+      if (keys.ArrowLeft || keys.a || keys.A) {
+        player.position.x -= sideSpeed * dt;
+      }
+      if (keys.ArrowRight || keys.d || keys.D) {
+        player.position.x += sideSpeed * dt;
+      }
+
+      player.position.x = THREE.MathUtils.clamp(player.position.x, -15.5, 15.5);
+
+      // Forward / backward driving down the entire neighborhood street
+      if (forward !== 0) {
+        player.position.z -= forward * moveSpeed * dt;
+      }
+
+      // Dynamic Z bounds allowing full drive down to Level 2 and Level 3 houses (-500px)
+      const maxDistanceZ = -30 - (levelHouseCounts[level - 1] * 38);
+      player.position.z = THREE.MathUtils.clamp(player.position.z, maxDistanceZ, 12);
+
+      // Turbo timer update
+      if (boostActive) {
+        speedBoost = Math.max(0, speedBoost - dt);
+        boostBar.style.width = `${(speedBoost / 4.5) * 100}%`;
+      } else {
+        boostBar.style.width = `0%`;
+      }
+
+      // Countdown Timer
+      timeLeft -= dt;
+      if (timeLeft <= 0) {
+        timeLeft = 0;
+        finishGame(false);
+        return;
+      }
+
+      // Candy pickup check
+      for (const candy of candies) {
+        if (candy.taken) continue;
+
+        candy.mesh.rotation.y += candy.rotSpeed * dt;
+        candy.mesh.position.y = 0.6 + Math.sin(performance.now() * 0.006) * 0.15;
+
+        if (player.position.distanceTo(candy.mesh.position) < 1.8) {
+          candy.taken = true;
+          candy.mesh.visible = false;
+          speedBoost = 4.5;
+          audio.playBoost();
+          showMessage("⚡ ¡TURBO GOMITA! ⚡", 1800);
+        }
+      }
+
+      updateOwners(dt);
+
+      // Animate Arrow Target Beacon
+      if (targetBeacon.visible) {
+        arrowMesh.position.y = Math.sin(performance.now() * 0.007) * 0.35;
+      }
+
+      // Smooth Third-Person Camera follow behind Pepe
+      const camTarget = new THREE.Vector3(
+        player.position.x * 0.45,
+        player.position.y + 6.0,
+        player.position.z + 9.5
+      );
+      camera.position.lerp(camTarget, 0.14);
+      camera.lookAt(
+        player.position.x * 0.7,
+        player.position.y + 1.2,
+        player.position.z - 4.5
+      );
+
+      // Skateboard tilt animation when turning
+      if (keys.ArrowLeft || keys.a || keys.A) {
+        playerModel.rotation.z = THREE.MathUtils.lerp(playerModel.rotation.z, -0.16, 0.2);
+      } else if (keys.ArrowRight || keys.d || keys.D) {
+        playerModel.rotation.z = THREE.MathUtils.lerp(playerModel.rotation.z, 0.16, 0.2);
+      } else {
+        playerModel.rotation.z = THREE.MathUtils.lerp(playerModel.rotation.z, 0, 0.2);
+      }
+    }
+
+    function gameLoop(now) {
+      if (!running) return;
+
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+
+      updateGame(dt);
+      if (!running) return;
+
+      renderer.render(scene, camera);
+
+      // Timer Display
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = Math.floor(timeLeft % 60);
+      timerEl.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+      if (timeLeft < 20) {
+        timerEl.style.color = "#ff0055";
+      } else {
+        timerEl.style.color = "#ffb703";
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // --- CONTROLS & LISTENERS ---
+    window.addEventListener("keydown", event => {
+      keys[event.key] = true;
+
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
+        event.preventDefault();
+      }
+
+      if (event.code === "Space" && running && !event.repeat) {
+        deliverPizza();
+      }
+    });
+
+    window.addEventListener("keyup", event => {
+      keys[event.key] = false;
+    });
+
+    const bindTouch = (id, keyName) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const onStart = (e) => { e.preventDefault(); keys[keyName] = true; };
+      const onEnd = (e) => { e.preventDefault(); keys[keyName] = false; };
+      el.addEventListener("touchstart", onStart);
+      el.addEventListener("touchend", onEnd);
+      el.addEventListener("mousedown", onStart);
+      el.addEventListener("mouseup", onEnd);
+    };
+
+    bindTouch("btn-up", "ArrowUp");
+    bindTouch("btn-down", "ArrowDown");
+    bindTouch("btn-left", "ArrowLeft");
+    bindTouch("btn-right", "ArrowRight");
+
+    document.getElementById("btn-deliver").addEventListener("click", () => {
+      if (running) deliverPizza();
+    });
+
+    document.getElementById("start").addEventListener("click", startGame);
+
+    window.addEventListener("resize", updateRendererSize);
+
+    // Camera initial position preview
+    camera.position.set(0, 6, 12);
+    camera.lookAt(0, 1, 0);
+    renderer.render(scene, camera);
+
+  })();
+  </script>
+</body>
+</html>
