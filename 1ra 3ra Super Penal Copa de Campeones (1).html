@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Super Penal - Copa de Campeones</title>
+
+    <style>
+
+        * {
+
+            box-sizing: border-box;
+
+            margin: 0;
+
+            padding: 0;
+
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+        }
+
+
+
+        body {
+
+            background: linear-gradient(135deg, #0b486b, #f56217);
+
+            color: #fff;
+
+            min-height: 100vh;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            overflow-x: hidden;
+
+            padding: 20px;
+
+        }
+
+
+
+        .container {
+
+            width: 100%;
+
+            max-width: 650px;
+
+            background: rgba(0, 0, 0, 0.75);
+
+            border-radius: 20px;
+
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+
+            padding: 25px;
+
+            text-align: center;
+
+            backdrop-filter: blur(5px);
+
+            border: 2px solid rgba(255, 255, 255, 0.1);
+
+        }
+
+
+
+        h1 {
+
+            font-size: 2rem;
+
+            margin-bottom: 5px;
+
+            color: #ffd700;
+
+            text-transform: uppercase;
+
+            letter-spacing: 2px;
+
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+
+        }
+
+
+
+        .subtitle {
+
+            font-size: 0.95rem;
+
+            color: #ccc;
+
+            margin-bottom: 20px;
+
+        }
+
+
+
+        /* Marcador y Estadísticas */
+
+        .stats-panel {
+
+            display: grid;
+
+            grid-template-columns: repeat(3, 1fr);
+
+            gap: 10px;
+
+            margin-bottom: 20px;
+
+            background: rgba(255, 255, 255, 0.1);
+
+            padding: 12px;
+
+            border-radius: 12px;
+
+        }
+
+
+
+        .stat-box {
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+        }
+
+
+
+        .stat-label {
+
+            font-size: 0.8rem;
+
+            color: #aaa;
+
+            text-transform: uppercase;
+
+            margin-bottom: 3px;
+
+        }
+
+
+
+        .stat-value {
+
+            font-size: 1.2rem;
+
+            font-weight: bold;
+
+            color: #fff;
+
+        }
+
+
+
+        .stat-value.goal { color: #2ecc71; }
+
+        .stat-value.miss { color: #e74c3c; }
+
+        .stat-value.level { color: #f39c12; }
+
+
+
+        /* Cancha / Arco */
+
+        .field-container {
+
+            position: relative;
+
+            width: 100%;
+
+            height: 320px;
+
+            background: linear-gradient(to bottom, #27ae60, #1e8449);
+
+            border-radius: 12px;
+
+            overflow: hidden;
+
+            border: 4px solid #fff;
+
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.3);
+
+            margin-bottom: 20px;
+
+        }
+
+
+
+        /* Líneas del área */
+
+        .field-container::after {
+
+            content: '';
+
+            position: absolute;
+
+            bottom: 0;
+
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            width: 60%;
+
+            height: 100px;
+
+            border: 3px dashed rgba(255,255,255,0.6);
+
+            border-bottom: none;
+
+            pointer-events: none;
+
+        }
+
+
+
+        .goal-frame {
+
+            position: absolute;
+
+            top: 20px;
+
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            width: 80%;
+
+            height: 180px;
+
+            border: 8px solid #fff;
+
+            border-bottom: none;
+
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.3) 100%);
+
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+
+            /* Patrón de red simulado */
+
+            background-image: 
+
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+
+            background-size: 20px 20px;
+
+        }
+
+
+
+        /* Arquero */
+
+        .goalkeeper {
+
+            position: absolute;
+
+            bottom: 5px;
+
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            width: 45px;
+
+            height: 75px;
+
+            background: #e74c3c;
+
+            border-radius: 20px 20px 5px 5px;
+
+            transition: all 0.25s ease-out;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+
+            z-index: 5;
+
+        }
+
+
+
+        .goalkeeper-head {
+
+            width: 22px;
+
+            height: 22px;
+
+            background: #f5d0b1;
+
+            border-radius: 50%;
+
+            margin-top: 4px;
+
+        }
+
+
+
+        .goalkeeper-body {
+
+            width: 32px;
+
+            height: 38px;
+
+            background: #2980b9;
+
+            border-radius: 6px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+        }
+
+
+
+        /* Pelota */
+
+        .ball {
+
+            position: absolute;
+
+            bottom: 25px;
+
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            width: 32px;
+
+            height: 32px;
+
+            background: #fff;
+
+            border-radius: 50%;
+
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5), inset -4px -4px 8px rgba(0,0,0,0.3);
+
+            background-image: radial-gradient(circle at 30% 30%, #fff 0%, #ddd 60%, #333 100%);
+
+            z-index: 10;
+
+            transition: all 0.6s cubic-bezier(0.1, 0.8, 0.3, 1);
+
+        }
+
+
+
+        /* Zonas Interactivas de Disparo */
+
+        .targets-overlay {
+
+            position: absolute;
+
+            top: 20px;
+
+            left: 10%;
+
+            width: 80%;
+
+            height: 180px;
+
+            display: grid;
+
+            grid-template-columns: repeat(3, 1fr);
+
+            grid-template-rows: repeat(2, 1fr);
+
+            z-index: 20;
+
+        }
+
+
+
+        .target-zone {
+
+            cursor: pointer;
+
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+
+            transition: background 0.2s;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+        }
+
+
+
+        .target-zone:hover {
+
+            background: rgba(255, 215, 0, 0.25);
+
+            border-color: #ffd700;
+
+        }
+
+
+
+        .target-zone::after {
+
+            content: '';
+
+            width: 14px;
+
+            height: 14px;
+
+            background: rgba(255,255,255,0.6);
+
+            border-radius: 50%;
+
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+
+            transition: transform 0.2s;
+
+        }
+
+
+
+        .target-zone:hover::after {
+
+            transform: scale(1.4);
+
+            background: #ffd700;
+
+        }
+
+
+
+        /* Mensajes de Resultado */
+
+        .message-box {
+
+            font-size: 1.4rem;
+
+            font-weight: bold;
+
+            margin: 15px 0;
+
+            min-height: 40px;
+
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+
+        }
+
+
+
+        .message-box.goal { color: #2ecc71; }
+
+        .message-box.save { color: #e74c3c; }
+
+
+
+        /* Controles / Botones */
+
+        .btn {
+
+            background: linear-gradient(135deg, #f12711, #f5af19);
+
+            border: none;
+
+            color: white;
+
+            padding: 12px 25px;
+
+            font-size: 1rem;
+
+            font-weight: bold;
+
+            border-radius: 30px;
+
+            cursor: pointer;
+
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+
+            transition: transform 0.1s, opacity 0.2s;
+
+            text-transform: uppercase;
+
+        }
+
+
+
+        .btn:hover {
+
+            transform: translateY(-2px);
+
+            opacity: 0.95;
+
+        }
+
+
+
+        .btn:active {
+
+            transform: translateY(1px);
+
+        }
+
+
+
+        .hidden {
+
+            display: none !important;
+
+        }
+
+
+
+        /* Pantallas modales / de fin */
+
+        .end-screen {
+
+            margin-top: 15px;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+    <div class="container">
+
+        <h1>Super Penal</h1>
+
+        <p class="subtitle">¡Anota 7 goles para ganar la Copa! Cuidado con fallar 5 penales.</p>
+
+
+
+        <!-- Marcador -->
+
+        <div class="stats-panel">
+
+            <div class="stat-box">
+
+                <span class="stat-label">Goles</span>
+
+                <span id="scoreVal" class="stat-value goal">0 / 7</span>
+
+            </div>
+
+            <div class="stat-box">
+
+                <span class="stat-label">Fallos / Vidas</span>
+
+                <span id="missVal" class="stat-value miss">0 / 5</span>
+
+            </div>
+
+            <div class="stat-box">
+
+                <span class="stat-label">Dificultad</span>
+
+                <span id="levelVal" class="stat-value level">Principiante</span>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Cancha y Arco -->
+
+        <div class="field-container" id="field">
+
+            <div class="goal-frame"></div>
+
+
+
+            <!-- Arquero -->
+
+            <div class="goalkeeper" id="keeper">
+
+                <div class="goalkeeper-head"></div>
+
+                <div class="goalkeeper-body"></div>
+
+            </div>
+
+
+
+            <!-- Pelota -->
+
+            <div class="ball" id="ball"></div>
+
+
+
+            <!-- Zonas de tiro interactivo (Cuadrícula 3x2) -->
+
+            <div class="targets-overlay" id="targetsOverlay">
+
+                <div class="target-zone" data-pos="0" title="Ángulo Superior Izquierdo"></div>
+
+                <div class="target-zone" data-pos="1" title="Centro Superior"></div>
+
+                <div class="target-zone" data-pos="2" title="Ángulo Superior Derecho"></div>
+
+                <div class="target-zone" data-pos="3" title="Esquina Inferior Izquierda"></div>
+
+                <div class="target-zone" data-pos="4" title="Centro Inferior"></div>
+
+                <div class="target-zone" data-pos="5" title="Esquina Inferior Derecha"></div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Mensaje de Estado -->
+
+        <div class="message-box" id="message">¡Elige un lugar para patear!</div>
+
+
+
+        <!-- Botón de Reiniciar / Siguiente -->
+
+        <div class="end-screen">
+
+            <button id="actionBtn" class="btn hidden" onclick="resetGame()">Jugar de Nuevo</button>
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+        let score = 0;
+
+        let misses = 0;
+
+        let isShooting = false;
+
+        const targetGoalsToWin = 7;
+
+        const maxMisses = 5;
+
+
+
+        // Coordenadas relativas de las 6 zonas de disparo (dentro del contenedor)
+
+        // Posiciones: 0: Arriba-Izq, 1: Arriba-Centro, 2: Arriba-Der, 3: Abajo-Izq, 4: Abajo-Centro, 5: Abajo-Der
+
+        const shotCoordinates = [
+
+            { x: '22%', y: '35%' },
+
+            { x: '50%', y: '35%' },
+
+            { x: '78%', y: '35%' },
+
+            { x: '22%', y: '70%' },
+
+            { x: '50%', y: '70%' },
+
+            { x: '78%', y: '70%' }
+
+        ];
+
+
+
+        // Posiciones de estirada del arquero correspondientes a las zonas
+
+        const keeperPositions = ['15%', '50%', '85%', '25%', '50%', '75%'];
+
+
+
+        const ball = document.getElementById('ball');
+
+        const keeper = document.getElementById('keeper');
+
+        const message = document.getElementById('message');
+
+        const scoreVal = document.getElementById('scoreVal');
+
+        const missVal = document.getElementById('missVal');
+
+        const levelVal = document.getElementById('levelVal');
+
+        const targetsOverlay = document.getElementById('targetsOverlay');
+
+        const actionBtn = document.getElementById('actionBtn');
+
+
+
+        // Configurar eventos para las zonas de tiro
+
+        const zones = document.querySelectorAll('.target-zone');
+
+        zones.forEach(zone => {
+
+            zone.addEventListener('click', () => {
+
+                if (isShooting) return;
+
+                const posIndex = parseInt(zone.getAttribute('data-pos'));
+
+                shoot(posIndex);
+
+            });
+
+        });
+
+
+
+        function getDifficulty() {
+
+            if (score <= 1) return { name: "Principiante", speed: 0.1, blockChance: 0.35 };
+
+            if (score <= 3) return { name: "Intermedio", speed: 0.25, blockChance: 0.55 };
+
+            if (score <= 5) return { name: "Profesional", speed: 0.45, blockChance: 0.70 };
+
+            return { name: "Leyenda", speed: 0.75, blockChance: 0.85 };
+
+        }
+
+
+
+        function updateUI() {
+
+            scoreVal.textContent = `${score} / ${targetGoalsToWin}`;
+
+            missVal.textContent = `${misses} / ${maxMisses}`;
+
+            const diff = getDifficulty();
+
+            levelVal.textContent = diff.name;
+
+        }
+
+
+
+        function shoot(targetPos) {
+
+            isShooting = true;
+
+            targetsOverlay.style.pointerEvents = 'none'; // Desactivar clics durante el tiro
+
+            message.textContent = "¡Pelota en marcha...";
+
+            message.className = "message-box";
+
+
+
+            const diff = getDifficulty();
+
+
+
+            // Determinar si el arquero adivina el lado según la dificultad y un factor aleatorio
+
+            let keeperTargetPos = targetPos;
+
+            const randomRoll = Math.random();
+
+
+
+            if (randomRoll > diff.blockChance) {
+
+                // El arquero se equivoca de lado
+
+                do {
+
+                    keeperTargetPos = Math.floor(Math.random() * 6);
+
+                } while (keeperTargetPos === targetPos);
+
+            }
+
+
+
+            // Mover arquero
+
+            keeper.style.left = keeperPositions[keeperTargetPos];
+
+            if (targetPos < 3) {
+
+                keeper.style.bottom = "45px"; // Se estira arriba
+
+            } else {
+
+                keeper.style.bottom = "5px";  // Abajo
+
+            }
+
+
+
+            // Mover pelota al blanco elegido
+
+            setTimeout(() => {
+
+                ball.style.left = shotCoordinates[targetPos].x;
+
+                ball.style.bottom = shotCoordinates[targetPos].y;
+
+            }, 100);
+
+
+
+            // Resolver jugada
+
+            setTimeout(() => {
+
+                const isGoal = (keeperTargetPos !== targetPos);
+
+
+
+                if (isGoal) {
+
+                    score++;
+
+                    message.textContent = "¡GOLAZO! ⚽🔥";
+
+                    message.className = "message-box goal";
+
+                } else {
+
+                    misses++;
+
+                    message.textContent = "¡ATAJÓ EL ARQUERO! 🧤❌";
+
+                    message.className = "message-box save";
+
+                }
+
+
+
+                updateUI();
+
+                checkGameStatus();
+
+            }, 600);
+
+        }
+
+
+
+        function checkGameStatus() {
+
+            if (score >= targetGoalsToWin) {
+
+                message.textContent = "🏆 ¡FELICIDADES! ¡Ganaste la Copa! 🏆";
+
+                message.className = "message-box goal";
+
+                actionBtn.classList.remove('hidden');
+
+                return;
+
+            }
+
+
+
+            if (misses >= maxMisses) {
+
+                message.textContent = "💀 ¡GAME OVER! Perdiste tus 5 vidas. 💀";
+
+                message.className = "message-box save";
+
+                actionBtn.classList.remove('hidden');
+
+                return;
+
+            }
+
+
+
+            // Preparar siguiente penal tras una breve pausa
+
+            setTimeout(resetTurn, 1400);
+
+        }
+
+
+
+        function resetTurn() {
+
+            isShooting = false;
+
+            targetsOverlay.style.pointerEvents = 'auto';
+
+            message.textContent = "¡Elige un lugar para patear!";
+
+            message.className = "message-box";
+
+
+
+            // Restablecer posiciones originales
+
+            ball.style.left = "50%";
+
+            ball.style.bottom = "25px";
+
+            keeper.style.left = "50%";
+
+            keeper.style.bottom = "5px";
+
+        }
+
+
+
+        function resetGame() {
+
+            score = 0;
+
+            misses = 0;
+
+            actionBtn.classList.add('hidden');
+
+            updateUI();
+
+            resetTurn();
+
+        }
+
+
+
+        // Inicializar UI al cargar
+
+        updateUI();
+
+    </script>
+
+</body>
+
+</html>
