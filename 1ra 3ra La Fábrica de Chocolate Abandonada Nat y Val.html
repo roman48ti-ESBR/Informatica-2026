@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>La Fábrica de Chocolate Abandonada - Nat y Val</title>
+   <!-- Tailwind CSS para una interfaz moderna y limpia -->
+   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+   <style>
+       @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+       body {
+           font-family: 'Fredoka', sans-serif;
+           user-select: none;
+           background: #1e1b18;
+       }
+       canvas {
+           box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5);
+           background: #2b1f1a;
+       }
+   </style>
+</head>
+<body class="min-h-screen text-white flex flex-col items-center justify-center p-4">
+
+
+   <!-- CONTENEDOR PRINCIPAL DEL JUEGO -->
+   <div id="game-container" class="relative w-full max-w-4xl flex flex-col items-center">
+      
+       <!-- PANTALLA DE TÍTULO / HISTORIA -->
+       <div id="screen-start" class="w-full max-w-2xl bg-amber-950/90 border-4 border-amber-600 rounded-2xl p-8 text-center shadow-2xl backdrop-blur-md">
+           <h1 class="text-4xl md:text-5xl font-bold text-amber-300 mb-4 drop-shadow-md">🍫 La Fábrica Abandonada</h1>
+           <p class="text-amber-100 text-base md:text-lg mb-6 leading-relaxed">
+               <strong>Nat y Val</strong>, dos grandes aventureras apasionadas por el chocolate, exploraron una misteriosa fábrica abandonada... ¡pero de repente las puertas se sellaron y un río de chocolate hirviendo comenzó a inundar todo!
+               <br><br>
+               Ayúdalas a escapar nivel por nivel antes de que la marea de chocolate las alcance. ¡La velocidad aumentará en cada nivel!
+           </p>
+
+
+           <div class="mb-6 bg-amber-900/60 p-4 rounded-xl border border-amber-700 text-left max-w-md mx-auto">
+               <h3 class="font-bold text-amber-200 mb-2">⚙️ Controles:</h3>
+               <ul class="text-sm space-y-1 text-amber-100">
+                   <li>🟢 <kbd class="px-2 py-0.5 bg-amber-800 rounded font-mono">W</kbd> - Saltar / Subir escaleras</li>
+                   <li>🟢 <kbd class="px-2 py-0.5 bg-amber-800 rounded font-mono">A</kbd> - Mover a la izquierda</li>
+                   <li>🟢 <kbd class="px-2 py-0.5 bg-amber-800 rounded font-mono">D</kbd> - Mover a la derecha</li>
+                   <li>🟢 <kbd class="px-2 py-0.5 bg-amber-800 rounded font-mono">Espacio</kbd> - Impulso / Súper Salto</li>
+               </ul>
+           </div>
+
+
+           <!-- SELECCIÓN DE PERSONAJE -->
+           <div class="mb-6">
+               <label class="block text-amber-200 font-semibold mb-2">Elige a tu aventurera:</label>
+               <div class="flex justify-center gap-4">
+                   <button onclick="selectCharacter('nat')" id="btn-nat" class="px-6 py-3 rounded-xl border-2 border-amber-400 bg-amber-600 font-bold text-white shadow-lg transition transform hover:scale-105 flex items-center gap-2">
+                       👧 Nat (Ágil y veloz)
+                   </button>
+                   <button onclick="selectCharacter('val')" id="btn-val" class="px-6 py-3 rounded-xl border-2 border-amber-700 bg-amber-900 font-bold text-amber-200 shadow-lg transition transform hover:scale-105 flex items-center gap-2">
+                       👩 Val (Resistente y equilibrada)
+                   </button>
+               </div>
+           </div>
+
+
+           <!-- SELECCIÓN DE DIFICULTAD -->
+           <div class="mb-8">
+               <label class="block text-amber-200 font-semibold mb-2">Selecciona la dificultad:</label>
+               <div class="flex justify-center gap-3">
+                   <button onclick="setDifficulty('facil')" id="diff-facil" class="px-4 py-2 rounded-lg border border-amber-600 bg-amber-900/60 hover:bg-amber-800 transition text-sm">Fácil (3 Vidas)</button>
+                   <button onclick="setDifficulty('normal')" id="diff-normal" class="px-4 py-2 rounded-lg border-2 border-amber-400 bg-amber-700 font-bold transition text-sm">Normal (2 Vidas)</button>
+                   <button onclick="setDifficulty('dificil')" id="diff-dificil" class="px-4 py-2 rounded-lg border border-amber-600 bg-amber-900/60 hover:bg-amber-800 transition text-sm">Difícil (1 Vida)</button>
+               </div>
+           </div>
+
+
+           <button onclick="startGame()" class="w-full max-w-md py-4 bg-gradient-to-r from-amber-500 to-yellow-500 text-amber-950 font-bold text-xl rounded-xl shadow-xl hover:from-amber-400 hover:to-yellow-400 transition transform hover:-translate-y-1 cursor-pointer">
+               ¡COMENZAR LA HUÍDA! 🚀
+           </button>
+       </div>
+
+
+       <!-- INTERFAZ DE JUEGO (OCULTA AL INICIO) -->
+       <div id="game-ui" class="hidden w-full flex flex-col items-center">
+           <!-- BARRA SUPERIOR DE ESTADO -->
+           <div class="w-full max-w-[800px] flex justify-between items-center bg-amber-950/80 px-6 py-3 rounded-t-xl border-t-2 border-x-2 border-amber-600 font-bold text-amber-200">
+               <div id="ui-level" class="text-lg">Nivel 1</div>
+               <div id="ui-lives" class="text-lg text-rose-400">❤️❤️</div>
+               <div id="ui-speed" class="text-sm bg-amber-900 px-3 py-1 rounded-full text-amber-300">Velocidad: 1.0x</div>
+           </div>
+
+
+           <!-- CANVAS DEL JUEGO -->
+           <canvas id="gameCanvas" width="800" height="450" class="rounded-b-xl border-b-2 border-x-2 border-amber-600 block"></canvas>
+
+
+           <!-- CONTROLES TÁCTILES PARA MÓVILES (OPCIONAL) -->
+           <div class="mt-4 flex gap-2 text-xs text-amber-300/80 text-center">
+               <span>Usa <strong>W</strong> (Saltar), <strong>A</strong> (Izquierda), <strong>D</strong> (Derecha), <strong>Espacio</strong> (Impulso)</span>
+           </div>
+       </div>
+
+
+       <!-- PANTALLA DE FIN DE JUEGO / VICTORIA -->
+       <div id="screen-gameover" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-zinc-900/95 border-4 border-rose-600 rounded-2xl p-8 text-center shadow-2xl backdrop-blur-md">
+           <h2 id="go-title" class="text-3xl font-bold text-rose-500 mb-3">¡Atrapadas por el Chocolate!</h2>
+           <p id="go-text" class="text-zinc-300 mb-6">El chocolate hirviendo alcanzó a Nat y Val. ¡Inténtalo de nuevo!</p>
+           <button onclick="returnToMenu()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 font-bold text-white rounded-xl shadow-lg transition">
+               Volver al Menú
+           </button>
+       </div>
+
+
+       <div id="screen-victory" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-amber-950/95 border-4 border-amber-400 rounded-2xl p-8 text-center shadow-2xl backdrop-blur-md">
+           <h2 class="text-3xl font-bold text-amber-300 mb-3">🎉 ¡Escapaste de la Fábrica!</h2>
+           <p class="text-amber-100 mb-6">Nat y Val lograron salir sanas y salvas al exterior sin una sola gota de chocolate encima. ¡Excelente aventura!</p>
+           <button onclick="returnToMenu()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 font-bold text-amber-950 rounded-xl shadow-lg transition">
+               Jugar de Nuevo
+           </button>
+       </div>
+
+
+   </div>
+
+
+   <!-- SCRIPT DEL JUEGO -->
+   <script>
+       const canvas = document.getElementById('gameCanvas');
+       const ctx = canvas.getContext('2d');
+
+
+       // Estado del juego
+       let gameState = 'MENU'; // MENU, PLAYING, GAMEOVER, VICTORY
+       let selectedChar = 'nat'; // nat o val
+       let difficulty = 'normal'; // facil, normal, dificil
+       let currentLevel = 1;
+       let maxLevels = 5;
+       let lives = 2;
+       let speedMultiplier = 1.0;
+
+
+       // Entradas de teclado
+       const keys = { w: false, a: false, d: false, space: false };
+
+
+       window.addEventListener('keydown', (e) => {
+           if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') { keys.w = true; e.preventDefault(); }
+           if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') { keys.a = true; e.preventDefault(); }
+           if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') { keys.d = true; e.preventDefault(); }
+           if (e.key === ' ') { keys.space = true; e.preventDefault(); }
+       });
+
+
+       window.addEventListener('keyup', (e) => {
+           if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.w = false;
+           if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.a = false;
+           if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.d = false;
+           if (e.key === ' ') keys.space = false;
+       });
+
+
+       function selectCharacter(char) {
+           selectedChar = char;
+           if (char === 'nat') {
+               document.getElementById('btn-nat').className = "px-6 py-3 rounded-xl border-2 border-amber-400 bg-amber-600 font-bold text-white shadow-lg transition transform scale-105 flex items-center gap-2";
+               document.getElementById('btn-val').className = "px-6 py-3 rounded-xl border-2 border-amber-700 bg-amber-900 font-bold text-amber-200/70 shadow-lg transition transform hover:scale-105 flex items-center gap-2";
+           } else {
+               document.getElementById('btn-val').className = "px-6 py-3 rounded-xl border-2 border-amber-400 bg-amber-600 font-bold text-white shadow-lg transition transform scale-105 flex items-center gap-2";
+               document.getElementById('btn-nat').className = "px-6 py-3 rounded-xl border-2 border-amber-700 bg-amber-900 font-bold text-amber-200/70 shadow-lg transition transform hover:scale-105 flex items-center gap-2";
+           }
+       }
+
+
+       function setDifficulty(diff) {
+           difficulty = diff;
+           ['facil', 'normal', 'dificil'].forEach(d => {
+               const btn = document.getElementById(`diff-${d}`);
+               if (d === diff) {
+                   btn.className = "px-4 py-2 rounded-lg border-2 border-amber-400 bg-amber-700 font-bold transition text-sm";
+               } else {
+                   btn.className = "px-4 py-2 rounded-lg border border-amber-600 bg-amber-900/60 hover:bg-amber-800 transition text-sm";
+               }
+           });
+       }
+
+
+       // Configuración del personaje y nivel
+       let player = {
+           x: 50,
+           y: 300,
+           width: 32,
+           height: 56,
+           vx: 0,
+           vy: 0,
+           speed: 4,
+           jumpForce: -11,
+           grounded: false,
+           animFrame: 0
+       };
+
+
+       let platforms = [];
+       let hazards = []; // engranajes / vapor
+       let goal = { x: 730, y: 100, width: 40, height: 60 };
+       let chocolateWaveY = 480; // marea de chocolate subiendo
+
+
+       function startGame() {
+           document.getElementById('screen-start').classList.add('hidden');
+           document.getElementById('game-ui').classList.remove('hidden');
+          
+           if (difficulty === 'facil') lives = 3;
+           else if (difficulty === 'normal') lives = 2;
+           else lives = 1;
+
+
+           currentLevel = 1;
+           speedMultiplier = 1.0;
+           initLevel();
+           gameState = 'PLAYING';
+       }
+
+
+       function initLevel() {
+           // Aumentar velocidad progresiva según el nivel
+           speedMultiplier = 1.0 + (currentLevel - 1) * 0.25;
+          
+           player.x = 50;
+           player.y = 300;
+           player.vx = 0;
+           player.vy = 0;
+
+
+           chocolateWaveY = 460; // reset marea
+
+
+           // Generar plataformas industriales según el nivel
+           platforms = [
+               { x: 0, y: 400, width: 800, height: 50, type: 'floor' }, // suelo principal
+           ];
+
+
+           if (currentLevel === 1) {
+               platforms.push(
+                   { x: 150, y: 310, width: 140, height: 20 },
+                   { x: 350, y: 230, width: 140, height: 20 },
+                   { x: 550, y: 150, width: 160, height: 20 }
+               );
+               hazards = [
+                   { x: 400, y: 380, radius: 25, speed: 2, dir: 1 }
+               ];
+           } else if (currentLevel === 2) {
+               platforms.push(
+                   { x: 120, y: 320, width: 120, height: 20 },
+                   { x: 300, y: 240, width: 120, height: 20 },
+                   { x: 480, y: 170, width: 120, height: 20 },
+                   { x: 200, y: 140, width: 100, height: 20 }
+               );
+               hazards = [
+                   { x: 250, y: 380, radius: 25, speed: 3, dir: 1 },
+                   { x: 500, y: 380, radius: 25, speed: 3, dir: -1 }
+               ];
+           } else if (currentLevel === 3) {
+               platforms.push(
+                   { x: 100, y: 330, width: 100, height: 20 },
+                   { x: 250, y: 250, width: 110, height: 20 },
+                   { x: 420, y: 180, width: 100, height: 20 },
+                   { x: 600, y: 120, width: 100, height: 20 }
+               );
+               hazards = [
+                   { x: 200, y: 380, radius: 22, speed: 4, dir: 1 },
+                   { x: 450, y: 380, radius: 22, speed: 4, dir: 1 },
+                   { x: 350, y: 220, radius: 18, speed: 3, dir: -1 }
+               ];
+           } else if (currentLevel === 4) {
+               platforms.push(
+                   { x: 130, y: 310, width: 90, height: 20 },
+                   { x: 280, y: 230, width: 90, height: 20 },
+                   { x: 450, y: 160, width: 90, height: 20 },
+                   { x: 200, y: 110, width: 90, height: 20 },
+                   { x: 600, y: 200, width: 100, height: 20 }
+               );
+               hazards = [
+                   { x: 150, y: 380, radius: 25, speed: 5, dir: 1 },
+                   { x: 400, y: 380, radius: 25, speed: 5, dir: -1 },
+                   { x: 300, y: 200, radius: 20, speed: 4, dir: 1 }
+               ];
+           } else {
+               // Nivel 5 (Final)
+               platforms.push(
+                   { x: 100, y: 320, width: 80, height: 20 },
+                   { x: 240, y: 250, width: 80, height: 20 },
+                   { x: 380, y: 180, width: 80, height: 20 },
+                   { x: 520, y: 120, width: 80, height: 20 },
+                   { x: 650, y: 80, width: 90, height: 20 }
+               );
+               hazards = [
+                   { x: 180, y: 380, radius: 25, speed: 6, dir: 1 },
+                   { x: 380, y: 380, radius: 25, speed: 6, dir: -1 },
+                   { x: 300, y: 220, radius: 20, speed: 5, dir: 1 },
+                   { x: 500, y: 150, radius: 20, speed: 5, dir: -1 }
+               ];
+           }
+
+
+           goal.x = platforms[platforms.length - 1].x + platforms[platforms.length - 1].width / 2 - 20;
+           goal.y = platforms[platforms.length - 1].y - 60;
+       }
+
+
+       // Bucle principal del juego
+       function update() {
+           if (gameState !== 'PLAYING') return;
+
+
+           // Movimiento horizontal con A y D
+           player.vx = 0;
+           if (keys.a) {
+               player.vx = -player.speed * (selectedChar === 'nat' ? 1.15 : 1.0);
+               player.animFrame += 0.2;
+           }
+           if (keys.d) {
+               player.vx = player.speed * (selectedChar === 'nat' ? 1.15 : 1.0);
+               player.animFrame += 0.2;
+           }
+
+
+           // Salto y subida con W
+           if ((keys.w || keys.space) && player.grounded) {
+               player.vy = player.jumpForce * (selectedChar === 'nat' ? 1.05 : 1.0);
+               player.grounded = false;
+           }
+
+
+           // Impulso extra con Espacio en el aire
+           if (keys.space && !player.grounded && !player.hasDashed) {
+               player.vy = -8;
+               player.vx *= 1.5;
+               player.hasDashed = true;
+           }
+
+
+           // Gravedad
+           player.vy += 0.5;
+
+
+           // Aplicar velocidad
+           player.x += player.vx;
+           player.y += player.vy;
+
+
+           // Límites de pantalla
+           if (player.x < 0) player.x = 0;
+           if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+
+           // Colisión con plataformas
+           player.grounded = false;
+           platforms.forEach(plat => {
+               if (
+                   player.x < plat.x + plat.width &&
+                   player.x + player.width > plat.x &&
+                   player.y + player.height >= plat.y &&
+                   player.y + player.height - player.vy <= plat.y + 10 &&
+                   player.vy >= 0
+               ) {
+                   player.y = plat.y - player.height;
+                   player.vy = 0;
+                   player.grounded = true;
+                   player.hasDashed = false; // Reset dash al tocar suelo
+               }
+           });
+
+
+           // Marea de chocolate subiendo (velocidad aumenta por nivel)
+           let waveSpeed = (0.25 + (currentLevel * 0.08)) * speedMultiplier;
+           chocolateWaveY -= waveSpeed;
+
+
+           // Movimiento de obstáculos (engranajes)
+           for (const h of hazards) {
+               h.x += h.speed * h.dir * speedMultiplier;
+               if (h.x - h.radius < 50 || h.x + h.radius > 750) {
+                   h.dir *= -1;
+               }
+               // Colisión con engranaje
+               let distX = (player.x + player.width / 2) - h.x;
+               let distY = (player.y + player.height / 2) - h.y;
+               let distance = Math.sqrt(distX * distX + distY * distY);
+               if (distance < h.radius + player.width / 3) {
+                   loseLife();
+                   return; // Evita descontar varias vidas en un mismo cuadro
+               }
+           }
+
+
+           // Colisión con marea de chocolate
+           if (player.y + player.height >= chocolateWaveY) {
+               loseLife();
+               return;
+           }
+
+
+           // Comprobar si llegó a la meta
+           if (
+               player.x < goal.x + goal.width &&
+               player.x + player.width > goal.x &&
+               player.y < goal.y + goal.height &&
+               player.y + player.height > goal.y
+           ) {
+               // Siguiente nivel o victoria
+               if (currentLevel < maxLevels) {
+                   currentLevel++;
+                   initLevel();
+               } else {
+                   gameState = 'VICTORY';
+                   document.getElementById('screen-victory').classList.remove('hidden');
+               }
+           }
+
+
+           // Actualizar interfaz HUD
+           document.getElementById('ui-level').innerText = `Nivel ${currentLevel} / ${maxLevels}`;
+           document.getElementById('ui-lives').innerText = '❤️'.repeat(lives);
+           document.getElementById('ui-speed').innerText = `Velocidad: ${speedMultiplier.toFixed(2)}x`;
+       }
+
+
+       function loseLife() {
+           lives--;
+           if (lives <= 0) {
+               gameState = 'GAMEOVER';
+               document.getElementById('go-title').innerText = "¡Atrapadas por el Chocolate!";
+               document.getElementById('go-text').innerText = `Nat y Val no pudieron escapar a tiempo en el Nivel ${currentLevel}.`;
+               document.getElementById('screen-gameover').classList.remove('hidden');
+           } else {
+               // Reiniciar posición en el mismo nivel
+               player.x = 50;
+               player.y = 300;
+               player.vx = 0;
+               player.vy = 0;
+               player.grounded = false;
+               player.hasDashed = false;
+               chocolateWaveY = 460;
+           }
+       }
+
+
+       function returnToMenu() {
+           gameState = 'MENU';
+           document.getElementById('screen-gameover').classList.add('hidden');
+           document.getElementById('screen-victory').classList.add('hidden');
+           document.getElementById('game-ui').classList.add('hidden');
+           document.getElementById('screen-start').classList.remove('hidden');
+       }
+
+
+       // Dibujar personajes humanos animados y entorno industrial
+       function draw() {
+           ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+           // Fondo: Fábrica industrial abandonada
+           ctx.fillStyle = '#221914';
+           ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+           // Tuberías de fondo
+           ctx.fillStyle = '#3a271d';
+           ctx.fillRect(100, 0, 30, canvas.height);
+           ctx.fillRect(650, 0, 30, canvas.height);
+
+
+           // Plataformas (Vigas metálicas de chocolate solidificado)
+           platforms.forEach(plat => {
+               ctx.fillStyle = '#5c3a21';
+               ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+               ctx.fillStyle = '#8c5830';
+               ctx.fillRect(plat.x, plat.y, plat.width, 4);
+               // Remaches industriales
+               ctx.fillStyle = '#d4a373';
+               for (let rx = plat.x + 10; rx < plat.x + plat.width - 5; rx += 30) {
+                   ctx.fillRect(rx, plat.y + 8, 4, 4);
+               }
+           });
+
+
+           // Meta (Puerta de salida brillante)
+           ctx.fillStyle = '#d97706';
+           ctx.fillRect(goal.x - 5, goal.y - 10, goal.width + 10, goal.height + 10);
+           ctx.fillStyle = '#fef08a';
+           ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
+           ctx.fillStyle = '#78350f';
+           ctx.font = 'bold 12px Fredoka';
+           ctx.fillText('SALIDA', goal.x - 1, goal.y + 35);
+
+
+           // Obstáculos (Engranajes giratorios)
+           hazards.forEach(h => {
+               ctx.save();
+               ctx.translate(h.x, h.y);
+               ctx.rotate(Date.now() * 0.003 * h.speed);
+               ctx.fillStyle = '#b45309';
+               ctx.beginPath();
+               ctx.arc(0, 0, h.radius, 0, Math.PI * 2);
+               ctx.fill();
+               ctx.lineWidth = 4;
+               ctx.strokeStyle = '#78350f';
+               ctx.stroke();
+               // Dientes del engranaje
+               for (let i = 0; i < 6; i++) {
+                   ctx.rotate(Math.PI / 3);
+                   ctx.fillRect(-4, -h.radius - 6, 8, 8);
+               }
+               ctx.restore();
+           });
+
+
+           // Marea de chocolate hirviendo en la parte inferior
+           ctx.fillStyle = '#78350f';
+           ctx.fillRect(0, chocolateWaveY, canvas.width, canvas.height - chocolateWaveY);
+           ctx.fillStyle = '#b45309';
+           ctx.fillRect(0, chocolateWaveY, canvas.width, 10);
+           // Burbujas de chocolate hirviendo
+           ctx.fillStyle = '#f59e0b';
+           let bubbleOffset = (Date.now() * 0.05) % 800;
+           ctx.beginPath();
+           ctx.arc((bubbleOffset + 100) % 800, chocolateWaveY + 5, 6, 0, Math.PI * 2);
+           ctx.arc((bubbleOffset + 400) % 800, chocolateWaveY + 8, 8, 0, Math.PI * 2);
+           ctx.arc((bubbleOffset + 700) % 800, chocolateWaveY + 4, 5, 0, Math.PI * 2);
+           ctx.fill();
+
+
+           // Dibujar Personaje Humano Animado (Nat o Val)
+           let px = player.x;
+           let py = player.y;
+           let isMoving = Math.abs(player.vx) > 0.1;
+           let legOffset = isMoving ? Math.sin(player.animFrame) * 6 : 0;
+
+
+           // Colores según personaje (Nat: coleta naranja/roja, campera turquesa; Val: coleta castaña, campera morada)
+           let hairColor = selectedChar === 'nat' ? '#ea580c' : '#713f12';
+           let jacketColor = selectedChar === 'nat' ? '#0891b2' : '#7c3aed';
+
+
+           // Piernas (Animadas al caminar)
+           ctx.fillStyle = '#1e293b';
+           ctx.fillRect(px + 6 + legOffset, py + 38, 6, 18);
+           ctx.fillRect(px + 20 - legOffset, py + 38, 6, 18);
+
+
+           // Zapatos
+           ctx.fillStyle = '#0f172a';
+           ctx.fillRect(px + 4 + legOffset, py + 52, 9, 5);
+           ctx.fillRect(px + 18 - legOffset, py + 52, 9, 5);
+
+
+           // Torso (Campera de aventura)
+           ctx.fillStyle = jacketColor;
+           ctx.fillRect(px + 4, py + 20, 24, 20);
+
+
+           // Brazos
+           ctx.fillStyle = '#fbcfe8'; // tono de piel
+           ctx.fillRect(px, py + 22, 5, 14);
+           ctx.fillRect(px + 27, py + 22, 5, 14);
+
+
+           // Cabeza
+           ctx.fillStyle = '#fbcfe8';
+           ctx.beginPath();
+           ctx.arc(px + 16, py + 12, 10, 0, Math.PI * 2);
+           ctx.fill();
+
+
+           // Cabello y coleta
+           ctx.fillStyle = hairColor;
+           ctx.beginPath();
+           ctx.arc(px + 16, py + 10, 10, Math.PI, Math.PI * 2);
+           ctx.fill();
+           // Coleta al viento
+           ctx.fillRect(selectedChar === 'nat' ? px + 24 : px - 6, py + 8, 10, 5);
+
+
+           // Ojos y sonrisa
+           ctx.fillStyle = '#0f172a';
+           ctx.fillRect(px + 12, py + 10, 2, 3);
+           ctx.fillRect(px + 18, py + 10, 2, 3);
+       }
+
+
+       // Loop general
+       function mainLoop() {
+           update();
+           draw();
+           requestAnimationFrame(mainLoop);
+       }
+
+
+       requestAnimationFrame(mainLoop);
+   </script>
+</body>
+</html>
+
+
