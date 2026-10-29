@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade 1v1 Arena</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap');
+        * { box-sizing: border-box; }
+        body { font-family: 'Outfit', Arial, sans-serif; background-color: #0b0f19; color: white; user-select: none; overflow: hidden; margin: 0; }
+        .glow-blue { text-shadow: 0 0 20px rgba(59,130,246,.6); }
+        .glow-red { text-shadow: 0 0 20px rgba(239,68,68,.6); }
+       .glow-box-blue {
+           box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+       }
+       .glow-box-red {
+           box-shadow: 0 0 25px rgba(239, 68, 68, 0.4);
+       }
+       .custom-scrollbar::-webkit-scrollbar {
+           width: 6px;
+       }
+       .custom-scrollbar::-webkit-scrollbar-thumb {
+           background: #1e293b;
+           border-radius: 9999px;
+       }
+   </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between items-center relative overflow-hidden">
+
+
+   <!-- Fondo con rejilla y efectos luminosos modernos -->
+   <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] pointer-events-none"></div>
+   <div class="absolute inset-0 bg-[linear-gradient(to_right,#1f293715_1px,transparent_1px),linear-gradient(to_bottom,#1f293715_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none"></div>
+
+
+   <!-- Contenedor Principal / Pantallas -->
+   <main id="app" class="relative z-10 w-full h-full flex flex-col items-center justify-center p-4">
+      
+       <!-- ================= PANTALLA DE MENÚ ================= -->
+       <div id="menu-screen" class="flex flex-col items-center justify-center max-w-4xl w-full text-center space-y-8 animate-fade-in">
+           <div class="space-y-3">
+               <span class="px-4 py-1.5 rounded-full text-xs font-bold tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase">
+                   Multijugador Local 1v1
+               </span>
+               <h1 class="text-6xl md:text-8xl font-black tracking-tight text-white">
+                   ARCADE <span class="bg-gradient-to-r from-blue-500 via-purple-500 to-red-500 bg-clip-text text-transparent">ARENA</span>
+               </h1>
+               <p class="text-slate-400 text-lg max-w-md mx-auto">
+                   Disfruta de duelos intensos cara a cara con un amigo en la misma computadora.
+               </p>
+           </div>
+
+
+           <!-- Tarjetas de Selección de Juegos -->
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl px-4">
+               <!-- Tarjeta Juego 1: Lluvia de Comida -->
+               <div onclick="startMinigame(1)" class="group relative bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-blue-500/50 rounded-3xl p-6 cursor-pointer transition-all duration-300 transform hover:-translate-y-2 glow-box-blue flex flex-col justify-between text-left">
+                   <div class="absolute top-4 right-4 text-3xl">🍕</div>
+                   <div>
+                       <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider">Minijuego 1</span>
+                       <h3 class="text-2xl font-bold text-white mt-1 group-hover:text-blue-400 transition-colors">Lluvia de Comida</h3>
+                       <p class="text-slate-400 text-sm mt-2">Atrapa la comida rápida que cae del cielo. ¡El primero en llegar a 50 puntos gana!</p>
+                   </div>
+                   <div class="mt-6 flex items-center justify-between pt-4 border-t border-slate-800 text-xs text-slate-400">
+                       <span>Meta: 50 pts</span>
+                       <span class="font-bold text-blue-400 group-hover:translate-x-1 transition-transform">Jugar &rarr;</span>
+                   </div>
+               </div>
+
+
+               <!-- Tarjeta Juego 2: Ping Pong -->
+               <div onclick="startMinigame(2)" class="group relative bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-red-500/50 rounded-3xl p-6 cursor-pointer transition-all duration-300 transform hover:-translate-y-2 glow-box-red flex flex-col justify-between text-left">
+                   <div class="absolute top-4 right-4 text-3xl">🏓</div>
+                   <div>
+                       <span class="text-xs font-semibold text-red-400 uppercase tracking-wider">Minijuego 2</span>
+                       <h3 class="text-2xl font-bold text-white mt-1 group-hover:text-red-400 transition-colors">Ping Pong Clásico</h3>
+                       <p class="text-slate-400 text-sm mt-2">Pelota hiperveloz con rebotes dinámicos. ¡El primero en alcanzar 5 puntos gana!</p>
+                   </div>
+                   <div class="mt-6 flex items-center justify-between pt-4 border-t border-slate-800 text-xs text-slate-400">
+                       <span>Meta: 5 Puntos</span>
+                       <span class="font-bold text-red-400 group-hover:translate-x-1 transition-transform">Jugar &rarr;</span>
+                   </div>
+               </div>
+           </div>
+
+
+           <!-- Leyenda de Jugadores -->
+           <div class="flex items-center justify-center space-x-8 text-sm font-semibold pt-4">
+               <div class="flex items-center space-x-2 bg-blue-500/10 border border-blue-500/30 px-4 py-2 rounded-xl text-blue-400">
+                   <span class="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></span>
+                   <span>Jugador 1 (Azul): WASD</span>
+               </div>
+               <div class="flex items-center space-x-2 bg-red-500/10 border border-red-500/30 px-4 py-2 rounded-xl text-red-400">
+                   <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+                   <span>Jugador 2 (Rojo): Flechas del Teclado</span>
+               </div>
+           </div>
+       </div>
+
+
+       <!-- ================= PANTALLA DE JUEGO (CANVAS Y HUD) ================= -->
+       <div id="game-screen" class="hidden flex-col items-center justify-center w-full max-w-5xl h-full py-2">
+           <!-- HUD Superior -->
+           <div class="w-full flex justify-between items-center bg-slate-900/90 border border-slate-800 px-6 py-3 rounded-2xl mb-3 shadow-lg">
+               <div class="flex items-center space-x-3">
+                   <button onclick="returnToMenu()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-700">
+                       &larr; Menú
+                   </button>
+                   <h2 id="current-game-title" class="text-lg font-extrabold text-white tracking-wide">Minijuego</h2>
+               </div>
+
+
+               <!-- Puntuaciones en vivo -->
+               <div class="flex items-center space-x-8">
+                   <div class="flex items-center space-x-2">
+                       <span class="w-3.5 h-3.5 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50"></span>
+                       <span class="text-sm font-bold text-blue-400 glow-blue">J1 (Azul): <span id="hud-score-1" class="text-xl">0</span></span>
+                   </div>
+                   <span class="text-xs text-slate-500 font-bold uppercase">VS</span>
+                   <div class="flex items-center space-x-2">
+                       <span class="text-sm font-bold text-red-400 glow-red"><span id="hud-score-2" class="text-xl">0</span> :J2 (Rojo)</span>
+                       <span class="w-3.5 h-3.5 rounded-full bg-red-500 shadow-lg shadow-red-500/50"></span>
+                   </div>
+               </div>
+           </div>
+
+
+           <!-- Contenedor del Canvas de Juego -->
+           <div class="relative w-full flex-1 flex items-center justify-center bg-slate-950/80 border border-slate-800/80 rounded-3xl overflow-hidden shadow-2xl">
+               <canvas id="gameCanvas" class="w-full h-full block rounded-3xl"></canvas>
+
+
+               <!-- Overlay de Pausa / Cuenta Regresiva Inicial -->
+               <div id="overlay-message" class="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-center transition-opacity duration-300">
+                   <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl max-w-md w-full space-y-4">
+                       <h3 id="overlay-title" class="text-3xl font-extrabold text-white">¡Listos?</h3>
+                       <p id="overlay-desc" class="text-slate-400 text-sm">Prepárense en los controles. El juego comienza de inmediato.</p>
+                       <button onclick="startActiveGame()" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-lg transition-all transform hover:scale-[1.02]">
+                           Comenzar Duelo
+                       </button>
+                   </div>
+               </div>
+           </div>
+       </div>
+
+
+       <!-- ================= PANTALLA DE VICTORIA ================= -->
+       <div id="victory-screen" class="hidden flex-col items-center justify-center max-w-md w-full text-center space-y-6 bg-slate-900/90 border border-slate-800 p-8 rounded-3xl shadow-2xl animate-fade-in">
+           <div class="text-6xl animate-bounce" id="victory-icon">🏆</div>
+           <div class="space-y-2">
+               <span class="text-xs font-bold tracking-widest text-amber-400 uppercase">¡Fin del Duelo!</span>
+               <h2 id="winner-title" class="text-4xl font-black text-white glow-blue">¡Jugador 1 Gana!</h2>
+               <p id="winner-subtitle" class="text-slate-400 text-sm">Ha dominado la arena con destreza absoluta.</p>
+           </div>
+           <div class="flex space-x-3 w-full pt-4">
+               <button onclick="restartCurrentGame()" class="flex-1 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all shadow-lg">
+                   Revancha
+               </button>
+               <button onclick="returnToMenu()" class="flex-1 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-2xl transition-all border border-slate-700">
+                   Menú
+               </button>
+           </div>
+       </div>
+
+
+   </main>
+
+
+   <!-- Script Principal del Sistema Arcade -->
+   <script>
+       // Referencias del DOM
+       const menuScreen = document.getElementById('menu-screen');
+       const gameScreen = document.getElementById('game-screen');
+       const victoryScreen = document.getElementById('victory-screen');
+       const currentGameTitle = document.getElementById('current-game-title');
+       const hudScore1 = document.getElementById('hud-score-1');
+       const hudScore2 = document.getElementById('hud-score-2');
+       const overlayMessage = document.getElementById('overlay-message');
+       const overlayTitle = document.getElementById('overlay-title');
+       const overlayDesc = document.getElementById('overlay-desc');
+       const winnerTitle = document.getElementById('winner-title');
+       const victoryIcon = document.getElementById('victory-icon');
+
+
+       const canvas = document.getElementById('gameCanvas');
+       const ctx = canvas.getContext('2d');
+
+
+       // Estado Global del Sistema
+       let activeGameId = 0; // 1: Lluvia de comida, 2: Ping Pong
+       let gameInterval = null;
+       let isGameRunning = false;
+
+
+       // Controles de Teclado
+       const keys = {};
+       window.addEventListener('keydown', (e) => { if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault(); keys[e.key.toLowerCase()] = true; });
+       window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+        window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+
+
+       // Ajustar tamaño del canvas automáticamente manteniendo proporción o espacio útil
+       function resizeCanvas() {
+           canvas.width = canvas.parentElement.clientWidth;
+           canvas.height = canvas.parentElement.clientHeight;
+       }
+       window.addEventListener('resize', resizeCanvas);
+
+
+       // Cambiar entre pantallas
+       function showScreen(screen) {
+           menuScreen.classList.add('hidden');
+           gameScreen.classList.add('hidden');
+           victoryScreen.classList.add('hidden');
+           screen.classList.remove('hidden');
+           screen.classList.add('flex');
+       }
+
+
+       function returnToMenu() {
+           stopGameLoop();
+           showScreen(menuScreen);
+       }
+
+
+       function startMinigame(id) {
+           activeGameId = id;
+           showScreen(gameScreen);
+           resizeCanvas();
+
+
+           if (id === 1) {
+               currentGameTitle.textContent = "Lluvia de Comida (Meta: 50 pts)";
+               setupFoodGame();
+           } else if (id === 2) {
+               currentGameTitle.textContent = "Ping Pong Clásico (Meta: 5 pts)";
+               setupPongGame();
+           }
+
+
+           overlayMessage.classList.remove('hidden');
+           overlayTitle.textContent = id === 1 ? "¡Lluvia de Comida 1v1!" : "¡Ping Pong 1v1 Extremo!";
+           overlayDesc.textContent = id === 1
+               ? "J1 (Azul) usa WASD. J2 (Rojo) usa Flechas Izquierda/Derecha. ¡Atrapa la comida rápida que cae! El primero en 50 gana."
+               : "J1 (Azul) usa W/S. J2 (Rojo) usa Flechas Arriba/Abajo. ¡La pelota acelera sin parar! El primero en 5 puntos gana.";
+       }
+
+
+       function startActiveGame() {
+           overlayMessage.classList.add('hidden');
+           isGameRunning = true;
+           if (activeGameId === 1) runFoodGameLoop();
+           if (activeGameId === 2) runPongGameLoop();
+       }
+
+
+       function stopGameLoop() {
+           isGameRunning = false;
+           if (gameInterval) cancelAnimationFrame(gameInterval);
+       }
+
+
+       function restartCurrentGame() {
+           victoryScreen.classList.add('hidden');
+           startMinigame(activeGameId);
+       }
+
+
+       function triggerVictory(winnerNum) {
+           stopGameLoop();
+           gameScreen.classList.add('hidden');
+           victoryScreen.classList.remove('hidden');
+           victoryScreen.classList.add('flex');
+
+
+           if (winnerNum === 1) {
+               winnerTitle.textContent = "¡Jugador 1 (Azul) Gana!";
+               winnerTitle.className = "text-4xl font-black text-blue-400 glow-blue";
+               victoryIcon.textContent = "💙🏆";
+           } else {
+               winnerTitle.textContent = "¡Jugador 2 (Rojo) Gana!";
+               winnerTitle.className = "text-4xl font-black text-red-400 glow-red";
+               victoryIcon.textContent = "❤️🏆";
+           }
+       }
+
+
+
+
+       /* ==========================================================
+          MINIJUEGO 1: LLUVIA DE COMIDA 1V1
+          ========================================================== */
+       let foodState = {};
+
+
+       function setupFoodGame() {
+           foodState = {
+               score1: 0,
+               score2: 0,
+               p1: { x: canvas.width * 0.25, y: canvas.height - 80, width: 60, height: 70, speed: 10 },
+               p2: { x: canvas.width * 0.75, y: canvas.height - 80, width: 60, height: 70, speed: 10 },
+               items: [],
+               spawnTimer: 0,
+               foodTypes: [
+                   { emoji: '🍕', pts: 1 }, { emoji: '🍔', pts: 1 }, { emoji: '🍩', pts: 1 },
+                   { emoji: '🍰', pts: 2 }, { emoji: '🌮', pts: 1 }, { emoji: '🍉', pts: 1 }
+               ]
+           };
+           hudScore1.textContent = foodState.score1;
+           hudScore2.textContent = foodState.score2;
+       }
+
+
+       function runFoodGameLoop() {
+           if (!isGameRunning) return;
+
+
+           // Actualizar posiciones de jugadores (J1: A/D con WASD, J2: Flechas Izquierda/Derecha)
+           if (keys['a']) foodState.p1.x -= foodState.p1.speed;
+           if (keys['d']) foodState.p1.x += foodState.p1.speed;
+           if (keys['arrowleft']) foodState.p2.x -= foodState.p2.speed;
+           if (keys['arrowright']) foodState.p2.x += foodState.p2.speed;
+
+
+           // Limitar dentro del canvas
+           foodState.p1.x = Math.max(10, Math.min(canvas.width / 2 - foodState.p1.width - 10, foodState.p1.x));
+           foodState.p2.x = Math.max(canvas.width / 2 + 10, Math.min(canvas.width - foodState.p2.width - 10, foodState.p2.x));
+
+
+           // Generar comida rápidamente
+           foodState.spawnTimer++;
+           if (foodState.spawnTimer > 18) { // Muy rápido como se pidió
+               foodState.spawnTimer = 0;
+               const randomFood = foodState.foodTypes[Math.floor(Math.random() * foodState.foodTypes.length)];
+               foodState.items.push({
+                   x: Math.random() * (canvas.width - 60) + 30,
+                   y: -40,
+                   speed: Math.random() * 4 + 7, // Alta velocidad de caída
+                   emoji: randomFood.emoji,
+                   pts: randomFood.pts,
+                   size: 35
+               });
+           }
+
+
+           // Actualizar comida
+           for (let i = foodState.items.length - 1; i >= 0; i--) {
+               let item = foodState.items[i];
+               item.y += item.speed;
+
+
+               // Colisión Jugador 1 (Azul)
+               if (
+                   item.x + item.size > foodState.p1.x &&
+                   item.x < foodState.p1.x + foodState.p1.width &&
+                   item.y + item.size > foodState.p1.y &&
+                   item.y < foodState.p1.y + foodState.p1.height
+               ) {
+                   foodState.score1 += item.pts;
+                   hudScore1.textContent = foodState.score1;
+                   foodState.items.splice(i, 1);
+                   if (foodState.score1 >= 50) {
+                       triggerVictory(1);
+                       return;
+                   }
+                   continue;
+               }
+
+
+               // Colisión Jugador 2 (Rojo)
+               if (
+                   item.x + item.size > foodState.p2.x &&
+                   item.x < foodState.p2.x + foodState.p2.width &&
+                   item.y + item.size > foodState.p2.y &&
+                   item.y < foodState.p2.y + foodState.p2.height
+               ) {
+                   foodState.score2 += item.pts;
+                   hudScore2.textContent = foodState.score2;
+                   foodState.items.splice(i, 1);
+                   if (foodState.score2 >= 50) {
+                       triggerVictory(2);
+                       return;
+                   }
+                   continue;
+               }
+
+
+               // Eliminar si cae fuera
+               if (item.y > canvas.height) {
+                   foodState.items.splice(i, 1);
+               }
+           }
+
+
+           // Renderizado de Lluvia de Comida
+           ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+           // Línea divisoria central sutil
+           ctx.strokeStyle = '#1e293b';
+           ctx.lineWidth = 2;
+           ctx.setLineDash([8, 8]);
+           ctx.beginPath();
+           ctx.moveTo(canvas.width / 2, 0);
+           ctx.lineTo(canvas.width / 2, canvas.height);
+           ctx.stroke();
+           ctx.setLineDash([]);
+
+
+           // Dibujar Personaje 1 (Azul)
+           ctx.fillStyle = '#3b82f6';
+           ctx.shadowColor = 'rgba(59, 130, 246, 0.8)';
+           ctx.shadowBlur = 15;
+           ctx.fillRect(foodState.p1.x, foodState.p1.y, foodState.p1.width, foodState.p1.height);
+           ctx.fillStyle = '#93c5fd';
+           ctx.font = '28px sans-serif';
+           ctx.fillText('🧢', foodState.p1.x + 10, foodState.p1.y + 30);
+           ctx.fillText('👦', foodState.p1.x + 10, foodState.p1.y + 60);
+
+
+           // Dibujar Personaje 2 (Rojo)
+           ctx.fillStyle = '#ef4444';
+           ctx.shadowColor = 'rgba(239, 68, 68, 0.8)';
+           ctx.shadowBlur = 15;
+           ctx.fillRect(foodState.p2.x, foodState.p2.y, foodState.p2.width, foodState.p2.height);
+           ctx.fillStyle = '#fca5a5';
+           ctx.fillText('🧢', foodState.p2.x + 10, foodState.p2.y + 30);
+           ctx.fillText('👧', foodState.p2.x + 10, foodState.p2.y + 60);
+           ctx.shadowBlur = 0;
+
+
+           // Dibujar Comida
+           ctx.font = '32px sans-serif';
+           for (let item of foodState.items) {
+               ctx.fillText(item.emoji, item.x, item.y + 30);
+           }
+
+
+           gameInterval = requestAnimationFrame(runFoodGameLoop);
+       }
+
+
+
+
+       /* ==========================================================
+          MINIJUEGO 2: PING PONG CLÁSICO 1V1
+          ========================================================== */
+       let pongState = {};
+
+
+       function setupPongGame() {
+           pongState = {
+               score1: 0,
+               score2: 0,
+               paddleWidth: 16,
+               paddleHeight: 110,
+               p1: { x: 30, y: canvas.height / 2 - 55, dy: 8 },
+               p2: { x: canvas.width - 46, y: canvas.height / 2 - 55, dy: 8 },
+               ball: {
+                   x: canvas.width / 2,
+                   y: canvas.height / 2,
+                   radius: 12,
+                   speedX: 6,
+                   speedY: 4,
+                   maxSpeed: 18
+               }
+           };
+           hudScore1.textContent = pongState.score1;
+           hudScore2.textContent = pongState.score2;
+       }
+
+
+       function resetPongBall(servingPlayer) {
+           pongState.ball.x = canvas.width / 2;
+           pongState.ball.y = canvas.height / 2;
+           let dir = servingPlayer === 1 ? 1 : -1;
+           pongState.ball.speedX = dir * 6;
+           pongState.ball.speedY = (Math.random() * 4 - 2);
+       }
+
+
+       function runPongGameLoop() {
+           if (!isGameRunning) return;
+
+
+           // Controles Jugador 1 (Azul): W / S
+           if (keys['w']) pongState.p1.y -= pongState.p1.dy;
+           if (keys['s']) pongState.p1.y += pongState.p1.dy;
+
+
+           // Controles Jugador 2 (Rojo): Flecha Arriba / Flecha Abajo
+           if (keys['arrowup']) pongState.p2.y -= pongState.p2.dy;
+           if (keys['arrowdown']) pongState.p2.y += pongState.p2.dy;
+
+
+           // Limitar paletas dentro del canvas
+           pongState.p1.y = Math.max(10, Math.min(canvas.height - pongState.paddleHeight - 10, pongState.p1.y));
+           pongState.p2.y = Math.max(10, Math.min(canvas.height - pongState.paddleHeight - 10, pongState.p2.y));
+
+
+           // Mover pelota y acelerar progresivamente
+           pongState.ball.x += pongState.ball.speedX;
+           pongState.ball.y += pongState.ball.speedY;
+
+
+           // Rebote superior e inferior
+           if (pongState.ball.y - pongState.ball.radius < 0 && pongState.ball.speedY < 0) {
+               pongState.ball.y = pongState.ball.radius;
+               pongState.ball.speedY *= -1;
+           }
+           if (pongState.ball.y + pongState.ball.radius > canvas.height && pongState.ball.speedY > 0) {
+               pongState.ball.y = canvas.height - pongState.ball.radius;
+               pongState.ball.speedY *= -1;
+           }
+
+
+           // Colisión Paleta 1 (Azul)
+           if (
+               pongState.ball.x - pongState.ball.radius < pongState.p1.x + pongState.paddleWidth &&
+               pongState.ball.x + pongState.ball.radius > pongState.p1.x &&
+               pongState.ball.y > pongState.p1.y &&
+               pongState.ball.y < pongState.p1.y + pongState.paddleHeight
+           ) {
+               pongState.ball.x = pongState.p1.x + pongState.paddleWidth + pongState.ball.radius;
+               // Incrementar velocidad progresivamente con cada rebote
+               let deltaY = pongState.ball.y - (pongState.p1.y + pongState.paddleHeight / 2);
+               pongState.ball.speedY = deltaY * 0.15;
+               pongState.ball.speedX = Math.abs(pongState.ball.speedX) * 1.1; // Hacia la derecha
+               if (Math.abs(pongState.ball.speedX) > pongState.ball.maxSpeed) {
+                   pongState.ball.speedX = Math.sign(pongState.ball.speedX) * pongState.ball.maxSpeed;
+               }
+           }
+
+
+           // Colisión Paleta 2 (Rojo)
+           if (
+               pongState.ball.x + pongState.ball.radius > pongState.p2.x &&
+               pongState.ball.x - pongState.ball.radius < pongState.p2.x + pongState.paddleWidth &&
+               pongState.ball.y > pongState.p2.y &&
+               pongState.ball.y < pongState.p2.y + pongState.paddleHeight
+           ) {
+               pongState.ball.x = pongState.p2.x - pongState.ball.radius;
+               let deltaY = pongState.ball.y - (pongState.p2.y + pongState.paddleHeight / 2);
+               pongState.ball.speedY = deltaY * 0.15;
+               pongState.ball.speedX = -Math.abs(pongState.ball.speedX) * 1.1; // Hacia la izquierda
+               if (Math.abs(pongState.ball.speedX) > pongState.ball.maxSpeed) {
+                   pongState.ball.speedX = Math.sign(pongState.ball.speedX) * pongState.ball.maxSpeed;
+               }
+           }
+
+
+           // Puntuación lateral (Punto para Jugador contrario)
+           if (pongState.ball.x < 0) {
+               pongState.score2++;
+               hudScore2.textContent = pongState.score2;
+               if (pongState.score2 >= 5) {
+                   triggerVictory(2);
+                   return;
+               }
+               resetPongBall(1);
+           } else if (pongState.ball.x > canvas.width) {
+               pongState.score1++;
+               hudScore1.textContent = pongState.score1;
+               if (pongState.score1 >= 5) {
+                   triggerVictory(1);
+                   return;
+               }
+               resetPongBall(2);
+           }
+
+
+           // Renderizado de Ping Pong
+           ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+           // Línea central de red punteada
+           ctx.strokeStyle = '#1e293b';
+           ctx.lineWidth = 4;
+           ctx.setLineDash([12, 12]);
+           ctx.beginPath();
+           ctx.moveTo(canvas.width / 2, 0);
+           ctx.lineTo(canvas.width / 2, canvas.height);
+           ctx.stroke();
+           ctx.setLineDash([]);
+
+
+           // Dibujar Paleta J1 (Azul)
+           ctx.fillStyle = '#3b82f6';
+           ctx.shadowColor = 'rgba(59, 130, 246, 0.8)';
+           ctx.shadowBlur = 15;
+           ctx.fillRect(pongState.p1.x, pongState.p1.y, pongState.paddleWidth, pongState.paddleHeight);
+
+
+           // Dibujar Paleta J2 (Rojo)
+           ctx.fillStyle = '#ef4444';
+           ctx.shadowColor = 'rgba(239, 68, 68, 0.8)';
+           ctx.shadowBlur = 15;
+           ctx.fillRect(pongState.p2.x, pongState.p2.y, pongState.paddleWidth, pongState.paddleHeight);
+
+
+           // Dibujar Pelota Dinámica
+           ctx.fillStyle = '#ffffff';
+           ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+           ctx.shadowBlur = 20;
+           ctx.beginPath();
+           ctx.arc(pongState.ball.x, pongState.ball.y, pongState.ball.radius, 0, Math.PI * 2);
+           ctx.fill();
+           ctx.shadowBlur = 0;
+
+
+           gameInterval = requestAnimationFrame(runPongGameLoop);
+       }
+   </script>
+</body>
+</html>
+    
