@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Super Minijuegos Arena - 10 Juegos Multijugador</title>
+   <!-- Tailwind CSS -->
+   <script src="https://cdn.tailwindcss.com"></script>
+   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+   <style>
+       body { font-family: 'Poppins', sans-serif; touch-action: manipulation; }
+       canvas { image-rendering: pixelated; }
+   </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-between p-4 select-none overflow-x-hidden">
+
+
+   <!-- Header -->
+   <header class="text-center my-2">
+       <h1 class="text-2xl md:text-4xl font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 drop-shadow-lg">
+           ⚡ SUPER MINIJUEGOS ARENA (10 JUEGOS) ⚡
+       </h1>
+       <p class="text-slate-400 text-xs md:text-sm mt-1">Elige entre 10 minijuegos o juega el <span class="text-yellow-400 font-bold">Torneo (Primero a 10)</span></p>
+   </header>
+
+
+   <!-- Contenedor Principal -->
+   <main class="w-full max-w-4xl flex flex-col items-center bg-slate-800/80 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-slate-700">
+      
+       <!-- Marcador Global -->
+       <div class="w-full flex justify-between items-center bg-slate-900/90 px-6 py-2 rounded-xl mb-3 border border-slate-700 shadow-inner">
+           <div class="flex items-center space-x-3">
+               <span class="w-3 h-3 rounded-full bg-blue-500 inline-block animate-pulse"></span>
+               <span class="font-bold text-blue-400 text-xs md:text-base">Jugador 1</span>
+               <span id="score-p1" class="text-xl font-black bg-blue-900/50 px-3 py-0.5 rounded-lg border border-blue-600">0</span>
+           </div>
+           <div class="text-center font-bold text-yellow-400 text-xs md:text-sm uppercase tracking-wider px-2 py-1 bg-yellow-500/10 rounded-lg border border-yellow-500/30" id="current-game-title">
+               Menú Principal
+           </div>
+           <div class="flex items-center space-x-3">
+               <span id="score-p2" class="text-xl font-black bg-red-900/50 px-3 py-0.5 rounded-lg border border-red-600">0</span>
+               <span class="font-bold text-red-400 text-xs md:text-base">Jugador 2</span>
+               <span class="w-3 h-3 rounded-full bg-red-500 inline-block animate-pulse"></span>
+           </div>
+       </div>
+
+
+       <!-- Área de Canvas y Pantallas -->
+       <div class="relative w-full aspect-[16/10] bg-slate-950 rounded-xl overflow-hidden flex flex-col items-center justify-center border-2 border-slate-700 shadow-inner">
+          
+           <!-- Menú de Selección -->
+           <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/98 z-30 p-3 overflow-y-auto">
+               <div class="max-w-2xl w-full bg-slate-900 p-4 rounded-2xl border border-slate-700 shadow-2xl my-auto">
+                   <h2 class="text-lg md:text-xl font-bold text-yellow-400 mb-2 text-center">Selecciona un Modo o Minijuego</h2>
+                  
+                   <button onclick="startTournamentSession()" class="w-full mb-3 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 text-slate-950 font-black rounded-xl text-sm md:text-base shadow-lg transition transform hover:scale-105 cursor-pointer">
+                       🏆 MODO TORNEO (Primero a 10 Victorias)
+                   </button>
+
+
+                   <div class="border-t border-slate-800 pt-2 mb-2">
+                       <p class="text-slate-400 text-xs font-semibold mb-2 text-center">O ELIGE UNO DE LOS 10 MINIJUEGOS:</p>
+                       <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-xs">
+                           <button onclick="startSpecificGame(0)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold text-blue-400">1. ⚽ Fútbol</button>
+                           <button onclick="startSpecificGame(1)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold text-emerald-400">2. 🏓 Ping Pong</button>
+                           <button onclick="startSpecificGame(2)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold text-amber-400">3. 🤼 Sumo</button>
+                           <button onclick="startSpecificGame(3)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold text-pink-400">4. ⚡ Reflejos</button>
+                           <button onclick="startSpecificGame(4)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold text-purple-400">5. ☄️ Meteoritos</button>
+                           <button onclick="startSpecificGame(5)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold text-red-400">6. 💥 Tanques</button>
+                           <button onclick="startSpecificGame(6)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold text-cyan-400">7. 🏃 Vallas</button>
+                           <button onclick="startSpecificGame(7)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold text-yellow-400">8. 🪙 Monedas</button>
+                           <button onclick="startSpecificGame(8)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold text-teal-400">9. 🥧 Pasteles</button>
+                           <button onclick="startSpecificGame(9)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold text-orange-400">10. 🪢 Fuerza</button>
+                       </div>
+                   </div>
+
+
+                   <div class="grid grid-cols-2 gap-2 text-left text-xs bg-slate-950 p-2 rounded-xl border border-slate-800">
+                       <p class="font-bold text-blue-400">🎮 J1: W A S D / ESPACIO</p>
+                       <p class="font-bold text-red-400">🎮 J2: FLECHAS / ENTER</p>
+                   </div>
+               </div>
+           </div>
+
+
+           <!-- Pantalla Anuncio Ronda -->
+           <div id="announcement-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 z-20 hidden">
+               <h3 id="announcement-game-name" class="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-yellow-400 mb-2 animate-bounce">JUEGO</h3>
+               <p id="announcement-instructions" class="text-slate-300 text-base md:text-lg mb-6 text-center max-w-md px-4">Instrucciones</p>
+               <div id="countdown-number" class="text-4xl md:text-6xl font-extrabold text-yellow-400">3</div>
+           </div>
+
+
+           <!-- Pantalla Fin de Partida / Torneo -->
+           <div id="gameover-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 z-40 hidden p-6 text-center">
+               <div class="max-w-md bg-slate-900 p-6 rounded-2xl border border-slate-700 shadow-2xl">
+                   <h2 id="winner-title" class="text-2xl font-black text-yellow-400 mb-2">¡CAMPEÓN!</h2>
+                   <p id="winner-subtitle" class="text-slate-300 text-sm mb-4">Marcador</p>
+                   <button onclick="returnToMenu()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black rounded-xl text-base shadow-lg cursor-pointer">
+                       VOLVER AL MENÚ
+                   </button>
+               </div>
+           </div>
+
+
+           <canvas id="gameCanvas" class="w-full h-full block bg-slate-900"></canvas>
+       </div>
+
+
+       <!-- Footer -->
+       <div class="w-full flex justify-between items-center mt-3 text-xs text-slate-400 px-2">
+           <span id="game-status-msg" class="font-semibold text-yellow-400">Selecciona un juego</span>
+           <button onclick="returnToMenu()" class="text-yellow-400 hover:underline font-semibold cursor-pointer">🏠 Menú Principal</button>
+       </div>
+   </main>
+
+
+   <!-- Script de los 10 Minijuegos -->
+   <script>
+       const canvas = document.getElementById('gameCanvas');
+       const ctx = canvas.getContext('2d');
+       const scoreP1El = document.getElementById('score-p1');
+       const scoreP2El = document.getElementById('score-p2');
+       const currentGameTitleEl = document.getElementById('current-game-title');
+       const startScreen = document.getElementById('start-screen');
+       const announcementScreen = document.getElementById('announcement-screen');
+       const announcementGameName = document.getElementById('announcement-game-name');
+       const announcementInstructions = document.getElementById('announcement-instructions');
+       const countdownNumber = document.getElementById('countdown-number');
+       const gameoverScreen = document.getElementById('gameover-screen');
+       const winnerTitle = document.getElementById('winner-title');
+       const winnerSubtitle = document.getElementById('winner-subtitle');
+       const gameStatusMsg = document.getElementById('game-status-msg');
+
+
+       let scoreP1 = 0;
+       let scoreP2 = 0;
+       let isTournamentMode = false;
+       let currentGameIndex = 0;
+       let gameActive = false;
+       let animationFrameId = null;
+        let roundTimeout = null;
+        let countdownInterval = null;
+        let sessionId = 0;
+        let roundEnding = false;
+
+
+       const miniGamesList = [
+           { id: 0, name: '⚽ 1. FÚTBOL 1V1', desc: '¡Empuja el balón hacia la portería rival!' },
+           { id: 1, name: '🏓 2. PING PONG', desc: '¡Devuelve la pelota y evita que pase tu paleta!' },
+           { id: 2, name: '🤼 3. SUMO RING', desc: '¡Empuja al rival fuera del tatami circular!' },
+           { id: 3, name: '⚡ 4. DUELO DE REFLEJOS', desc: '¡Presiona tu tecla apenas aparezca la señal!' },
+           { id: 4, name: '☄️ 5. ESQUIVAR METEORITOS', desc: '¡Sobrevive más tiempo que tu oponente!' },
+           { id: 5, name: '💥 6. BATALLA DE TANQUES', desc: '¡Dispara proyectiles rebotando para destruir al rival!' },
+           { id: 6, name: '🏃 7. CARRERA DE VALLAS', desc: '¡Salta los obstáculos sincronizando tu ritmo!' },
+           { id: 7, name: '🪙 8. RECOLECTAR MONEDAS', desc: '¡Atrapa más monedas antes de que acabe el tiempo!' },
+           { id: 8, name: '🥧 9. DUELO DE PASTELES', desc: '¡Calcula ángulo y potencia para golpear al rival!' },
+           { id: 9, name: '🪢 10. FUERZA (TIRA Y AFLOJA)', desc: '¡Machaca tu tecla de movimiento para arrastrar al rival!' }
+       ];
+
+
+       const keys = {};
+        const keyTriggered = {};
+        window.addEventListener('keydown', (e) => {
+            if (['Space','Enter','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'].includes(e.code) && gameActive) e.preventDefault();
+            if (!keys[e.code] && !e.repeat) keyTriggered[e.code] = true;
+            keys[e.code] = true;
+        });
+        window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+        window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+
+        function clearPending() {
+            sessionId++;
+            clearTimeout(roundTimeout);
+            clearInterval(countdownInterval);
+            if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+            roundTimeout = null; countdownInterval = null; animationFrameId = null;
+            gameActive = false;
+            for (const k in keys) keys[k] = false;
+            for (const k in keyTriggered) keyTriggered[k] = false;
+        }
+
+       function resizeCanvas() { canvas.width = 800; canvas.height = 500; }
+       window.addEventListener('resize', resizeCanvas);
+       resizeCanvas();
+
+
+       function returnToMenu() {
+           clearPending();
+           roundEnding = false;
+           currentGameInstance = null;
+           startScreen.classList.remove('hidden');
+           announcementScreen.classList.add('hidden');
+           gameoverScreen.classList.add('hidden');
+           currentGameTitleEl.textContent = 'Menú Principal';
+           gameStatusMsg.textContent = 'Selecciona un juego';
+       }
+
+       function startSpecificGame(index) {
+            clearPending();
+            roundEnding = false;
+            gameoverScreen.classList.add('hidden');
+           isTournamentMode = false;
+           scoreP1 = 0; scoreP2 = 0;
+           updateScoreboard();
+           startScreen.classList.add('hidden');
+           currentGameIndex = index;
+           currentGameTitleEl.textContent = miniGamesList[index].name;
+           launchGameInstance(index);
+       }
+
+
+       function startTournamentSession() {
+            clearPending();
+            roundEnding = false;
+            gameoverScreen.classList.add('hidden');
+           isTournamentMode = true;
+           scoreP1 = 0; scoreP2 = 0;
+           updateScoreboard();
+           startScreen.classList.add('hidden');
+           nextTournamentRound();
+       }
+
+
+       function updateScoreboard() {
+           scoreP1El.textContent = scoreP1;
+           scoreP2El.textContent = scoreP2;
+       }
+
+
+       function nextTournamentRound() {
+           if (scoreP1 >= 10) { endTournament(1); return; }
+           if (scoreP2 >= 10) { endTournament(2); return; }
+
+
+           currentGameIndex = Math.floor(Math.random() * miniGamesList.length);
+           const gameData = miniGamesList[currentGameIndex];
+
+
+           currentGameTitleEl.textContent = gameData.name;
+           announcementGameName.textContent = gameData.name;
+           announcementInstructions.textContent = gameData.desc;
+           announcementScreen.classList.remove('hidden');
+
+
+           let count = 3;
+           countdownNumber.textContent = count;
+           const token = sessionId;
+            countdownInterval = setInterval(() => {
+                if (token !== sessionId) { clearInterval(countdownInterval); return; }
+               count--;
+               if (count > 0) { countdownNumber.textContent = count; }
+               else if (count === 0) { countdownNumber.textContent = "¡YA!"; }
+               else {
+                   clearInterval(countdownInterval);
+                   announcementScreen.classList.add('hidden');
+                   launchGameInstance(currentGameIndex);
+               }
+           }, 800);
+       }
+
+
+       function endTournament(winner) {
+           clearPending();
+           cancelAnimationFrame(animationFrameId);
+           announcementScreen.classList.add('hidden');
+           gameoverScreen.classList.remove('hidden');
+           winnerTitle.textContent = `🏆 ¡JUGADOR ${winner} ES EL CAMPEÓN! 🏆`;
+           winnerSubtitle.textContent = `Marcador final: ${scoreP1} - ${scoreP2}`;
+       }
+
+
+       let currentGameInstance = null;
+       function launchGameInstance(index) {
+           roundEnding = false;
+           for (const k in keys) keys[k] = false;
+           for (const k in keyTriggered) keyTriggered[k] = false;
+           gameActive = true;
+           if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+
+
+           switch(index) {
+               case 0: currentGameInstance = new FootballGame(); break;
+               case 1: currentGameInstance = new PongGame(); break;
+               case 2: currentGameInstance = new SumoGame(); break;
+               case 3: currentGameInstance = new ReflexGame(); break;
+               case 4: currentGameInstance = new MeteorGame(); break;
+               case 5: currentGameInstance = new TanksGame(); break;
+               case 6: currentGameInstance = new HurdlesGame(); break;
+               case 7: currentGameInstance = new CoinsGame(); break;
+               case 8: currentGameInstance = new CakesGame(); break;
+               case 9: currentGameInstance = new TugOfWarGame(); break;
+           }
+           gameLoop();
+       }
+
+
+       function gameLoop() {
+           if (!gameActive) return;
+           ctx.clearRect(0, 0, canvas.width, canvas.height);
+           if (currentGameInstance && currentGameInstance.update && currentGameInstance.draw) {
+               currentGameInstance.update();
+               currentGameInstance.draw();
+           }
+           // Limpiar triggers
+           for (let k in keyTriggered) keyTriggered[k] = false;
+           if (gameActive) animationFrameId = requestAnimationFrame(gameLoop);
+       }
+
+
+       function finishRound(winner) {
+            if (roundEnding || !gameActive) return;
+            roundEnding = true;
+            gameActive = false;
+            if (winner === 1) { scoreP1++; gameStatusMsg.textContent = '¡Jugador 1 gana la ronda!'; }
+            else if (winner === 2) { scoreP2++; gameStatusMsg.textContent = '¡Jugador 2 gana la ronda!'; }
+            else gameStatusMsg.textContent = '¡Empate!';
+            updateScoreboard();
+            const token = sessionId;
+            roundTimeout = setTimeout(() => {
+                if (token !== sessionId) return;
+                if (isTournamentMode) nextTournamentRound();
+                else launchGameInstance(currentGameIndex);
+            }, 1500);
+        }
+
+       /* ================= 1. FÚTBOL ================= */
+       class FootballGame {
+           constructor() {
+               this.p1 = { x: 150, y: 250, radius: 18, speed: 4.5, color: '#3b82f6' };
+               this.p2 = { x: 650, y: 250, radius: 18, speed: 4.5, color: '#ef4444' };
+               this.ball = { x: 400, y: 250, radius: 12, vx: 0, vy: 0 };
+               this.goalHeight = 160;
+           }
+           update() {
+               if (keys['KeyW'] && this.p1.y > 30) this.p1.y -= this.p1.speed;
+               if (keys['KeyS'] && this.p1.y < canvas.height - 30) this.p1.y += this.p1.speed;
+               if (keys['KeyA'] && this.p1.x > 30) this.p1.x -= this.p1.speed;
+               if (keys['KeyD'] && this.p1.x < canvas.width/2 - 40) this.p1.x += this.p1.speed;
+
+
+               if (keys['ArrowUp'] && this.p2.y > 30) this.p2.y -= this.p2.speed;
+               if (keys['ArrowDown'] && this.p2.y < canvas.height - 30) this.p2.y += this.p2.speed;
+               if (keys['ArrowLeft'] && this.p2.x > canvas.width/2 + 40) this.p2.x -= this.p2.speed;
+               if (keys['ArrowRight'] && this.p2.x < canvas.width - 30) this.p2.x += this.p2.speed;
+
+
+               this.ball.x += this.ball.vx; this.ball.y += this.ball.vy;
+               this.ball.vx *= 0.98; this.ball.vy *= 0.98;
+
+
+               if (this.ball.y < 20) { this.ball.y = 20; this.ball.vy *= -0.8; }
+               if (this.ball.y > canvas.height - 20) { this.ball.y = canvas.height - 20; this.ball.vy *= -0.8; }
+
+
+               [this.p1, this.p2].forEach(p => {
+                   let dx = this.ball.x - p.x, dy = this.ball.y - p.y, dist = Math.hypot(dx, dy);
+                   if (dist < p.radius + this.ball.radius) {
+                       let angle = Math.atan2(dy, dx);
+                       this.ball.vx = Math.cos(angle) * 7; this.ball.vy = Math.sin(angle) * 7;
+                   }
+               });
+
+
+               if (this.ball.x < 30 && Math.abs(this.ball.y - canvas.height/2) < this.goalHeight/2) finishRound(2);
+               if (this.ball.x > canvas.width - 30 && Math.abs(this.ball.y - canvas.height/2) < this.goalHeight/2) finishRound(1);
+           }
+           draw() {
+               ctx.strokeStyle = '#334155'; ctx.lineWidth = 4;
+               ctx.strokeRect(30, 20, canvas.width - 60, canvas.height - 40);
+               ctx.fillStyle = '#1e293b';
+               ctx.fillRect(0, canvas.height/2 - this.goalHeight/2, 30, this.goalHeight);
+               ctx.fillRect(canvas.width - 30, canvas.height/2 - this.goalHeight/2, 30, this.goalHeight);
+               ctx.fillStyle = this.p1.color; ctx.beginPath(); ctx.arc(this.p1.x, this.p1.y, this.p1.radius, 0, Math.PI*2); ctx.fill();
+               ctx.fillStyle = this.p2.color; ctx.beginPath(); ctx.arc(this.p2.x, this.p2.y, this.p2.radius, 0, Math.PI*2); ctx.fill();
+               ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI*2); ctx.fill();
+           }
+       }
+
+
+       /* ================= 2. PING PONG ================= */
+       class PongGame {
+           constructor() {
+               this.p1 = { x: 40, y: 200, w: 14, h: 80, speed: 6 };
+               this.p2 = { x: canvas.width - 54, y: 200, w: 14, h: 80, speed: 6 };
+               this.ball = { x: canvas.width/2, y: canvas.height/2, r: 10, vx: 5, vy: 3 };
+           }
+           update() {
+               if (keys['KeyW'] && this.p1.y > 20) this.p1.y -= this.p1.speed;
+               if (keys['KeyS'] && this.p1.y + this.p1.h < canvas.height - 20) this.p1.y += this.p1.speed;
+               if (keys['ArrowUp'] && this.p2.y > 20) this.p2.y -= this.p2.speed;
+               if (keys['ArrowDown'] && this.p2.y + this.p2.h < canvas.height - 20) this.p2.y += this.p2.speed;
+
+
+               this.ball.x += this.ball.vx; this.ball.y += this.ball.vy;
+               if (this.ball.y - this.ball.r < 20 || this.ball.y + this.ball.r > canvas.height - 20) this.ball.vy *= -1;
+
+
+               if (this.ball.x - this.ball.r <= this.p1.x + this.p1.w && this.ball.y >= this.p1.y && this.ball.y <= this.p1.y + this.p1.h) {
+                   this.ball.vx *= -1.05; this.ball.x = this.p1.x + this.p1.w + this.ball.r;
+               }
+               if (this.ball.x + this.ball.r >= this.p2.x && this.ball.y >= this.p2.y && this.ball.y <= this.p2.y + this.p2.h) {
+                   this.ball.vx *= -1.05; this.ball.x = this.p2.x - this.ball.r;
+               }
+
+
+               if (this.ball.x < 0) finishRound(2);
+               if (this.ball.x > canvas.width) finishRound(1);
+           }
+           draw() {
+               ctx.strokeStyle = '#334155'; ctx.setLineDash([10, 10]); ctx.beginPath(); ctx.moveTo(canvas.width/2, 20); ctx.lineTo(canvas.width/2, canvas.height-20); ctx.stroke(); ctx.setLineDash([]);
+               ctx.fillStyle = '#3b82f6'; ctx.fillRect(this.p1.x, this.p1.y, this.p1.w, this.p1.h);
+               ctx.fillStyle = '#ef4444'; ctx.fillRect(this.p2.x, this.p2.y, this.p2.w, this.p2.h);
+               ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(this.ball.x, this.ball.y, this.ball.r, 0, Math.PI*2); ctx.fill();
+           }
+       }
+
+
+       /* ================= 3. SUMO ================= */
+       class SumoGame {
+           constructor() {
+               this.cx = canvas.width/2; this.cy = canvas.height/2 + 20; this.r = 150;
+               this.p1 = { x: this.cx - 50, y: this.cy, r: 22, vx: 0, vy: 0, speed: 0.35, color: '#3b82f6' };
+               this.p2 = { x: this.cx + 50, y: this.cy, r: 22, vx: 0, vy: 0, speed: 0.35, color: '#ef4444' };
+           }
+           update() {
+               if (keys['KeyW']) this.p1.vy -= this.p1.speed;
+               if (keys['KeyS']) this.p1.vy += this.p1.speed;
+               if (keys['KeyA']) this.p1.vx -= this.p1.speed;
+               if (keys['KeyD']) this.p1.vx += this.p1.speed;
+
+
+               if (keys['ArrowUp']) this.p2.vy -= this.p2.speed;
+               if (keys['ArrowDown']) this.p2.vy += this.p2.speed;
+               if (keys['ArrowLeft']) this.p2.vx -= this.p2.speed;
+               if (keys['ArrowRight']) this.p2.vx += this.p2.speed;
+
+
+               this.p1.vx *= 0.92; this.p1.vy *= 0.92; this.p2.vx *= 0.92; this.p2.vy *= 0.92;
+               this.p1.x += this.p1.vx; this.p1.y += this.p1.vy; this.p2.x += this.p2.vx; this.p2.y += this.p2.vy;
+
+
+               let dx = this.p2.x - this.p1.x, dy = this.p2.y - this.p1.y, dist = Math.hypot(dx, dy);
+               if (dist < this.p1.r + this.p2.r) {
+                   let angle = Math.atan2(dy, dx), overlap = (this.p1.r + this.p2.r) - dist;
+                   this.p1.x -= Math.cos(angle)*overlap*0.5; this.p1.y -= Math.sin(angle)*overlap*0.5;
+                   this.p2.x += Math.cos(angle)*overlap*0.5; this.p2.y += Math.sin(angle)*overlap*0.5;
+               }
+
+
+               if (Math.hypot(this.p1.x - this.cx, this.p1.y - this.cy) > this.r) finishRound(2);
+               if (Math.hypot(this.p2.x - this.cx, this.p2.y - this.cy) > this.r) finishRound(1);
+           }
+           draw() {
+               ctx.fillStyle = '#d97706'; ctx.beginPath(); ctx.arc(this.cx, this.cy, this.r+12, 0, Math.PI*2); ctx.fill();
+               ctx.fillStyle = '#fef3c7'; ctx.beginPath(); ctx.arc(this.cx, this.cy, this.r, 0, Math.PI*2); ctx.fill();
+               ctx.fillStyle = this.p1.color; ctx.beginPath(); ctx.arc(this.p1.x, this.p1.y, this.p1.r, 0, Math.PI*2); ctx.fill();
+               ctx.fillStyle = this.p2.color; ctx.beginPath(); ctx.arc(this.p2.x, this.p2.y, this.p2.r, 0, Math.PI*2); ctx.fill();
+           }
+       }
+
+
+       /* ================= 4. REFLEJOS ================= */
+       class ReflexGame {
+           constructor() {
+               this.state = 'waiting'; this.timer = Math.floor(Math.random()*90)+60; this.msg = "¡ESPERA LA SEÑAL...";
+           }
+           update() {
+               if (this.state === 'waiting') {
+                   this.timer--;
+                   if (keyTriggered['Space']) { finishRound(2); this.state = 'done'; }
+                   if (keyTriggered['Enter']) { finishRound(1); this.state = 'done'; }
+                   if (this.timer <= 0) { this.state = 'ready'; this.msg = "¡YA! (ESPACIO = J1 | ENTER = J2)"; }
+               } else if (this.state === 'ready') {
+                   if (keyTriggered['Space']) { finishRound(1); this.state = 'done'; }
+                   if (keyTriggered['Enter']) { finishRound(2); this.state = 'done'; }
+               }
+           }
+           draw() {
+               ctx.fillStyle = this.state === 'ready' ? '#dc2626' : '#0f172a'; ctx.fillRect(0,0,canvas.width,canvas.height);
+               ctx.fillStyle = '#fff'; ctx.font = 'bold 28px Poppins'; ctx.textAlign = 'center';
+               ctx.fillText(this.msg, canvas.width/2, canvas.height/2);
+           }
+       }
+
+
+       /* ================= 5. METEORITOS ================= */
+       class MeteorGame {
+           constructor() {
+               this.p1 = { x: 200, y: 400, r: 15, alive: true, color: '#3b82f6' };
+               this.p2 = { x: 600, y: 400, r: 15, alive: true, color: '#ef4444' };
+               this.meteors = [];
+               this.timer = 0;
+           }
+           update() {
+               this.timer++;
+               if (this.timer % 20 === 0) {
+                   this.meteors.push({ x: Math.random()*canvas.width, y: -20, r: Math.random()*15+10, vy: Math.random()*4+3 });
+               }
+
+
+               if (this.p1.alive) {
+                   if (keys['KeyW']) this.p1.y -= 4; if (keys['KeyS']) this.p1.y += 4;
+                   if (keys['KeyA']) this.p1.x -= 4; if (keys['KeyD']) this.p1.x += 4;
+               }
+               if (this.p2.alive) {
+                   if (keys['ArrowUp']) this.p2.y -= 4; if (keys['ArrowDown']) this.p2.y += 4;
+                   if (keys['ArrowLeft']) this.p2.x -= 4; if (keys['ArrowRight']) this.p2.x += 4;
+               }
+
+
+               this.meteors.forEach(m => {
+                   m.y += m.vy;
+                   if (this.p1.alive && Math.hypot(m.x - this.p1.x, m.y - this.p1.y) < m.r + this.p1.r) this.p1.alive = false;
+                   if (this.p2.alive && Math.hypot(m.x - this.p2.x, m.y - this.p2.y) < m.r + this.p2.r) this.p2.alive = false;
+               });
+
+
+               this.meteors = this.meteors.filter(m => m.y < canvas.height + m.r);
+                if (!this.p1.alive && !this.p2.alive) finishRound(0);
+               else if (!this.p1.alive) finishRound(2);
+               else if (!this.p2.alive) finishRound(1);
+               else if (this.timer > 500 && this.p1.alive && this.p2.alive) finishRound(0);
+           }
+           draw() {
+               ctx.fillStyle = '#f59e0b'; this.meteors.forEach(m => { ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, Math.PI*2); ctx.fill(); });
+               if (this.p1.alive) { ctx.fillStyle = this.p1.color; ctx.beginPath(); ctx.arc(this.p1.x, this.p1.y, this.p1.r, 0, Math.PI*2); ctx.fill(); }
+               if (this.p2.alive) { ctx.fillStyle = this.p2.color; ctx.beginPath(); ctx.arc(this.p2.x, this.p2.y, this.p2.r, 0, Math.PI*2); ctx.fill(); }
+           }
+       }
+
+
+       /* ================= 6. TANQUES ================= */
+       class TanksGame {
+           constructor() {
+               this.p1 = { x: 100, y: 250, angle: 0, color: '#3b82f6', hp: 2 };
+               this.p2 = { x: 700, y: 250, angle: Math.PI, color: '#ef4444', hp: 2 };
+               this.bullets = [];
+           }
+           update() {
+               if (keys['KeyW']) this.p1.x += Math.cos(this.p1.angle)*2.5, this.p1.y += Math.sin(this.p1.angle)*2.5;
+               if (keys['KeyS']) this.p1.x -= Math.cos(this.p1.angle)*2.5, this.p1.y -= Math.sin(this.p1.angle)*2.5;
+               if (keys['KeyA']) this.p1.angle -= 0.05;
+               if (keys['KeyD']) this.p1.angle += 0.05;
+               if (keyTriggered['Space']) {
+                   this.bullets.push({ x: this.p1.x, y: this.p1.y, vx: Math.cos(this.p1.angle)*6, vy: Math.sin(this.p1.angle)*6, owner: 1 });
+               }
+
+
+               if (keys['ArrowUp']) this.p2.x += Math.cos(this.p2.angle)*2.5, this.p2.y += Math.sin(this.p2.angle)*2.5;
+               if (keys['ArrowDown']) this.p2.x -= Math.cos(this.p2.angle)*2.5, this.p2.y -= Math.sin(this.p2.angle)*2.5;
+               if (keys['ArrowLeft']) this.p2.angle -= 0.05;
+               if (keys['ArrowRight']) this.p2.angle += 0.05;
+               if (keyTriggered['Enter']) {
+                   this.bullets.push({ x: this.p2.x, y: this.p2.y, vx: Math.cos(this.p2.angle)*6, vy: Math.sin(this.p2.angle)*6, owner: 2 });
+               }
+
+
+               this.bullets.forEach(b => {
+                   b.x += b.vx; b.y += b.vy;
+                   if (b.x < 10 || b.x > canvas.width-10) b.vx *= -1;
+                   if (b.y < 10 || b.y > canvas.height-10) b.vy *= -1;
+
+
+                   if (b.owner === 2 && Math.hypot(b.x - this.p1.x, b.y - this.p1.y) < 15) finishRound(2);
+                   if (b.owner === 1 && Math.hypot(b.x - this.p2.x, b.y - this.p2.y) < 15) finishRound(1);
+               });
+           }
+           draw() {
+               ctx.strokeStyle = '#475569'; ctx.strokeRect(10, 10, canvas.width-20, canvas.height-20);
+               [this.p1, this.p2].forEach(p => {
+                   ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+                   ctx.fillStyle = p.color; ctx.fillRect(-12, -12, 24, 24);
+                   ctx.fillStyle = '#fff'; ctx.fillRect(0, -3, 18, 6);
+                   ctx.restore();
+               });
+               ctx.fillStyle = '#facc15'; this.bullets.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI*2); ctx.fill(); });
+           }
+       }
+
+
+       /* ================= 7. VALLAS ================= */
+       class HurdlesGame {
+           constructor() {
+               this.p1 = { x: 100, y: 200, vy: 0, score: 0, color: '#3b82f6' };
+               this.p2 = { x: 100, y: 350, vy: 0, score: 0, color: '#ef4444' };
+               this.hurdleX = 500;
+           }
+           update() {
+               if (keyTriggered['Space'] && this.p1.y === 200) this.p1.vy = -9;
+               this.p1.y += this.p1.vy; this.p1.vy += 0.5;
+               if (this.p1.y > 200) { this.p1.y = 200; this.p1.vy = 0; }
+
+
+               if (keyTriggered['Enter'] && this.p2.y === 350) this.p2.vy = -9;
+               this.p2.y += this.p2.vy; this.p2.vy += 0.5;
+               if (this.p2.y > 350) { this.p2.y = 350; this.p2.vy = 0; }
+
+
+               this.hurdleX -= 4;
+               if (this.hurdleX < 0) this.hurdleX = 850;
+
+
+               if (Math.abs(this.hurdleX - this.p1.x) < 20 && this.p1.y > 175) finishRound(2);
+               if (Math.abs(this.hurdleX - this.p2.x) < 20 && this.p2.y > 325) finishRound(1);
+           }
+           draw() {
+               ctx.strokeStyle = '#334155'; ctx.lineWidth = 4;
+               ctx.beginPath(); ctx.moveTo(0, 240); ctx.lineTo(canvas.width, 240); ctx.stroke();
+               ctx.beginPath(); ctx.moveTo(0, 390); ctx.lineTo(canvas.width, 390); ctx.stroke();
+
+
+               ctx.fillStyle = '#ef4444'; ctx.fillRect(this.hurdleX, 210, 10, 30);
+               ctx.fillRect(this.hurdleX, 360, 10, 30);
+
+
+               ctx.fillStyle = this.p1.color; ctx.fillRect(this.p1.x-10, this.p1.y-20, 20, 20);
+               ctx.fillStyle = this.p2.color; ctx.fillRect(this.p2.x-10, this.p2.y-20, 20, 20);
+           }
+       }
+
+
+       /* ================= 8. MONEDAS ================= */
+       class CoinsGame {
+           constructor() {
+               this.p1 = { x: 200, y: 250, score: 0, color: '#3b82f6' };
+               this.p2 = { x: 600, y: 250, score: 0, color: '#ef4444' };
+               this.coin = { x: Math.random()*700+50, y: Math.random()*400+50 };
+               this.timer = 400;
+           }
+           update() {
+               this.timer--;
+               if (keys['KeyW']) this.p1.y -= 4; if (keys['KeyS']) this.p1.y += 4;
+               if (keys['KeyA']) this.p1.x -= 4; if (keys['KeyD']) this.p1.x += 4;
+               if (keys['ArrowUp']) this.p2.y -= 4; if (keys['ArrowDown']) this.p2.y += 4;
+               if (keys['ArrowLeft']) this.p2.x -= 4; if (keys['ArrowRight']) this.p2.x += 4;
+
+
+               if (Math.hypot(this.p1.x - this.coin.x, this.p1.y - this.coin.y) < 20) {
+                   this.p1.score++; this.coin = { x: Math.random()*700+50, y: Math.random()*400+50 };
+               }
+               if (Math.hypot(this.p2.x - this.coin.x, this.p2.y - this.coin.y) < 20) {
+                   this.p2.score++; this.coin = { x: Math.random()*700+50, y: Math.random()*400+50 };
+               }
+
+
+               if (this.timer <= 0) {
+                   if (this.p1.score > this.p2.score) finishRound(1);
+                   else if (this.p2.score > this.p1.score) finishRound(2);
+                   else finishRound(0);
+               }
+           }
+           draw() {
+               ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(this.coin.x, this.coin.y, 10, 0, Math.PI*2); ctx.fill();
+               ctx.fillStyle = this.p1.color; ctx.beginPath(); ctx.arc(this.p1.x, this.p1.y, 15, 0, Math.PI*2); ctx.fill();
+               ctx.fillStyle = this.p2.color; ctx.beginPath(); ctx.arc(this.p2.x, this.p2.y, 15, 0, Math.PI*2); ctx.fill();
+               ctx.fillStyle = '#fff'; ctx.font = '14px Poppins';
+               ctx.fillText(`P1 Monedas: ${this.p1.score} | P2 Monedas: ${this.p2.score}`, 20, 30);
+           }
+       }
+
+
+       /* ================= 9. PASTELES ================= */
+       class CakesGame {
+           constructor() {
+               this.p1 = { x: 150, y: 400, power: 5, angle: -Math.PI/4 };
+               this.p2 = { x: 650, y: 400, power: 5, angle: -3*Math.PI/4 };
+               this.cake = null; this.turn = 1;
+           }
+           update() {
+               if (!this.cake) {
+                   if (this.turn === 1) {
+                       if (keys['KeyA']) this.p1.angle -= 0.03;
+                       if (keys['KeyD']) this.p1.angle += 0.03;
+                       if (keys['KeyW']) this.p1.power = Math.min(15, this.p1.power + 0.1);
+                       if (keyTriggered['Space']) {
+                           this.cake = { x: this.p1.x, y: this.p1.y, vx: Math.cos(this.p1.angle)*this.p1.power, vy: Math.sin(this.p1.angle)*this.p1.power };
+                       }
+                   } else {
+                       if (keys['ArrowLeft']) this.p2.angle -= 0.03;
+                       if (keys['ArrowRight']) this.p2.angle += 0.03;
+                       if (keys['ArrowUp']) this.p2.power = Math.min(15, this.p2.power + 0.1);
+                       if (keyTriggered['Enter']) {
+                           this.cake = { x: this.p2.x, y: this.p2.y, vx: Math.cos(this.p2.angle)*this.p2.power, vy: Math.sin(this.p2.angle)*this.p2.power };
+                       }
+                   }
+               } else {
+                   this.cake.x += this.cake.vx; this.cake.y += this.cake.vy; this.cake.vy += 0.2;
+                   if (this.turn === 1 && Math.hypot(this.cake.x - this.p2.x, this.cake.y - this.p2.y) < 25) finishRound(1);
+                   if (this.turn === 2 && Math.hypot(this.cake.x - this.p1.x, this.cake.y - this.p1.y) < 25) finishRound(2);
+                   if (this.cake.y > canvas.height || this.cake.x < 0 || this.cake.x > canvas.width) {
+                       this.cake = null; this.turn = this.turn === 1 ? 2 : 1;
+                   }
+               }
+           }
+           draw() {
+               ctx.fillStyle = '#3b82f6'; ctx.fillRect(this.p1.x-15, this.p1.y-15, 30, 30);
+               ctx.fillStyle = '#ef4444'; ctx.fillRect(this.p2.x-15, this.p2.y-15, 30, 30);
+               if (this.cake) { ctx.fillStyle = '#ec4899'; ctx.beginPath(); ctx.arc(this.cake.x, this.cake.y, 8, 0, Math.PI*2); ctx.fill(); }
+               ctx.fillStyle = '#fff'; ctx.font = '14px Poppins'; ctx.fillText(`Turno del Jugador ${this.turn}`, 350, 30);
+           }
+
+       }
+
+        /* ================= 10. TIRA Y AFLOJA ================= */
+        class TugOfWarGame {
+            constructor() {
+                this.position = 0;
+                this.duration = 60 * 14;
+                this.p1Taps = 0;
+                this.p2Taps = 0;
+            }
+            update() {
+                this.duration--;
+                if (keyTriggered['Space']) { this.position -= 9; this.p1Taps++; }
+                if (keyTriggered['Enter']) { this.position += 9; this.p2Taps++; }
+                this.position *= 0.999;
+                if (this.position <= -180) finishRound(1);
+                else if (this.position >= 180) finishRound(2);
+                else if (this.duration <= 0) finishRound(this.position < -5 ? 1 : this.position > 5 ? 2 : 0);
+            }
+            draw() {
+                ctx.fillStyle = '#1e293b'; ctx.fillRect(40,180,720,150);
+                ctx.fillStyle = '#64748b'; ctx.fillRect(75,245,650,11);
+                ctx.fillStyle = '#eab308'; ctx.fillRect(390,205,20,92);
+                ctx.fillStyle = '#fff'; ctx.fillRect(395+this.position,215,10,72);
+                ctx.fillStyle = '#3b82f6'; ctx.fillRect(90,225,55,52);
+                ctx.fillStyle = '#ef4444'; ctx.fillRect(655,225,55,52);
+                ctx.font = 'bold 23px Arial'; ctx.textAlign = 'center';
+                ctx.fillStyle = '#fff'; ctx.fillText('J1: ESPACIO      |      J2: ENTER',400,120);
+                ctx.font='16px Arial'; ctx.fillText('Pulsá repetidamente para llevar la marca hacia tu lado',400,155);
+                ctx.fillText('Tiempo: '+Math.ceil(this.duration/60)+' s',400,365);
+            }
+        }
+    </script>
+</body>
+</html>
